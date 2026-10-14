@@ -1,0 +1,22 @@
+{
+  "name": "lz-potato-workers",
+  "private": true,
+  "type": "module",
+  "description": "Workshop topic 12: off-chain DVN and Executor for the self-hosted LayerZero V2 lab (potato <-> anvil)",
+  "scripts": {
+    "dvn": "node src/dvn.ts",
+    "executor": "node src/executor.ts",
+    "test": "node --test src/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "dependencies": {
+    "viem": "2.56.9"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "6.0.2"
+  }
+}

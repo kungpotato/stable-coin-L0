@@ -14,3 +14,6 @@ potato-localnet/anvil-home-state.json
 
 # python venv for tools/
 .venv/
+
+# worker cursors (local runtime state)
+workers/state/
