@@ -1,0 +1,15 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["node_modules", "lib"]
+solc = "0.8.22"
+optimizer = true
+optimizer_runs = 20000
+# potato-chain runs cosmos/evm v0.7.3 -> Prague is the newest supported hardfork
+evm_version = "prague"
+via_ir = false
+fs_permissions = [{ access = "read-write", path = "./deployments" }]
+
+[rpc_endpoints]
+potato = "http://localhost:18545"
+anvil_lab = "http://localhost:28545"

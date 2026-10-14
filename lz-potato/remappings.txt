@@ -1,0 +1,6 @@
+forge-std/=lib/forge-std/src/
+@layerzerolabs/=node_modules/@layerzerolabs/
+solidity-bytes-utils/=node_modules/solidity-bytes-utils/
+node_modules/@layerzerolabs/lz-evm-protocol-v2/:@openzeppelin/contracts/=node_modules/@openzeppelin/contracts-v4/
+node_modules/@layerzerolabs/lz-evm-messagelib-v2/:@openzeppelin/contracts/=node_modules/@openzeppelin/contracts-v4/
+@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
