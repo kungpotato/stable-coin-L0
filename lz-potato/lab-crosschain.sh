@@ -35,7 +35,8 @@ export PAYLOAD=$(cast abi-decode --input "x(bytes,bytes,address)" "$DATA" | sed 
 echo "== PacketSent on $FROM after $CONF confirmation(s): ${PAYLOAD:0:42}..."
 
 # 4. DVN verify + commit + executor lzReceive, all on the destination chain with its own key
-PRIVATE_KEY="${!DST_KEY_VAR}" CONFIRMATIONS="$CONF" forge script script/Relay.s.sol --rpc-url "$DST_RPC" --broadcast --slow -q
+# LabDVN.verify is owner-only and the owner is the DVN key since topic 12
+PRIVATE_KEY="$DVN_KEY" CONFIRMATIONS="$CONF" forge script script/Relay.s.sol --rpc-url "$DST_RPC" --broadcast --slow -q
 
 echo "== $TO Ping.received:    $BEFORE -> $(cast call "$DST_PING" "received()(uint256)" --rpc-url "$DST_RPC")"
 echo "== $TO Ping.lastSrcEid:  $(cast call "$DST_PING" "lastSrcEid()(uint32)" --rpc-url "$DST_RPC" | awk '{print $1}')"
