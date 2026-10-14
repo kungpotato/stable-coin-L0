@@ -1,0 +1,3 @@
+[submodule "lz-potato/lib/forge-std"]
+	path = lz-potato/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

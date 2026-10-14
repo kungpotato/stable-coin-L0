@@ -1,0 +1,11 @@
+# Remap potato node0 host ports so it can run next to the anvil already on :8545.
+# Usage (from stable-coin-L0):
+#   docker-compose -f ../potato-chain/docker-compose.yml -f potato-localnet/ports-override.yml up -d --build
+services:
+  node0:
+    ports: !override
+      - "36657:26657"  # CometBFT RPC
+      - "18545:8545"   # EVM JSON-RPC
+      - "18546:8546"   # EVM WebSocket
+      - "11317:1317"   # Cosmos REST
+      - "19090:9090"   # gRPC
