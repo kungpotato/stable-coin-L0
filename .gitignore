@@ -10,3 +10,6 @@ lz-potato/deployments/31338.json
 
 # npm
 node_modules/
+
+# anvil-home chain state (local data, like potato .localnet)
+potato-localnet/anvil-home-state.json
