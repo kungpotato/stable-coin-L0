@@ -22,7 +22,7 @@ echo "== ping sent: $MSG"
 
 # what a DVN does: find PacketSent. Start from the deploy block, never 0 (cosmos/evm getLogs bug, known-issues.md)
 DATA=$(cast logs --from-block "$START" --address "$EP" "PacketSent(bytes,bytes,address)" --rpc-url "$RPC" --json | jq -r '.[-1].data')
-export PAYLOAD=$(cast abi-decode --input "x(bytes,bytes,address)" "$DATA" | head -1)
+export PAYLOAD=$(cast abi-decode --input "x(bytes,bytes,address)" "$DATA" | sed -n 1p)
 echo "== PacketSent payload: ${PAYLOAD:0:42}..."
 
 forge script script/Relay.s.sol --rpc-url "$RPC" --broadcast --slow -q
