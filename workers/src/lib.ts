@@ -128,7 +128,11 @@ export async function send(chain: ChainCfg, s: Signer, to: Address, data: Hex) {
   }
   const hash = await s.wallet.sendTransaction({ account: s.account, chain: chain.viemChain, to, data, gas });
   const receipt = await chain.pub.waitForTransactionReceipt({ hash, timeout: 60_000 });
-  if (receipt.status !== "success") throw new Error(`tx ${hash} reverted on ${chain.name} (gas limit ${receipt.gasUsed} used)`);
+  if (receipt.status !== "success") {
+    const tx = await chain.pub.getTransaction({ hash });
+    const oog = receipt.gasUsed === tx.gas ? " = out of gas" : "";
+    throw new Error(`tx ${hash} reverted on ${chain.name} (used ${receipt.gasUsed} of gas limit ${tx.gas}${oog})`);
+  }
   return receipt;
 }
 
