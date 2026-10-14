@@ -154,3 +154,22 @@ export function log(role: string, msg: string) {
 
 export const short = (h: string) => `${h.slice(0, 10)}…`;
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Key from the environment, else from lz-potato/config/dev-keys.env (public lab keys). */
+export function envKey(name: string): Hex {
+  if (process.env[name]) return process.env[name] as Hex;
+  const line = readFileSync(join(LAB, "config", "dev-keys.env"), "utf8").split("\n").find((l) => l.startsWith(`${name}=`));
+  if (!line) throw new Error(`${name} not set and not in dev-keys.env`);
+  return line.slice(name.length + 1).split(/\s/)[0] as Hex;
+}
+
+/** Inbound state of a packet on its destination endpoint. */
+export async function inboundState(dst: ChainCfg, p: Packet): Promise<"delivered" | "committed" | "pending"> {
+  const args = [p.receiver, p.srcEid, p.sender] as const;
+  const [lazy, hash] = await Promise.all([
+    dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "lazyInboundNonce", args }),
+    dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "inboundPayloadHash", args: [...args, p.nonce] }),
+  ]);
+  if (BigInt(hash) !== 0n) return "committed";
+  return p.nonce <= lazy ? "delivered" : "pending";
+}
