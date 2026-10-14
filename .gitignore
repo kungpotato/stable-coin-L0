@@ -13,3 +13,6 @@ node_modules/
 
 # anvil-home chain state (local data, like potato .localnet)
 potato-localnet/anvil-home-state.json
+
+# python venv for tools/
+.venv/
