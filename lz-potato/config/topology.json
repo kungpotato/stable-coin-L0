@@ -1,0 +1,24 @@
+{
+  "$comment": "Source of truth for chains, EIDs and asset home chains. Decisions: docs/adr/0001-counterpart-chain-and-home-chains.md",
+  "chains": {
+    "potato": { "chainId": 707070, "eid": 40707, "rpc": "http://localhost:18545", "confirmations": 1, "finality": "instant (CometBFT)" },
+    "anvil":  { "chainId": 31338,  "eid": 40338, "rpc": "http://localhost:28545", "confirmations": 1, "finality": "local, no reorgs" }
+  },
+  "assets": {
+    "POTATO": {
+      "decimals": 18, "sharedDecimals": 6, "home": "potato",
+      "legs": {
+        "potato": { "kind": "adapter", "impl": "NativeOFTAdapter or OFTAdapter(WPOTATO): decided in topic 13" },
+        "anvil":  { "kind": "oft",     "impl": "OFT" }
+      }
+    },
+    "USDC": {
+      "decimals": 6, "sharedDecimals": 6, "home": "anvil",
+      "legs": {
+        "anvil":  { "kind": "adapter", "impl": "OFTAdapter over issuer ERC-20" },
+        "potato": { "kind": "oft",     "impl": "OFT (separate from the existing MockUSDC, see ADR 0001)" }
+      }
+    }
+  },
+  "paths": [["potato", "anvil"], ["anvil", "potato"]]
+}
