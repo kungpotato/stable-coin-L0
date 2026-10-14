@@ -5,8 +5,6 @@
 lz-potato/out/
 lz-potato/cache/
 lz-potato/broadcast/
-# anvil is throwaway; potato localnet deployments are kept
-lz-potato/deployments/31338.json
 
 # npm
 node_modules/
