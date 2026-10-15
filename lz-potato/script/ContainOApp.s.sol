@@ -9,10 +9,15 @@ import {BlockedMessageLib} from "@layerzerolabs/lz-evm-protocol-v2/contracts/mes
 /// @notice Incident containment (topic 3/8): cut one OApp off from every path on the connected chain by pointing
 /// its send AND receive library at BlockedMessageLib (every call reverts). Works for OApps without a pause switch;
 /// only the OApp's delegate can do it, and only it can undo it. In-flight messages stay where they are.
-/// env: KEY_<chain>, ASSET (deployments key of the OApp)
+/// SIDES=send|receive|both (default both): one side only retires a leg while keeping an exit open, e.g. block new
+/// deposits (home send, remote receive) but let holders bridge back (remote send, home receive).
+/// env: KEY_<chain>, ASSET (deployments key of the OApp), SIDES (optional)
 contract ContainOApp is LabBase {
     function run() external {
         string memory asset = vm.envString("ASSET");
+        string memory sides = vm.envOr("SIDES", string("both"));
+        bool doSend = keccak256(bytes(sides)) != keccak256("receive");
+        bool doReceive = keccak256(bytes(sides)) != keccak256("send");
         EndpointV2 endpoint = EndpointV2(existing("EndpointV2"));
         address oapp = existing(asset);
         require(oapp != address(0), "unknown OApp");
@@ -31,10 +36,10 @@ contract ContainOApp is LabBase {
             if (keccak256(bytes(names[i])) == keccak256(bytes(local))) continue;
             uint32 eid = eidOf(names[i]);
             address sendLib = endpoint.getSendLibrary(oapp, eid);
-            if (sendLib != blocked) endpoint.setSendLibrary(oapp, eid, blocked);
+            if (doSend && sendLib != blocked) endpoint.setSendLibrary(oapp, eid, blocked);
             (address receiveLib,) = endpoint.getReceiveLibrary(oapp, eid);
-            if (receiveLib != blocked) endpoint.setReceiveLibrary(oapp, eid, blocked, 0); // no grace period
-            console.log(string.concat("  contained ", asset, " <-> ", names[i], " (send + receive = BlockedMessageLib)"));
+            if (doReceive && receiveLib != blocked) endpoint.setReceiveLibrary(oapp, eid, blocked, 0); // no grace period
+            console.log(string.concat("  contained ", asset, " <-> ", names[i], ": ", sides, " = BlockedMessageLib"));
         }
         vm.stopBroadcast();
     }
