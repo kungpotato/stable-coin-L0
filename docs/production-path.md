@@ -27,7 +27,10 @@
   - path ที่ต้องผ่าน 2 DVN: การโจมตีเดียวกันถูกบล็อกด้วย `LZ_ULN_Verifying`
   - `check-supply.sh` จับ message ปลอมได้ (inbound nonce มากกว่า outbound nonce)
 - ⬜ **config ฝั่งส่งกับฝั่งรับต้องตรงกันทุก path:** ถ้าไม่ตรง message ค้าง (topic 3.9) ต้องให้ DVN ที่ไม่ได้รับ assign มา attest เอง (`npm run attest`) ให้ตั้งค่าผ่าน DevTools (topic 8) เพื่อไม่ให้ตั้งผิด
-- ⬜ **ตั้ง security ราย OApp ทุกตัว:** อย่าพึ่ง default ของ endpoint (DEMOWEAK ใช้ default แล้วถูกเจาะ)
+- ✅ **ตั้ง security ราย OApp ทุกตัว:** อย่าพึ่ง default ของ endpoint (DEMOWEAK ใช้ default แล้วถูกเจาะ) ใน lab ทำครบแล้วและตรวจด้วย `check-security.sh`
+- ✅ **ขั้นตอนเปลี่ยน DVN แบบไม่ให้ message ค้าง:**
+  - leg ที่มี pause: pause → setConfig ทั้งสองเชน → unpause
+  - leg ที่ไม่มี pause: ยืนยันว่าไม่มี message ค้าง แล้วเปลี่ยนทั้งสองเชนต่อกันทันที
 - ✅ **potato เหมาะกับ LayerZero:** EVM ระดับ Prague, gas ตรงกับ Ethereum และ finality ทันที (`confirmations = 1`) ตามที่พิสูจน์ใน topic 9
 - ⬜ **เลิกใช้ contract ของ lab:** EndpointV2/ULN302 ที่ deploy เอง, `LabDVN`, `LabExecutor` และ workers ห้ามใช้ใน production (license LZBL-1.2)
 - ⬜ **deploy `PotatoNativeAdapter` และ `PotatoOFT`** โดยชี้ไปที่ endpoint ทางการ แล้วตั้ง peer, enforced options, DVN config (send/receive ต้องตรงกันทั้งสองฝั่ง) และ rate limit ให้กับ POTATO ด้วย
