@@ -18,6 +18,22 @@
         "anvil":  { "kind": "adapter", "impl": "UsdcAdapter (OFTAdapter + rate limit + pause) over IssuerUSDC, ADR 0003" },
         "potato": { "kind": "oft",     "impl": "UsdcOFT USDC.lz (separate from MockUSDC), ADR 0003" }
       }
+    },
+    "DEMOWEAK": {
+      "decimals": 18, "sharedDecimals": 6, "home": "anvil",
+      "$comment": "Topic 3 drill: 1 DVN on the path (the default). Gets attacked, then is left broken.",
+      "legs": {
+        "anvil":  { "kind": "adapter", "impl": "DemoAdapter over DemoToken" },
+        "potato": { "kind": "oft",     "impl": "DemoOFT" }
+      }
+    },
+    "DEMOSAFE": {
+      "decimals": 18, "sharedDecimals": 6, "home": "anvil",
+      "$comment": "Topic 3 drill: per-OApp config requiring 2 independent DVNs. Same attack must fail.",
+      "legs": {
+        "anvil":  { "kind": "adapter", "impl": "DemoAdapter over DemoToken" },
+        "potato": { "kind": "oft",     "impl": "DemoOFT" }
+      }
     }
   },
   "paths": [["potato", "anvil"], ["anvil", "potato"]]

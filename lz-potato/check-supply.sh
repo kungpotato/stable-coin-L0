@@ -2,7 +2,7 @@
 # Topic 13: supply invariant of a bridged asset (ADR 0002).
 #   locked on the home chain (adapter) >= sum of OFT supply on the other chains
 #   equal when nothing is in flight; locked < minted means tokens were minted without backing.
-# usage: ./check-supply.sh [asset]        (POTATO | USDC, default POTATO)
+# usage: ./check-supply.sh [asset]        (POTATO | USDC | DEMOWEAK | DEMOSAFE, default POTATO)
 set -uo pipefail
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$(dirname "$0")"
@@ -30,7 +30,9 @@ HOME_LEG=$(dep "$HOME_CHAIN" "$ASSET"); HOME_RPC=$(get "$HOME_CHAIN" rpc); HOME_
 case "$ASSET" in
   POTATO) locked=$(cast balance "$HOME_LEG" --rpc-url "$HOME_RPC") ;;  # native coin held by the adapter
   USDC) locked=$(cast call "$(dep "$HOME_CHAIN" IssuerUSDC)" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num) ;;
-  *) echo "❌ don't know how to read locked $ASSET yet"; exit 1 ;;
+  *) TOKEN=$(dep "$HOME_CHAIN" "${ASSET}Token")  # demo assets: DemoToken held by the adapter
+     [ -n "$TOKEN" ] || { echo "❌ don't know how to read locked $ASSET"; exit 1; }
+     locked=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num) ;;
 esac
 echo "== $ASSET: home $HOME_CHAIN, adapter $HOME_LEG"
 echo "locked on $HOME_CHAIN: $(fmt "$locked")"
