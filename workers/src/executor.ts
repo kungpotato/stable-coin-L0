@@ -69,6 +69,9 @@ async function tick(src: ChainCfg) {
 }
 
 const RECEIVED = `0x${"0".repeat(63)}1`; // composeQueue value once lzCompose ran
+// everything we deployed on each chain (deployments/<chainId>.json); compose jobs are only taken from these
+const ours = new Map(chains.map((c) => [c.name, new Set(Object.values(c.deployments).map((a) => String(a).toLowerCase()))]));
+const skipped = new Set<string>();
 
 /** Run every compose queued on `dst` (ComposeSent) that has not run yet. Cursor "compose-<chain>" only passes
  *  blocks whose composes all ran; a failing compose (the composer reverted) is retried next tick. */
@@ -84,6 +87,13 @@ async function composeTick(dst: ChainCfg) {
     for (const l of logs) {
       const { args } = decodeEventLog({ abi: [composeSentEvent], data: l.data, topics: l.topics });
       const what = `compose on ${dst.name} ${args.from.slice(0, 8)}… -> ${args.to.slice(0, 8)}… guid ${short(args.guid)}`;
+      // Anyone can queue a compose on the endpoint. Like a real executor (which only runs paid jobs), only run
+      // composes queued by our own OApps; anything else is skipped for good instead of retried every tick.
+      if (!ours.get(dst.name)!.has(args.from.toLowerCase())) {
+        if (!skipped.has(what)) log(ROLE, `${what}: queued by an unknown contract, skip (not our OApp)`);
+        skipped.add(what);
+        continue;
+      }
       try {
         const queued = await dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "composeQueue",
           args: [args.from, args.to, args.guid, args.index] });

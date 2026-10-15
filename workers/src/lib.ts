@@ -221,6 +221,8 @@ const KNOWN_ERRORS: Record<string, string> = {
   "0xc09b6350": "LZ_InvalidNonce",
   "0x7182306f": "LZ_PayloadHashNotFound",
   "0x118cdaa7": "OwnableUnauthorizedAccount",
+  "0x14c84ce0": "UntrustedOApp (composer refused a compose not queued by our OFT)",
+  "0x571f7b49": "AccountBlacklisted",
 };
 
 /** One-line reason for a failed call: viem's details (the node's revert text) with known selectors named. */
