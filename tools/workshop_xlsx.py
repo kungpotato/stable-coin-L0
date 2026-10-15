@@ -81,10 +81,10 @@ ov = wb.active
 ov.title = "Overview"
 topics = [
     (1, "ปัญหา cross-chain และภาพรวม LayerZero", "อธิบายได้ว่า LayerZero เป็น messaging layer ไม่ใช่ bridge และไม่ถือเงินผู้ใช้", "พื้นฐาน blockchain, อ่านเคส bridge hack (Ronin, Wormhole, Nomad)", "เสร็จ"),
-    (2, "Architecture หลัก (V2)", "ไล่ lifecycle ได้: send → DVN verify → commit → lzReceive", "ผ่าน topic 1, เข้าใจ event/log, เปิด LayerZero Scan", "ยังไม่เริ่ม"),
+    (2, "Architecture หลัก (V2)", "ไล่ lifecycle ได้: send → DVN verify → commit → lzReceive", "ผ่าน topic 1, เข้าใจ event/log, เปิด LayerZero Scan", "เสร็จ"),
     (3, "Security model และ configuration", "ออกแบบ DVN set / threshold / confirmations ที่เหมาะกับ stablecoin", "ผ่าน topic 2, รายชื่อเชนเป้าหมาย, risk appetite จากฝั่งธุรกิจ", "เสร็จ"),
     (4, "OApp: cross-chain app ตัวแรก", "deploy OApp 2 testnet แล้วส่งข้อความข้ามเชนได้", "Solidity ระดับกลาง, RPC + faucet 2 testnet", "ยังไม่เริ่ม"),
-    (5, "OFT: token ข้ามเชน", "เลือก OFT vs OFT Adapter ได้ และโอน token ข้ามเชนได้", "ผ่าน topic 4, ERC-20, ตัดสินใจ home chain / decimals", "ยังไม่เริ่ม"),
+    (5, "OFT: token ข้ามเชน", "เลือก OFT vs OFT Adapter ได้ และโอน token ข้ามเชนได้", "ผ่าน topic 4, ERC-20, ตัดสินใจ home chain / decimals", "เสร็จ"),
     (6, "Stablecoin-specific controls", "มี rate limit, pause, blacklist และ supply invariant ข้ามเชน", "ผ่าน topic 5, AccessControl/Pausable, ข้อกำหนด compliance", "เสร็จ"),
     (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "เสร็จบางส่วน"),
     (8, "Deployment, operations, debugging", "มี runbook deploy + incident response", "ผ่านทุก topic, explorer API key, Safe multisig", "เสร็จบางส่วน"),
@@ -108,7 +108,7 @@ note_row = ov.max_row + 2
 ov.cell(note_row, 1, "หมายเหตุ").font = BOLD
 notes = [
     "Topic 9 ปิดครบ 4/4 เกณฑ์แล้ว: เกณฑ์ known-issues พิสูจน์ใน step 12.7–12.8",
-    "Topic 1–8: ทำตามลำดับ P1–P8 (1, 3, 6 เสร็จ; 7 เหลือ lzRead; 8 เหลือ DevTools/multisig/Scan; 2, 4, 5 รอ testnet/ทบทวน)",
+    "Topic 1–8: 1, 2, 3, 5, 6 เสร็จ (2 และ 5 ทำผ่าน topic 9–14); เหลือ 4 (testnet), 7 (lzRead), 8 (DevTools/multisig/Scan) ซึ่งรอ testnet",
     "แต่ละ step ใน sheet Steps อ้าง commit ใน repo stable-coin-L0 (git log --oneline)",
 ]
 for k, t in enumerate(notes, start=1):
@@ -130,6 +130,14 @@ steps = [
      S, "cat docs/topic1-layerzero-overview.md",
      "ตารางบทบาท (endpoint owner, DVN, executor, OApp owner) + ตาราง hack 3 เคส + คำถามทบทวน 5 ข้อ", "2fab547",
      "ระหว่างทำพบว่า OApp ของเรายังใช้ default library ของ endpoint → งานต่อใน topic 8", "ผ่าน"),
+    (2, 0, "ไล่ lifecycle ของ message จริงหนึ่งตัว", "goal: send → DVN verify → commit → lzReceive (ทำด้วยมือใน 9.10–9.12/11.6 และอัตโนมัติใน 12.3–12.4)",
+     S, "curl -s -X POST http://localhost:42069/graphql -H 'content-type: application/json' --data '{\"query\":\"{ lzMessages(orderBy: \\\"sentAt\\\", orderDirection: \\\"desc\\\", limit: 1) { items { srcEid dstEid nonce status sentAt verifiedAt deliveredAt } } }\"}' | jq",
+     "status delivered พร้อม sentAt ≤ verifiedAt ≤ deliveredAt (เวลาคนละเชน อาจเหลื่อมกันได้ ดู 15.2)", "—",
+     "ทำครบแล้วผ่าน topic 9, 11, 12 (manual relay = ทุกขั้นด้วยมือ)", "ผ่าน"),
+    (5, 0, "เลือก OFT / OFTAdapter / NativeOFTAdapter และโอนได้", "goal ของ topic 5 ทำครบใน topic 13–14 และ drill 3",
+     L, "for a in POTATO USDC DEMOSAFE DEMOWEAK; do ./check-supply.sh $a | tail -1; done",
+     "✅ ทุก asset: NativeOFTAdapter (POTATO), OFTAdapter + OFT (USDC, DEMO*)", "—",
+     "ใช้ครบทั้งสามแบบ เหตุผลอยู่ใน ADR 0002/0003", "ผ่าน"),
     (3, 0, "deploy token ทดลอง 2 ชุด (DEMOWEAK, DEMOSAFE)", "การปลอม message กิน nonce ของ path ถาวร จึงซ้อมบน token ทิ้งได้ ไม่แตะ POTATO/USDC.lz",
      L, "set -a; . config/dev-keys.env; set +a; for A in DEMOWEAK DEMOSAFE; do for pass in 1 2; do for r in http://localhost:28545 http://localhost:18545; do ASSET=$A forge script script/DeployDemo.s.sol --rpc-url $r --broadcast --slow; done; done; done",
      "deployed DEMOWEAK/DEMOSAFE adapter (anvil) + OFT (potato), pass 2 set peer", "098029e", "ครบทั้งสองชุด, check-supply ✅ ทั้งคู่", "ผ่าน"),
@@ -578,6 +586,8 @@ steps = [
      "ขั้นตอน chain integration ทางการของ LayerZero หาเอกสารสาธารณะไม่เจอ → ❓ ต้องติดต่อ LayerZero Labs", "บางส่วน"),
 ]
 RERUN = {
+    (2, 0): ("ได้", "อ่านอย่างเดียว (ต้องเปิด indexer)"),
+    (5, 0): ("ได้", "อ่านอย่างเดียว"),
     (1, 0): ("ได้", "อ่านอย่างเดียว"),
     (1, 1): ("ได้", "อ่านอย่างเดียว"),
     (7, 0): ("ได้", "รันบน EVM จำลองของ forge"),
@@ -821,7 +831,8 @@ commits = [
     ("ea74930", "feat(workers): executor runs queued lzCompose calls", "workers/src/executor.ts, lib.ts", "7.2", "typecheck ผ่าน"),
     ("d014051", "feat(lz-potato): bridge-and-deposit.sh, one action via lzCompose", "bridge-and-deposit.sh, script/DeployComposer.s.sol", "7.1–7.3", "— (shell)"),
     ("7d6ef8d", "fix(workers): executor only runs composes queued by our OApps", "workers/src/executor.ts, lib.ts", "7.4", "typecheck ผ่าน"),
-    ("(commit นี้)", "docs: topic 1 and 7 (lzCompose) steps in the runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("65d0a01", "docs: topic 1 and 7 (lzCompose) steps in the runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("(commit นี้)", "docs: map topics 2 and 5 to the work that met their goals", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
 ]
 table(cm, ["Commit", "Message", "ไฟล์", "ใช้ใน step", "ตรวจแล้วว่า build ได้ลำพัง"],
       [list(c) for c in commits], {"A": 10, "B": 52, "C": 58, "D": 12, "E": 30}, mono_cols=("A",))
