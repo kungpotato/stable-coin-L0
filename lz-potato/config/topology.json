@@ -8,8 +8,8 @@
     "POTATO": {
       "decimals": 18, "sharedDecimals": 6, "home": "potato",
       "legs": {
-        "potato": { "kind": "adapter", "impl": "NativeOFTAdapter or OFTAdapter(WPOTATO): decided in topic 13" },
-        "anvil":  { "kind": "oft",     "impl": "OFT" }
+        "potato": { "kind": "adapter", "impl": "PotatoNativeAdapter (NativeOFTAdapter), ADR 0002" },
+        "anvil":  { "kind": "oft",     "impl": "PotatoOFT (OFT)" }
       }
     },
     "USDC": {
