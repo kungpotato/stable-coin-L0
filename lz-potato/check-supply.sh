@@ -52,16 +52,17 @@ for c in $(jq -r '.chains | keys[]' "$T"); do
   back_in=$(executed "$HOME_EP" "$HOME_RPC" "$HOME_LEG" "$eid" "$L" "$back_out")
   echo "messages $HOME_CHAIN->$c: sent $out, delivered $in | $c->$HOME_CHAIN: sent $back_out, delivered $back_in"
   inflight=$((inflight + out - in + back_out - back_in))
-  # a destination that accepted more nonces than the source ever sent was fed forged messages
-  lazy=$(cast call "$ep" "lazyInboundNonce(address,uint32,bytes32)(uint64)" "$leg" "$heid" "$H" --rpc-url "$rpc" | num)
-  back_lazy=$(cast call "$HOME_EP" "lazyInboundNonce(address,uint32,bytes32)(uint64)" "$HOME_LEG" "$eid" "$L" --rpc-url "$HOME_RPC" | num)
-  [ "$lazy" -gt "$out" ] && { echo "❌ $c accepted $((lazy - out)) message(s) from $HOME_CHAIN that were never sent: FORGED"; forged=1; }
-  [ "$back_lazy" -gt "$back_out" ] && { echo "❌ $HOME_CHAIN accepted $((back_lazy - back_out)) message(s) from $c that were never sent: FORGED"; forged=1; }
 done
+
+# Per-nonce payload-hash audit: catches forged messages even after real traffic reaches the same nonce count
+# (comparing counts alone stopped flagging DEMOWEAK once its real nonce 3 arrived).
+audit=$(cd ../workers && node src/audit.ts "$ASSET" 2>&1); audit_rc=$?
+echo "$audit" | sed 's/^/audit: /'
+[ "$audit_rc" -ge 2 ] && forged=1
 
 diff=$(echo "$locked - $minted" | bc)
 if [ "$forged" = 1 ]; then
-  echo "❌ forged messages on this asset's paths (locked - minted = $(fmt "$diff")): pause the legs and investigate the DVNs"; exit 1
+  echo "❌ forged or poisoned messages on this asset's paths (locked - minted = $(fmt "$diff")): contain the legs and investigate the DVNs"; exit 1
 elif [ "$(echo "$diff < 0" | bc)" = 1 ]; then
   echo "❌ minted exceeds locked by $(fmt "${diff#-}") $ASSET: unbacked supply"; exit 1
 elif [ "$diff" = 0 ] && [ "$inflight" = 0 ]; then

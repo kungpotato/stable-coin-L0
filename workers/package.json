@@ -8,7 +8,8 @@
     "executor": "node src/executor.ts",
     "test": "node --test src/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "attest": "node src/attest.ts"
+    "attest": "node src/attest.ts",
+    "audit": "node src/audit.ts"
   },
   "engines": {
     "node": ">=22.18"
