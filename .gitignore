@@ -22,3 +22,8 @@ workers/state/
 .env
 .env*
 !.env.example
+
+# DevTools: generated hardhat-deploy files and hardhat output
+testnet/devtools/deployments/
+testnet/devtools/cache/
+testnet/devtools/artifacts/
