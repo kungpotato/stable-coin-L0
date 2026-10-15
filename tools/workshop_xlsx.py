@@ -80,13 +80,13 @@ wb = Workbook()
 ov = wb.active
 ov.title = "Overview"
 topics = [
-    (1, "ปัญหา cross-chain และภาพรวม LayerZero", "อธิบายได้ว่า LayerZero เป็น messaging layer ไม่ใช่ bridge และไม่ถือเงินผู้ใช้", "พื้นฐาน blockchain, อ่านเคส bridge hack (Ronin, Wormhole, Nomad)", "ยังไม่เริ่ม"),
+    (1, "ปัญหา cross-chain และภาพรวม LayerZero", "อธิบายได้ว่า LayerZero เป็น messaging layer ไม่ใช่ bridge และไม่ถือเงินผู้ใช้", "พื้นฐาน blockchain, อ่านเคส bridge hack (Ronin, Wormhole, Nomad)", "เสร็จ"),
     (2, "Architecture หลัก (V2)", "ไล่ lifecycle ได้: send → DVN verify → commit → lzReceive", "ผ่าน topic 1, เข้าใจ event/log, เปิด LayerZero Scan", "ยังไม่เริ่ม"),
     (3, "Security model และ configuration", "ออกแบบ DVN set / threshold / confirmations ที่เหมาะกับ stablecoin", "ผ่าน topic 2, รายชื่อเชนเป้าหมาย, risk appetite จากฝั่งธุรกิจ", "เสร็จ"),
     (4, "OApp: cross-chain app ตัวแรก", "deploy OApp 2 testnet แล้วส่งข้อความข้ามเชนได้", "Solidity ระดับกลาง, RPC + faucet 2 testnet", "ยังไม่เริ่ม"),
     (5, "OFT: token ข้ามเชน", "เลือก OFT vs OFT Adapter ได้ และโอน token ข้ามเชนได้", "ผ่าน topic 4, ERC-20, ตัดสินใจ home chain / decimals", "ยังไม่เริ่ม"),
     (6, "Stablecoin-specific controls", "มี rate limit, pause, blacklist และ supply invariant ข้ามเชน", "ผ่าน topic 5, AccessControl/Pausable, ข้อกำหนด compliance", "เสร็จ"),
-    (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "ยังไม่เริ่ม"),
+    (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "เสร็จบางส่วน"),
     (8, "Deployment, operations, debugging", "มี runbook deploy + incident response", "ผ่านทุก topic, explorer API key, Safe multisig", "เสร็จบางส่วน"),
     (9, "ประเมินความพร้อมของ potato-chain", "ยืนยันว่า LayerZero V2 deploy และทำงานบน potato-chain ได้ และรู้ว่าต้องแก้หรือเลี่ยงอะไร", "potato localnet รันได้, อ่าน known-issues.md, เข้าใจ topic 2", "เสร็จ"),
     (10, "เลือกเชนคู่ และวาง topology", "เลือกเชนคู่ + EID + home chain ของแต่ละ asset", "RPC/gas ของเชนคู่, คุยฝั่งธุรกิจเรื่อง home chain", "เสร็จ"),
@@ -108,7 +108,7 @@ note_row = ov.max_row + 2
 ov.cell(note_row, 1, "หมายเหตุ").font = BOLD
 notes = [
     "Topic 9 ปิดครบ 4/4 เกณฑ์แล้ว: เกณฑ์ known-issues พิสูจน์ใน step 12.7–12.8",
-    "Topic 1–8: ทำตามลำดับ P1–P8 (topic 3, 6 เสร็จ; topic 8 ทำ incident drill แล้ว เหลือ DevTools/multisig/Scan บน testnet)",
+    "Topic 1–8: ทำตามลำดับ P1–P8 (1, 3, 6 เสร็จ; 7 เหลือ lzRead; 8 เหลือ DevTools/multisig/Scan; 2, 4, 5 รอ testnet/ทบทวน)",
     "แต่ละ step ใน sheet Steps อ้าง commit ใน repo stable-coin-L0 (git log --oneline)",
 ]
 for k, t in enumerate(notes, start=1):
@@ -122,6 +122,14 @@ S = "stable-coin-L0"
 L = "stable-coin-L0/lz-potato"
 W = "stable-coin-L0/workers"
 steps = [
+    (1, 0, "พิสูจน์ว่า LayerZero ไม่ได้ถือเงิน", "messaging layer ≠ bridge: เงินอยู่ใน OApp ของเรา ความปลอดภัยเป็นความรับผิดชอบของเรา",
+     L, "U=$(jq -r .IssuerUSDC deployments/31338.json); cast call $U 'balanceOf(address)(uint256)' $(jq -r .EndpointV2 deployments/31338.json) --rpc-url http://localhost:28545; cast call $U 'balanceOf(address)(uint256)' $(jq -r .USDC deployments/31338.json) --rpc-url http://localhost:28545; cast balance $(jq -r .EndpointV2 deployments/707070.json) --rpc-url http://localhost:18545; cast balance $(jq -r .POTATO deployments/707070.json) --rpc-url http://localhost:18545",
+     "endpoint ทั้งสองเชน = 0; adapter ของเรา = ยอดที่ lock อยู่", "2fab547",
+     "endpoint 0 / 0; UsdcAdapter 852.5 USDC, PotatoNativeAdapter 68.88 POTATO", "ผ่าน"),
+    (1, 1, "อ่านเอกสาร topic 1: ใครทำอะไรได้ + bridge hack 3 เคส", "เทียบ Ronin / Wormhole / Nomad กับ drill และ control ที่เราทำ",
+     S, "cat docs/topic1-layerzero-overview.md",
+     "ตารางบทบาท (endpoint owner, DVN, executor, OApp owner) + ตาราง hack 3 เคส + คำถามทบทวน 5 ข้อ", "2fab547",
+     "ระหว่างทำพบว่า OApp ของเรายังใช้ default library ของ endpoint → งานต่อใน topic 8", "ผ่าน"),
     (3, 0, "deploy token ทดลอง 2 ชุด (DEMOWEAK, DEMOSAFE)", "การปลอม message กิน nonce ของ path ถาวร จึงซ้อมบน token ทิ้งได้ ไม่แตะ POTATO/USDC.lz",
      L, "set -a; . config/dev-keys.env; set +a; for A in DEMOWEAK DEMOSAFE; do for pass in 1 2; do for r in http://localhost:28545 http://localhost:18545; do ASSET=$A forge script script/DeployDemo.s.sol --rpc-url $r --broadcast --slow; done; done; done",
      "deployed DEMOWEAK/DEMOSAFE adapter (anvil) + OFT (potato), pass 2 set peer", "098029e", "ครบทั้งสองชุด, check-supply ✅ ทั้งคู่", "ผ่าน"),
@@ -200,6 +208,26 @@ steps = [
      L, "./export-to-potato.sh   # แล้ว commit potato-chain/deployments/layerzero.json และ restart indexer",
      "USDC legs = v2; indexer live; transfer ล่าสุดขึ้นใน GraphQL", "a9b3ca4, potato 42bea0c",
      "ใช้ได้ แต่ indexer/web แสดง transfer ที่ถูกกักว่า 'delivered' (ยังไม่ได้ index event Quarantined) → งานต่อ", "บางส่วน"),
+    (7, 0, "unit test ของ composer", "ทดสอบเงื่อนไขความปลอดภัยของ compose ก่อนขึ้นเชน",
+     L, "forge test --match-contract DepositComposerTest",
+     "4 passed: deposit, rejects caller ≠ endpoint, rejects compose จาก OApp อื่น, ฝากไม่สำเร็จแล้ว refund", "9ba11ab",
+     "4/4 (test จับ bug offset 108 → 76 ได้ก่อน deploy)", "ผ่าน"),
+    (7, 1, "deploy vault + composer บน potato", "เป้าหมายของ compose: ฝากเข้า vault (ERC-4626)",
+     L, "set -a; . config/dev-keys.env; set +a; forge script script/DeployComposer.s.sol --rpc-url http://localhost:18545 --broadcast --slow",
+     "deployed UsdcVault / UsdcComposer (รันซ้ำ: reused)", "d014051", "vault 0xcEBe…7a49, composer 0xa1D1…b3c3", "ผ่าน"),
+    (7, 2, "bridge + deposit ใน action เดียว", "goal ของ lzCompose: ผู้ใช้กดครั้งเดียว ได้ทั้งโอนข้ามเชนและฝาก",
+     L, "./bridge-and-deposit.sh 100",
+     "✅ deposited … vault shares 0 -> 100 pvUSDC; executor: delivered แล้ว 'compose … composed' เป็น tx แยก", "ea74930, d014051",
+     "12s; compose ตามหลัง lzReceive 3s; invariant ✅", "ผ่าน"),
+    (7, 3, "vault ปิดรับฝาก → composer refund", "compose ที่ revert จะทำให้เงินค้างใน composer จึงต้อง refund แทน",
+     L, "V=$(jq -r .UsdcVault deployments/707070.json); cast send $V 'setDepositsOpen(bool)' false --rpc-url http://localhost:18545 --private-key $KEY_potato; ./bridge-and-deposit.sh 10   # รอ USDC.lz ของ dev0 เพิ่ม แล้ว Ctrl+C; จากนั้น setDepositsOpen true",
+     "dev0 USDC.lz +10 (refund), shares ไม่เพิ่ม, composer เหลือ 0", "d014051", "852.5 → 862.5, composer 0", "ผ่าน"),
+    (7, 4, "โจมตี: queue compose ปลอมใส่ composer", "ใครก็ sendCompose ได้ อ้างยอดเท่าไหร่ก็ได้",
+     L, "EP=$(jq -r .EndpointV2 deployments/707070.json); C=$(jq -r .UsdcComposer deployments/707070.json); MSG=$(cast concat-hex 0x0000000000000001 0x00009d92 $(cast to-uint256 1000000000000) $(cast to-uint256 1) $(cast abi-encode 'f(address)' $ATTACKER)); cast send $EP 'sendCompose(address,bytes32,uint16,bytes)' $C $(cast keccak fake-guid) 0 $MSG --rpc-url http://localhost:18545 --private-key $ATTACKER_KEY",
+     "executor: 'queued by an unknown contract, skip' (ครั้งเดียว); ถ้ามีคนเรียก lzCompose เอง composer revert UntrustedOApp; composer และ attacker ไม่ได้อะไร", "7d6ef8d",
+     "ก่อนแก้: executor retry ทุก 2s (UntrustedOApp) → แก้ให้ skip; เงินปลอดภัยทั้งสองรอบ", "ผ่าน"),
+    (7, 5, "lzRead", "อ่าน state ข้ามเชน ต้องใช้ read DVN จริง",
+     "—", "(รอ P3 testnet)", "—", "—", "ยังไม่ได้ทำ: lab ไม่มี read DVN; ทำบน testnet หลัง P3", "ยังไม่ทำ"),
     (8, 0, "ยืนยันข้อเท็จจริงก่อนตอบ: path พังจริงไหม", "ตอนแรกสรุปว่า 'พังถาวร' ต้องพิสูจน์ก่อนตัดสินใจ",
      L, "./bridge.sh DEMOWEAK anvil potato 1; ./bridge.sh DEMOWEAK anvil potato 2",
      "nonce 2 (1 DEMOWEAK) ❌ ค้าง, nonce 3 (2 DEMOWEAK) ✅ ถึง → เสียแค่ช่อง nonce ที่ถูกปลอม", "—",
@@ -550,6 +578,14 @@ steps = [
      "ขั้นตอน chain integration ทางการของ LayerZero หาเอกสารสาธารณะไม่เจอ → ❓ ต้องติดต่อ LayerZero Labs", "บางส่วน"),
 ]
 RERUN = {
+    (1, 0): ("ได้", "อ่านอย่างเดียว"),
+    (1, 1): ("ได้", "อ่านอย่างเดียว"),
+    (7, 0): ("ได้", "รันบน EVM จำลองของ forge"),
+    (7, 1): ("ได้", "รันซ้ำ = reused"),
+    (7, 2): ("ได้ (มีผลข้างเคียง)", "ฝากจริงทุกครั้ง (ใช้ USDC บน anvil + โควตา rate limit)"),
+    (7, 3): ("ได้ (มีผลข้างเคียง)", "ต้องเปิด vault คืน (setDepositsOpen true) ไม่งั้นทุก compose จะ refund"),
+    (7, 4): ("ได้ (มีผลข้างเคียง)", "เพิ่ม compose ขยะใน queue ของ endpoint (ไม่มีผลกับเงิน); guid ต้องเปลี่ยนทุกครั้ง ไม่งั้น LZ_ComposeExists"),
+    (7, 5): ("—", "ยังไม่ได้ทำ"),
     (3, 0): ("ได้", "รันซ้ำไม่มี tx (reused)"),
     (3, 1): ("ได้", "รันซ้ำไม่มี tx; เติม gas เมื่อ operator เหลือ < 5"),
     (3, 2): ("ได้", "รันซ้ำ = ok ไม่มี tx"),
@@ -778,7 +814,14 @@ commits = [
     ("167ce5d", "feat(lz-potato): tooling for USDC v2 (blacklister, quarantine, _V1 legs)", "bridge.sh, check-supply.sh, script/DeployUsdcBridge.s.sol, config/dev-keys.env", "6.2, 6.8", "forge build ผ่าน"),
     ("8b6c639", "feat(lz-potato): USDC v2 live; v1 retired one-way", "script/ContainOApp.s.sol, deployments/*.json", "6.2–6.4", "forge build ผ่าน"),
     ("potato 42bea0c", "chore: LayerZero addresses after USDC v2 and the demo assets  [repo potato-chain, main]", "deployments/layerzero.json", "6.10", "— (generated)"),
-    ("(commit นี้)", "docs: topic 6 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("a5b73a6", "docs: topic 6 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("2fab547", "docs: topic 1, LayerZero as a messaging layer, with real bridge hacks", "docs/topic1-layerzero-overview.md", "1.0–1.1", "— (เอกสาร)"),
+    ("8cc124a", "build(lz-potato): solc 0.8.24 for OpenZeppelin 5.6 ERC4626", "lz-potato/foundry.toml", "7.0", "forge test ผ่านทั้งหมด"),
+    ("9ba11ab", "feat(lz-potato): USDC vault and deposit composer for lzCompose", "src/compose/UsdcVault.sol, UsdcDepositComposer.sol, test/DepositComposer.t.sol", "7.0", "forge test 4/4"),
+    ("ea74930", "feat(workers): executor runs queued lzCompose calls", "workers/src/executor.ts, lib.ts", "7.2", "typecheck ผ่าน"),
+    ("d014051", "feat(lz-potato): bridge-and-deposit.sh, one action via lzCompose", "bridge-and-deposit.sh, script/DeployComposer.s.sol", "7.1–7.3", "— (shell)"),
+    ("7d6ef8d", "fix(workers): executor only runs composes queued by our OApps", "workers/src/executor.ts, lib.ts", "7.4", "typecheck ผ่าน"),
+    ("(commit นี้)", "docs: topic 1 and 7 (lzCompose) steps in the runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
 ]
 table(cm, ["Commit", "Message", "ไฟล์", "ใช้ใน step", "ตรวจแล้วว่า build ได้ลำพัง"],
       [list(c) for c in commits], {"A": 10, "B": 52, "C": 58, "D": 12, "E": 30}, mono_cols=("A",))
