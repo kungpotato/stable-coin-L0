@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "potato-web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd ../potato-chain/web && . ../scripts/lib.sh && VITE_RPC_URL=http://localhost:18545 VITE_DEV_BURNER=1 POTATO_FAUCET_KEY=$DEV0_PRIVKEY npx vite --port 5173 --strictPort"],
+      "port": 5173
+    }
+  ]
+}
