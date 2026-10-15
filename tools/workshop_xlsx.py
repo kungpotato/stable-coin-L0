@@ -88,10 +88,10 @@ topics = [
     (6, "Stablecoin-specific controls", "มี rate limit, pause, blacklist และ supply invariant ข้ามเชน", "ผ่าน topic 5, AccessControl/Pausable, ข้อกำหนด compliance", "ยังไม่เริ่ม"),
     (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "ยังไม่เริ่ม"),
     (8, "Deployment, operations, debugging", "มี runbook deploy + incident response", "ผ่านทุก topic, explorer API key, Safe multisig", "ยังไม่เริ่ม"),
-    (9, "ประเมินความพร้อมของ potato-chain", "ยืนยันว่า LayerZero V2 deploy และทำงานบน potato-chain ได้ และรู้ว่าต้องแก้หรือเลี่ยงอะไร", "potato localnet รันได้, อ่าน known-issues.md, เข้าใจ topic 2", "เสร็จบางส่วน"),
+    (9, "ประเมินความพร้อมของ potato-chain", "ยืนยันว่า LayerZero V2 deploy และทำงานบน potato-chain ได้ และรู้ว่าต้องแก้หรือเลี่ยงอะไร", "potato localnet รันได้, อ่าน known-issues.md, เข้าใจ topic 2", "เสร็จ"),
     (10, "เลือกเชนคู่ และวาง topology", "เลือกเชนคู่ + EID + home chain ของแต่ละ asset", "RPC/gas ของเชนคู่, คุยฝั่งธุรกิจเรื่อง home chain", "เสร็จ"),
     (11, "Deploy LayerZero V2 protocol เอง (2 เชน)", "Endpoint/ULN302 บนสองเชน + default config ข้ามเชน", "LayerZero-v2 sources, deployer key, ที่เก็บ address", "เสร็จ"),
-    (12, "เขียน DVN + Executor ของเราเอง", "worker อัตโนมัติ ส่ง message ถึงปลายทางโดยไม่ต้อง relay มือ", "TypeScript+viem หรือ Go, workaround known issues, key แยก", "ยังไม่เริ่ม"),
+    (12, "เขียน DVN + Executor ของเราเอง", "worker อัตโนมัติ ส่ง message ถึงปลายทางโดยไม่ต้อง relay มือ", "TypeScript+viem หรือ Go, workaround known issues, key แยก", "เสร็จ"),
     (13, "Bridge native crypto (POTATO)", "โอน POTATO ไป-กลับ โดย supply รวมถูกต้อง", "พฤติกรรม WPOTATO precompile, ผ่าน topic 5", "ยังไม่เริ่ม"),
     (14, "Bridge stablecoin (USDC)", "bridge USDC ถูก model + supply invariant + controls", "home chain decision, รายการ contract ที่ผูก USDC เดิม, ผ่าน topic 6", "ยังไม่เริ่ม"),
     (15, "Frontend + indexer + explorer", "ผู้ใช้กด bridge จาก web/ และเห็นสถานะ message", "web/ (wagmi/viem), indexer/ (Ponder), address จาก 11–14", "ยังไม่เริ่ม"),
@@ -107,7 +107,7 @@ table(ov, ["Topic", "ชื่อ", "Goal", "ต้องเตรียมก�
 note_row = ov.max_row + 2
 ov.cell(note_row, 1, "หมายเหตุ").font = BOLD
 notes = [
-    "Topic 9 = 'เสร็จบางส่วน': ผ่าน 3/4 เกณฑ์ เกณฑ์ known-issues รู้ workaround แล้วแต่จะพิสูจน์จริงใน topic 12 (worker ที่ใช้ viem)",
+    "Topic 9 ปิดครบ 4/4 เกณฑ์แล้ว: เกณฑ์ known-issues พิสูจน์ใน step 12.7–12.8",
     "Topic 1–8 เป็นสาย LayerZero ทั่วไป ยังไม่ได้ทำ จึงยังไม่มี step / command",
     "แต่ละ step ใน sheet Steps อ้าง commit ใน repo stable-coin-L0 (git log --oneline)",
 ]
@@ -120,6 +120,7 @@ for k, t in enumerate(notes, start=1):
 st = wb.create_sheet("Steps")
 S = "stable-coin-L0"
 L = "stable-coin-L0/lz-potato"
+W = "stable-coin-L0/workers"
 steps = [
     (9, 0, "ให้ shell เจอ forge / cast / anvil", "Foundry ติดตั้งไว้ที่ ~/.foundry/bin แต่ไม่อยู่ใน PATH (พิมพ์ forge แล้วขึ้น command not found)",
      S, 'export PATH="$HOME/.foundry/bin:$PATH" && forge --version',
@@ -175,7 +176,7 @@ steps = [
     (9, 15, "ประเมิน known issues ของ potato", "เกณฑ์ข้อ 4: worker ต้องเลี่ยง bug อะไร",
      S, "cat ../potato-chain/docs/known-issues.md",
      "2 bug: eth_getLogs fromBlock 0 ซ้ำ, eth_fillTransaction ประเมิน gas ผิด", "ea51410",
-     "เลี่ยงแล้วใน script (อ่าน log จาก deploy block) แต่ยังไม่ได้ reproduce bug และยังไม่ได้ทดสอบกับ viem → พิสูจน์ใน topic 12", "บางส่วน"),
+     "ตอน topic 9: เลี่ยงไว้แต่ยังไม่ได้พิสูจน์ → พิสูจน์แล้วใน step 12.7 (out of gas เมื่อไม่มี workaround) และ 12.8 (getLogs ซ้ำเมื่อเริ่มที่ block 0)", "ผ่าน"),
     (9, 16, "บันทึกผล", "ให้ทีมอ่านผลได้โดยไม่ต้องรันใหม่",
      L, "git show a7337a2 --stat", "README.md มีตาราง Topic 9 result + deployments/707070.json", "a7337a2", "บันทึกแล้ว", "ผ่าน"),
     (9, 17, "(ทางเลือก) ปิด lab", "คืน resource เครื่อง ไม่แตะ anvil :8545 ตัวเดิม",
@@ -242,6 +243,39 @@ steps = [
      S, "curl -s -m 5 -X POST -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\",\"params\":[]}' http://localhost:28545 || { cp potato-localnet/anvil-home-state.json /tmp/anvil-home-state.bak; pkill -9 -f 'anvil --port 28545'; sleep 1; potato-localnet/anvil-home.sh; }",
      "ปกติ: {\"result\":\"0x...\"}\nถ้าค้าง: curl timeout → backup state → kill -9 → เปิดใหม่ (state ย้อนไปไม่เกิน 10 วินาทีจาก --state-interval) แล้วรัน step 11.8 ดู nonce",
      "—", "เกิด 1 ครั้ง กู้แล้ว nonce ตรงทั้งสองทาง ไม่มีข้อมูลหาย. สาเหตุยังไม่รู้: stress test 3 แบบ (block-time+state-interval / state-interval / block-time) ~7 นาทียังไม่ค้าง", "บางส่วน"),
+    (12, 0, "ติดตั้งและทดสอบ workers", "worker เขียนด้วย TypeScript + viem 2.56.9 (เวอร์ชันเดียวกับ potato web/) รันตรงด้วย Node 24",
+     W, "npm ci && npm test && npm run typecheck",
+     "✔ decodePacket reads PacketV1 fields\nℹ pass 1 / fail 0 และ typecheck ไม่มี error", "20d111f", "pass 1, typecheck ok", "ผ่าน"),
+    (12, 1, "แยก key ให้ DVN และ Executor", "DVN key ยืนยัน packet ได้อย่างเดียว, executor key แค่จ่าย gas ส่งของ — ไม่ใช้ key deployer",
+     L, "./setup-worker-keys.sh",
+     "<chain>: LabDVN owner 0x… -> 0x7099…79C8 และ funded 10ether บน potato\nรันซ้ำ: 'already DVN key' / 'has 10.0'", "ff6c3ba",
+     "เปลี่ยน owner ทั้ง 2 เชน, เติม 10 POTATO ให้ทั้งสอง key บน potato", "ผ่าน"),
+    (12, 2, "regression: relay ด้วยมือยังใช้ได้", "หลังเปลี่ยน owner ของ LabDVN, Relay.s.sol ต้องเซ็นด้วย DVN key",
+     L, "./lab-crosschain.sh potato anvil", "output:\n== anvil Ping.received: n -> n+1", "ff6c3ba", "received 2 -> 3", "ผ่าน"),
+    (12, 3, "เปิด DVN worker (terminal ที่ 1)", "ยืนยัน packet อัตโนมัติ หลัง source chain ครบ confirmations",
+     W, "npm run dvn",
+     "[dvn] signer 0x7099…79C8, chains potato(eid 40707, 1 conf), anvil(eid 40338, 1 conf)\nข้อความเก่า: 'already delivered' (ไม่ส่ง tx)\nข้อความใหม่: 'verified on <dst> (tx …, gas 55627)'",
+     "2edc869", "ข้อความเก่า 6 อัน already delivered, ping ใหม่ nonce 4 verified บน anvil", "ผ่าน"),
+    (12, 4, "เปิด Executor worker (terminal ที่ 2)", "commit verification แล้วเรียก lzReceive ส่งของถึงปลายทาง",
+     W, "npm run executor",
+     "[executor] … nonce N: committed on <dst>\n[executor] … nonce N: delivered to 0x… (gas ~58k)", "726b003",
+     "nonce 4 ที่ค้างอยู่ delivered ภายใน 8 วินาที, Ping ได้ 'dvn-only test'", "ผ่าน"),
+    (12, 5, "end-to-end อัตโนมัติ ทั้งสองทาง", "goal หลักของ topic: ไม่ต้อง relay ด้วยมืออีก",
+     L, "./lab-auto.sh potato anvil && ./lab-auto.sh anvil potato",
+     "✅ delivered to anvil in ~10s: \"auto potato -> anvil @ …\"\n✅ delivered to potato in ~10s", "80a80a9",
+     "4 รอบ: 11s, 6s, 10s, 11s", "ผ่าน"),
+    (12, 6, "restart test: ส่งตอน worker ปิด", "worker ต้องตามเก็บ backlog เองหลังเปิดใหม่ ไม่หาย ไม่ซ้ำ",
+     L, "pkill -f 'src/dvn.ts'; pkill -f 'src/executor.ts'; . config/dev-keys.env; for i in 1 2; do cast send $(jq -r .Ping deployments/707070.json) 'ping(uint32,string)' 40338 \"down #$i\" --rpc-url http://localhost:18545 --private-key $KEY_potato; done   # แล้วเปิด npm run dvn / npm run executor ใหม่",
+     "executor: 'waiting for DVN verification' → DVN verified → executor committed → delivered ครบทุกอัน เรียงตาม nonce", "726b003",
+     "3 ping (2 ทาง potato->anvil, 1 ทาง anvil->potato) delivered ครบ, nonce 7 ก่อน 8", "ผ่าน"),
+    (12, 7, "พิสูจน์ bug eth_fillTransaction (เกณฑ์ข้อ 4 ของ topic 9)", "ดูว่าถ้าไม่มี workaround จะพังจริงไหม",
+     W, "pkill -f 'src/dvn.ts'; WORKAROUND_GAS=0 npm run dvn   # terminal อื่น: cd lz-potato && ./lab-auto.sh anvil potato 'no workaround' 20  # เห็น ERROR แล้ว Ctrl+C ทันที แล้ว npm run dvn ตามปกติ",
+     "[dvn] ERROR anvil: tx … reverted on potato (used 26750 of gas limit 26750 = out of gas)\nเปิด dvn ปกติแล้ว: verified (gas 55627) → executor delivered", "6b36b2e",
+     "out of gas 26,750/26,750 บน potato (ฝั่ง anvil ผ่านปกติ) แล้วกู้คืนได้เอง", "ผ่าน"),
+    (12, 8, "พิสูจน์ bug eth_getLogs fromBlock 0", "worker ต้องไม่ query จาก block 0",
+     L, "./probe-getlogs-bug.sh",
+     "t+1: fromBlock 0 -> N+1 logs, fromBlock 1 -> N logs (DIFFERENT <- bug)\nt+2..: same", "c69e671",
+     "t+1: 43 vs 42 (DIFFERENT), t+2..4: same", "ผ่าน"),
 ]
 RERUN = {
     (9, 0): ("ได้", "มีผลแค่ terminal นั้น เปิด terminal ใหม่ต้องรันใหม่ (หรือใส่บรรทัด export ใน ~/.zshrc ถาวร)"),
@@ -279,6 +313,15 @@ RERUN = {
     (11, 7): ("ได้ (มีผลข้างเคียง)", "เหมือน 11.6 ทางกลับ"),
     (11, 8): ("ได้", "อ่านอย่างเดียว"),
     (11, 9): ("ได้ (มีผลข้างเคียง)", "ถ้า RPC ตอบปกติจะไม่ทำอะไร. ถ้าค้าง: kill -9 แล้ว state ย้อนกลับไป dump ล่าสุด (≤10 วินาที) tx ที่อยู่ในช่วงนั้นหาย ต้องตรวจ nonce (11.8) ถ้า outbound ฝั่ง anvil ลดลงแต่อีกฝั่งรับไปแล้ว = state สองเชนไม่ตรงกัน ต้องแจ้งก่อนทำต่อ"),
+    (12, 0): ("ได้", "npm ci ลบ node_modules แล้วติดตั้งตาม lockfile ใหม่"),
+    (12, 1): ("ได้", "รันซ้ำไม่ทำอะไร (owner ถูกแล้ว / balance ≥ 5). ข้อสังเกต: หลัง step นี้ LabDVN.verify ใช้ได้เฉพาะ DVN key → script เก่าที่ใช้ key deployer จะ revert"),
+    (12, 2): ("ได้ (มีผลข้างเคียง)", "เหมือน 11.6: ส่ง message ใหม่จริง. ถ้า worker เปิดอยู่ worker กับ script อาจแย่งกัน verify/commit ตัวที่ช้ากว่าจะ revert (ไม่เสียหาย แค่เสีย gas)"),
+    (12, 3): ("ได้ (ทีละตัว)", "เปิดซ้อน 2 ตัว = verify packet เดียวกันซ้ำ ตัวที่สองเสีย gas เปล่า. ปิดด้วย Ctrl+C. ลบ workers/state/dvn.json = สแกนใหม่ตั้งแต่ block 1 (ปลอดภัย เพราะเช็ค state บนเชนก่อนทุกครั้ง แค่ช้า)"),
+    (12, 4): ("ได้ (ทีละตัว)", "เหมือน 12.3 สำหรับ workers/state/executor.json"),
+    (12, 5): ("ได้ (มีผลข้างเคียง)", "ทุกครั้งส่ง message ใหม่ (nonce +1) ถ้า worker ไม่ได้เปิดจะขึ้น ❌ not delivered แต่ message ยังอยู่ จะถูกส่งเมื่อเปิด worker"),
+    (12, 6): ("ได้ (มีผลข้างเคียง)", "ส่ง message ใหม่ + ต้องจำเปิด worker กลับ ไม่งั้น message ค้าง"),
+    (12, 7): ("ได้ (มีผลข้างเคียง)", "ระหว่างปิด workaround DVN จะ retry ทุก 2 วินาที แต่ละครั้งเสีย gas บน potato (~26,750) → Ctrl+C ทันทีที่เห็น ERROR ห้ามทิ้งไว้"),
+    (12, 8): ("ได้ (มีผลข้างเคียง)", "ส่ง ping 1 อัน (worker จะ deliver ให้). bug เห็นแค่ ~1 block หลัง tx บางรอบอาจเห็น same ทุกบรรทัด ให้รันใหม่"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
@@ -318,7 +361,15 @@ commits = [
     ("7dcc37b", "feat(lz-potato): check-wiring reads pathway config back with cast", "check-wiring.sh", "11.4–11.5", "check-wiring.sh ผ่าน"),
     ("eec40d7", "feat(lz-potato): cross-chain ping potato <-> anvil with manual relay", "script/DeployPing.s.sol, lab-crosschain.sh, deployments/*.json", "11.6–11.8", "forge build ผ่าน"),
     ("d638f4b", "fix(lz-potato): avoid broken pipe when decoding PacketSent", "lab-loopback.sh", "9.10–9.11", "—"),
-    ("(commit นี้)", "docs: topic 11 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("fbdc858", "docs: topic 11 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("20d111f", "feat(workers): shared lib for lab DVN/executor", "workers/package.json, tsconfig.json, src/lib.ts, src/lib.test.ts", "12.0", "npm test + typecheck ผ่าน"),
+    ("ff6c3ba", "feat(lz-potato): separate DVN and executor keys", "config/dev-keys.env, setup-worker-keys.sh, lab-crosschain.sh", "12.1–12.2", "— (shell)"),
+    ("2edc869", "feat(workers): lab DVN worker", "workers/src/dvn.ts, src/lib.ts", "12.3", "typecheck ผ่าน"),
+    ("726b003", "feat(workers): lab executor worker", "workers/src/executor.ts", "12.4, 12.6", "typecheck ผ่าน"),
+    ("80a80a9", "feat(lz-potato): lab-auto.sh sends a ping and waits for the workers", "lab-auto.sh", "12.5", "— (shell)"),
+    ("6b36b2e", "fix(workers): say when a reverted tx ran out of gas", "workers/src/lib.ts", "12.7", "npm test + typecheck ผ่าน"),
+    ("c69e671", "feat(lz-potato): probe for the cosmos/evm getLogs fromBlock 0 bug", "probe-getlogs-bug.sh", "12.8", "— (shell)"),
+    ("(commit นี้)", "docs: topic 12 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
 ]
 table(cm, ["Commit", "Message", "ไฟล์", "ใช้ใน step", "ตรวจแล้วว่า build ได้ลำพัง"],
       [list(c) for c in commits], {"A": 10, "B": 52, "C": 58, "D": 12, "E": 30}, mono_cols=("A",))
