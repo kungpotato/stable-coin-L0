@@ -44,6 +44,12 @@ contract DeployPingTestnet is TestnetBase {
                 ping.setPeer(remoteEid, bytes32(uint256(uint160(remote))));
                 console.log("  set  peer", chains[i], remote);
             }
+            // lzReceive gas the remote chain really needs (measured in topic 4, +40%); paid by the sender
+            uint128 gas = uint128(vm.parseJsonUint(tn(), string.concat(".chains.", tnPath(chains[i]), ".pingReceiveGas")));
+            if (ping.receiveGas(remoteEid) != gas) {
+                ping.setReceiveGas(remoteEid, gas);
+                console.log("  set  lzReceive gas for", chains[i], gas);
+            }
             // send waits for OUR chain's confirmations, receive for the remote chain's (keep LayerZero's defaults)
             _uln(EndpointV2(endpoint), address(ping), tnAddr(local, "sendUln302"), remoteEid, _confirmations(local), local, "send   ");
             _uln(EndpointV2(endpoint), address(ping), tnAddr(local, "receiveUln302"), remoteEid, _confirmations(chains[i]), local, "receive");

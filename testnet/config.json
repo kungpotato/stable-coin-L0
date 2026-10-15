@@ -1,8 +1,10 @@
 {
-  "$comment": "Official LayerZero V2 testnet deployments, from https://metadata.layerzero-api.com/v1/metadata/deployments (2026-10-15), each cross-checked on-chain (eid(), default libraries). RPC URLs and keys live in .env.",
+  "$comment": "Official LayerZero V2 testnet deployments, from https://metadata.layerzero-api.com/v1/metadata/deployments (2026-10-15), each cross-checked on-chain (eid(), default libraries). RPC URLs and keys live in .env. pingReceiveGas = lzReceive gas Ping must request when sending TO this chain (measured in topic 4 + ~40%).",
   "chains": {
     "sepolia": {
-      "chainId": 11155111, "eid": 40161, "rpcEnv": "SEPOLIA_RPC_URL",
+      "chainId": 11155111,
+      "eid": 40161,
+      "rpcEnv": "SEPOLIA_RPC_URL",
       "endpointV2": "0x6EDCE65403992e310A62460808c4b910D972f10f",
       "sendUln302": "0xcc1ae8Cf5D3904Cef3360A9532B477529b177cCE",
       "receiveUln302": "0xdAf00F5eE2158dD58E0d3857851c432E34A3A851",
@@ -12,10 +14,18 @@
         "layerzero-labs": "0x8eebf8b423B73bFCa51a1Db4B7354AA0bFCA9193",
         "nethermind": "0x68802e01d6321d5159208478f297d7007a7516ed"
       },
-      "defaultToArbSepolia": { "confirmations": 2, "requiredDVNs": ["layerzero-labs"] }
+      "defaultToArbSepolia": {
+        "confirmations": 2,
+        "requiredDVNs": [
+          "layerzero-labs"
+        ]
+      },
+      "pingReceiveGas": 1000000
     },
     "arbitrum-sepolia": {
-      "chainId": 421614, "eid": 40231, "rpcEnv": "ARBITRUM_SEPOLIA_RPC_URL",
+      "chainId": 421614,
+      "eid": 40231,
+      "rpcEnv": "ARBITRUM_SEPOLIA_RPC_URL",
       "endpointV2": "0x6EDCE65403992e310A62460808c4b910D972f10f",
       "sendUln302": "0x4f7cd4DA19ABB31b0eC98b9066B9e857B1bf9C0E",
       "receiveUln302": "0x75Db67CDab2824970131D5aa9CECfC9F69c69636",
@@ -25,7 +35,13 @@
         "layerzero-labs": "0x53f488E93b4f1b60E8E83aa374dBe1780A1EE8a8",
         "nethermind": "0x3a74f7174709842d3b8a14ce60b4aa2499f2a2f2"
       },
-      "defaultToSepolia": { "confirmations": 5, "requiredDVNs": ["layerzero-labs"] }
+      "defaultToSepolia": {
+        "confirmations": 5,
+        "requiredDVNs": [
+          "layerzero-labs"
+        ]
+      },
+      "pingReceiveGas": 250000
     }
   }
 }
