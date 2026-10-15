@@ -2,7 +2,7 @@
 // then attest the packet on the destination's ReceiveUln302 through LabDVN.verify.
 // Run: npm run dvn          State: workers/state/dvn.json (last processed block per source chain)
 import { encodeFunctionData } from "viem";
-import { loadChains, byEid, scanPacketSent, signer, send, cursorStore, envKey, inboundState, log, short, sleep,
+import { loadChains, byEid, scanPacketSent, signer, send, cursorStore, envKey, inboundState, log, short, sleep, errMsg,
   receiveLibAbi, labDvnAbi, type ChainCfg, type Packet } from "./lib.ts";
 
 const ROLE = "dvn";
@@ -44,7 +44,7 @@ async function tick(src: ChainCfg) {
 log(ROLE, `signer ${signers.values().next().value!.account.address}, chains ${chains.map((c) => `${c.name}(eid ${c.eid}, ${c.confirmations} conf)`).join(", ")}`);
 for (;;) {
   for (const src of chains) {
-    try { await tick(src); } catch (e) { log(ROLE, `ERROR ${src.name}: ${(e as Error).message.split("\n")[0]}`); }
+    try { await tick(src); } catch (e) { log(ROLE, `ERROR ${src.name}: ${errMsg(e)}`); }
   }
   await sleep(POLL_MS);
 }

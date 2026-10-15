@@ -177,3 +177,27 @@ export async function inboundState(dst: ChainCfg, p: Packet): Promise<"delivered
   if (BigInt(hash) !== 0n) return "committed";
   return p.nonce <= lazy ? "delivered" : "pending";
 }
+
+// Revert selectors an operator meets on these paths (cast sig "<error>()")
+const KNOWN_ERRORS: Record<string, string> = {
+  "0xd93c0665": "EnforcedPause (receiver paused)",
+  "0xa74c1c5f": "RateLimitExceeded",
+  "0x679f6e3d": "CreditFailed (recipient cannot take native coin)",
+  "0x4c3118d4": "LZ_ULN_Verifying (DVN has not verified yet)",
+  "0xc09b6350": "LZ_InvalidNonce",
+  "0x7182306f": "LZ_PayloadHashNotFound",
+  "0x118cdaa7": "OwnableUnauthorizedAccount",
+};
+
+/** One-line reason for a failed call: viem's details (the node's revert text) with known selectors named. */
+export function errMsg(e: unknown): string {
+  const err = e as { details?: string; shortMessage?: string; message?: string };
+  let msg = (err.details || err.shortMessage || err.message || String(e)).split("\n")[0];
+  // the revert data (selector + args) sits on the RPC error somewhere down the cause chain, not in the text
+  for (let c: any = e; c; c = c.cause) {
+    const data = typeof c.data === "string" ? c.data : typeof c.data?.data === "string" ? c.data.data : undefined;
+    if (data?.startsWith("0x") && data.length >= 10) { msg += ` (data ${data.slice(0, 10)})`; break; }
+  }
+  for (const [sel, name] of Object.entries(KNOWN_ERRORS)) if (msg.includes(sel)) msg += ` = ${name}`;
+  return msg;
+}

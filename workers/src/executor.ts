@@ -2,7 +2,7 @@
 // commit the verification to the endpoint, then deliver it with EndpointV2.lzReceive.
 // Run: npm run executor     State: workers/state/executor.json (all packets up to this block are delivered)
 import { encodeFunctionData } from "viem";
-import { loadChains, byEid, scanPacketSent, signer, send, cursorStore, envKey, inboundState, log, short, sleep,
+import { loadChains, byEid, scanPacketSent, signer, send, cursorStore, envKey, inboundState, log, short, sleep, errMsg,
   endpointAbi, receiveLibAbi, type ChainCfg, type Packet } from "./lib.ts";
 
 const ROLE = "executor";
@@ -57,7 +57,7 @@ async function tick(src: ChainCfg) {
   for (const ev of await scanPacketSent(src, from, latest)) {
     let ok = false;
     try { ok = await progress(src, ev.packet); }
-    catch (e) { log(ROLE, `ERROR ${src.name} nonce ${ev.packet.nonce}: ${(e as Error).message.split("\n")[0]}`); }
+    catch (e) { log(ROLE, `ERROR ${src.name} nonce ${ev.packet.nonce}: ${errMsg(e)}`); }
     if (!ok && ev.blockNumber - 1n < done) done = ev.blockNumber - 1n;
   }
   if (done >= from) cursor.set(src.name, done);
@@ -66,7 +66,7 @@ async function tick(src: ChainCfg) {
 log(ROLE, `signer ${signers.values().next().value!.account.address}, chains ${chains.map((c) => `${c.name}(eid ${c.eid})`).join(", ")}`);
 for (;;) {
   for (const src of chains) {
-    try { await tick(src); } catch (e) { log(ROLE, `ERROR ${src.name}: ${(e as Error).message.split("\n")[0]}`); }
+    try { await tick(src); } catch (e) { log(ROLE, `ERROR ${src.name}: ${errMsg(e)}`); }
   }
   await sleep(POLL_MS);
 }
