@@ -661,7 +661,7 @@ steps = [
      "ibc smoke test passed (voucher ibc/6B1A5F…53A4 mint/burn ถูกต้อง)", "ผ่าน"),
     (16, 7, "สรุปบทเรียนทั้ง 16 topics เป็น HTML", "ทบทวนและแชร์บทเรียนได้ในหน้าเดียว โดยไม่ต้องไล่อ่าน runbook 150 กว่าแถว",
      S, "open workshop-lessons.html",
-     "หน้าเดียว: 10 บทเรียนหลัก, การ์ดราย topic 16 ใบ, drill DEMOWEAK, ตาราง bug, ADR, สิ่งที่ยังขาดก่อน production", "(commit นี้)",
+     "หน้าเดียว: 10 บทเรียนหลัก, การ์ดราย topic 16 ใบ, drill DEMOWEAK, ตาราง bug, ADR, สิ่งที่ยังขาดก่อน production", "654f972",
      "เปิดได้ทั้ง desktop และ mobile (375px ไม่มี horizontal scroll), มี dark mode", "ผ่าน"),
 ]
 RERUN = {
