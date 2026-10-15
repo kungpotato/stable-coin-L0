@@ -15,8 +15,8 @@
     "USDC": {
       "decimals": 6, "sharedDecimals": 6, "home": "anvil",
       "legs": {
-        "anvil":  { "kind": "adapter", "impl": "OFTAdapter over issuer ERC-20" },
-        "potato": { "kind": "oft",     "impl": "OFT (separate from the existing MockUSDC, see ADR 0001)" }
+        "anvil":  { "kind": "adapter", "impl": "UsdcAdapter (OFTAdapter + rate limit + pause) over IssuerUSDC, ADR 0003" },
+        "potato": { "kind": "oft",     "impl": "UsdcOFT USDC.lz (separate from MockUSDC), ADR 0003" }
       }
     }
   },
