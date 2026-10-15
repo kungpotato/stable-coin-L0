@@ -17,6 +17,7 @@ const LAB = join(ROOT, "lz-potato");
 export type ChainCfg = {
   name: string; chainId: number; eid: number; rpc: string; confirmations: number;
   endpoint: Address; receiveLib: Address; dvn: Address; executor: Address;
+  deployments: Record<string, Address>; // everything recorded for this chain (e.g. LabDVN_B)
   pub: PublicClient; viemChain: Chain;
 };
 
@@ -30,7 +31,7 @@ export function loadChains(): ChainCfg[] {
     } as const satisfies Chain;
     return {
       name, chainId: c.chainId, eid: c.eid, rpc: c.rpc, confirmations: c.confirmations,
-      endpoint: dep.EndpointV2, receiveLib: dep.ReceiveUln302, dvn: dep.LabDVN, executor: dep.LabExecutor,
+      endpoint: dep.EndpointV2, receiveLib: dep.ReceiveUln302, dvn: dep.LabDVN, executor: dep.LabExecutor, deployments: dep,
       // 10s timeout: a hung RPC (anvil-home incident, topic 11.9) must surface as an error, not stall the loop
       pub: createPublicClient({ chain: viemChain, transport: http(c.rpc, { timeout: 10_000, retryCount: 1 }) }),
       viemChain,
@@ -45,6 +46,8 @@ export function byEid(chains: ChainCfg[], eid: number) {
 // ---------------------------------------------------------------- ABIs (only what the workers touch)
 
 export const packetSentEvent = parseAbiItem("event PacketSent(bytes encodedPayload, bytes options, address sendLibrary)");
+/** LabDVN on the SOURCE chain emits this when SendUln302 assigns (and pays) it for a packet. */
+export const jobAssignedEvent = parseAbiItem("event JobAssigned(uint32 dstEid, bytes packetHeader, bytes32 payloadHash, uint64 confirmations, address sender)");
 
 export const endpointAbi = parseAbi([
   "function lazyInboundNonce(address receiver, uint32 srcEid, bytes32 sender) view returns (uint64)",
