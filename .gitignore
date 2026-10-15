@@ -20,5 +20,5 @@ workers/state/
 
 # secrets: copy .env.example to .env (never commit it)
 .env
-.env.*
+.env*
 !.env.example
