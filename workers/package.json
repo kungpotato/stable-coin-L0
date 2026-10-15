@@ -9,7 +9,8 @@
     "test": "node --test src/*.test.ts",
     "typecheck": "tsc --noEmit",
     "attest": "node src/attest.ts",
-    "audit": "node src/audit.ts"
+    "audit": "node src/audit.ts",
+    "snapshot": "node src/snapshot.ts"
   },
   "engines": {
     "node": ">=22.18"
