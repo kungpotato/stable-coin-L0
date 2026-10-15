@@ -17,3 +17,8 @@ potato-localnet/anvil-home-state.json
 
 # worker cursors (local runtime state)
 workers/state/
+
+# secrets: copy .env.example to .env (never commit it)
+.env
+.env.*
+!.env.example
