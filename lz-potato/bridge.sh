@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Topics 13-14: bridge an asset between chains through its OFT legs (workers must be running).
-# usage: ./bridge.sh <POTATO|USDC> <from> <to> <amount, e.g. 1.5> [recipient]
+# usage: ./bridge.sh <POTATO|USDC|DEMOWEAK|DEMOSAFE> <from> <to> <amount, e.g. 1.5> [recipient]
 #   recipient defaults to the address of KEY_<to> (our account on the destination chain)
 # Amounts are rounded down to the 6 shared decimals; the dust never leaves the wallet.
 #   POTATO from its home: sent as msg.value = fee + amount exactly (NativeOFTAdapter, ADR 0002)
-#   USDC from its home:   approve IssuerUSDC to the adapter, which locks it (ADR 0003)
+#   USDC / demo assets from their home: approve the home token (IssuerUSDC / <ASSET>Token) to the adapter
 #   anywhere else:        the OFT burns from the sender, msg.value = fee
 set -euo pipefail
 export PATH="$HOME/.foundry/bin:$PATH"
@@ -16,6 +16,7 @@ get() { jq -r ".chains.$1.$2" "$T"; }
 dep() { jq -r ".$2" "deployments/$(get "$1" chainId).json"; }
 num() { awk '{print $1}'; }
 HOME_CHAIN=$(jq -r ".assets.$ASSET.home" "$T"); DEC=$(jq -r ".assets.$ASSET.decimals" "$T")
+HOME_TOKEN_KEY=IssuerUSDC; [ "$ASSET" != USDC ] && HOME_TOKEN_KEY="${ASSET}Token"
 DUST_STEP=$(echo "10^($DEC - $(jq -r ".assets.$ASSET.sharedDecimals" "$T"))" | bc)
 SRC_RPC=$(get "$FROM" rpc); DST_RPC=$(get "$TO" rpc); DST_EID=$(get "$TO" eid)
 SRC_LEG=$(dep "$FROM" "$ASSET"); DST_LEG=$(dep "$TO" "$ASSET")
@@ -25,7 +26,7 @@ RECIPIENT="${5:-$(cast wallet address "${!DST_KEY_VAR}")}"
 
 balance() { # $ASSET balance of $2 on chain $1
   if [ "$1" = "$HOME_CHAIN" ] && [ "$ASSET" = POTATO ]; then cast balance "$2" --rpc-url "$(get "$1" rpc)"
-  elif [ "$1" = "$HOME_CHAIN" ]; then cast call "$(dep "$1" IssuerUSDC)" "balanceOf(address)(uint256)" "$2" --rpc-url "$(get "$1" rpc)" | num
+  elif [ "$1" = "$HOME_CHAIN" ]; then cast call "$(dep "$1" "$HOME_TOKEN_KEY")" "balanceOf(address)(uint256)" "$2" --rpc-url "$(get "$1" rpc)" | num
   else cast call "$(dep "$1" "$ASSET")" "balanceOf(address)(uint256)" "$2" --rpc-url "$(get "$1" rpc)" | num; fi
 }
 fmt() { cast format-units "$1" "$DEC"; }
@@ -41,7 +42,7 @@ echo "== $AMOUNT $ASSET $FROM -> $TO, recipient $RECIPIENT"
 [ "$SENT_LD" != "$AMOUNT_LD" ] && echo "   dust kept by sender: $(echo "$AMOUNT_LD - $SENT_LD" | bc) wei"
 echo "   amount sent $(fmt "$SENT_LD"), fee $FEE wei, msg.value $VALUE wei"
 if [ "$FROM" = "$HOME_CHAIN" ] && [ "$ASSET" != POTATO ]; then # the adapter pulls the home token with transferFrom
-  TOKEN=$(dep "$FROM" IssuerUSDC)
+  TOKEN=$(dep "$FROM" "$HOME_TOKEN_KEY")
   if [ "$(echo "$(cast call "$TOKEN" "allowance(address,address)(uint256)" "$SENDER" "$SRC_LEG" --rpc-url "$SRC_RPC" | num) < $SENT_LD" | bc)" = 1 ]; then
     cast send "$TOKEN" "approve(address,uint256)" "$SRC_LEG" "$SENT_LD" --rpc-url "$SRC_RPC" --private-key "${!KEY_VAR}" >/dev/null
     echo "   approved $(fmt "$SENT_LD") $ASSET for the adapter"
