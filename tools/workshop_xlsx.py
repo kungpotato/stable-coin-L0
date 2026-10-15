@@ -95,7 +95,7 @@ topics = [
     (13, "Bridge native crypto (POTATO)", "โอน POTATO ไป-กลับ โดย supply รวมถูกต้อง", "พฤติกรรม WPOTATO precompile, ผ่าน topic 5", "เสร็จ"),
     (14, "Bridge stablecoin (USDC)", "bridge USDC ถูก model + supply invariant + controls", "home chain decision, รายการ contract ที่ผูก USDC เดิม, ผ่าน topic 6", "เสร็จ"),
     (15, "Frontend + indexer + explorer", "ผู้ใช้กด bridge จาก web/ และเห็นสถานะ message", "web/ (wagmi/viem), indexer/ (Ponder), address จาก 11–14", "เสร็จ"),
-    (16, "IBC vs LayerZero และทางไป production", "ตัดสินใจ asset ไหนใช้ IBC/LayerZero และรู้ขั้นตอน integration ทางการ", "ประสบการณ์ IBC bridge, แผนเปิด public network", "ยังไม่เริ่ม"),
+    (16, "IBC vs LayerZero และทางไป production", "ตัดสินใจ asset ไหนใช้ IBC/LayerZero และรู้ขั้นตอน integration ทางการ", "ประสบการณ์ IBC bridge, แผนเปิด public network", "เสร็จ"),
 ]
 rows = []
 for i, (n, name, goal, prep, status) in enumerate(topics, start=2):
@@ -395,6 +395,24 @@ steps = [
     (15, 7, "(incident) indexer ตาย หลัง hot reload ซ้อน", "ponder dev reload 3 ครั้งติดกันตอนแก้หลายไฟล์ → DB (PGlite) ถูกปิดกลางคัน exit 75",
      "potato-chain/indexer", "รัน step 15.1 ใหม่ (ไม่ใช่ bug ในโค้ด indexer)",
      "indexer กลับมา live", "—", "restart แล้วปกติ", "ผ่าน"),
+    (16, 0, "ตรวจสถานะ IBC ของ potato", "ก่อนเทียบ ต้องรู้ว่าเส้นทาง IBC ที่มีอยู่ยังใช้ได้จริงไหม",
+     S, "docker exec potato-node0 potatod q ibc client status 07-tendermint-0 -o json; docker exec potato-node0 potatod q ibc channel channels -o json | jq -c '.channels[] | {channel_id, state}'",
+     "status ของ client และ channel-0", "—",
+     "client Expired (trusting period 14 วัน ไม่มี relayer ~18 วัน) แต่ channel-0 ยัง STATE_OPEN → โอนไม่ได้จริง", "ผ่าน"),
+    (16, 1, "อ่าน license ของ LayerZero protocol จากต้นทาง", "ตัดสินว่า self-host ใช้ production ได้ไหม (search ยืนยันไม่ได้ ต้องอ่านเอง)",
+     S, "curl -s https://raw.githubusercontent.com/LayerZero-Labs/LayerZero-v2/main/LICENSE-LZBL-1.2 | grep -n -iE 'non-production|Change Date|commercial license'",
+     "'… make non-production use of the Licensed Work.' + Change Date / commercial license", "09b6b62",
+     "non-production เท่านั้น; production ต้องซื้อ license; เปลี่ยนเป็น GPL-2.0+ 2027-12-14 สำหรับ permissionless app", "ผ่าน"),
+    (16, 2, "อ่านเอกสารเทียบ IBC vs LayerZero", "รวมผลวัดจาก workshop + ข้อมูลภายนอก (มีแหล่งอ้างอิง)",
+     S, "cat docs/ibc-vs-layerzero.md", "ตารางเทียบ trust model, กรณี off-chain หยุด, ความครอบคลุม, control, license + เรื่อง Circle ปิด Noble USDC", "09b6b62",
+     "ครบ", "ผ่าน"),
+    (16, 3, "ตัดสินใจเส้นทาง production + อ่าน ADR 0004", "goal ของ topic: asset ไหนใช้ IBC / LayerZero",
+     S, "cat docs/adr/0004-production-routing.md",
+     "POTATO: IBC (Cosmos) + LayerZero ทางการ (EVM); USDC: ของ issuer ผ่าน IBC; USDC.lz/MockUSDC/stack self-host = lab only", "df2e396",
+     "เลือกตามคำแนะนำทั้งสองข้อ", "ผ่าน"),
+    (16, 4, "อ่าน checklist ทางไป production", "goal ของ topic: รู้ขั้นตอน integration ทางการ และสิ่งที่ยังขาด",
+     S, "cat docs/production-path.md", "รายการ ✅ ทำแล้ว / ⬜ ยังไม่ทำ / ❓ ต้องยืนยันกับ LayerZero Labs", "df2e396",
+     "ขั้นตอน chain integration ทางการของ LayerZero หาเอกสารสาธารณะไม่เจอ → ❓ ต้องติดต่อ LayerZero Labs", "บางส่วน"),
 ]
 RERUN = {
     (9, 0): ("ได้", "มีผลแค่ terminal นั้น เปิด terminal ใหม่ต้องรันใหม่ (หรือใส่บรรทัด export ใน ~/.zshrc ถาวร)"),
@@ -474,6 +492,11 @@ RERUN = {
     (15, 5): ("ได้ (มีผลข้างเคียง)", "ใช้โควตา rate limit; ต้องมี USDC บน anvil (ดู 14.4)"),
     (15, 6): ("ได้", "อ่านอย่างเดียว"),
     (15, 7): ("—", "เหตุการณ์ที่เกิดแล้ว"),
+    (16, 0): ("ได้", "อ่านอย่างเดียว"),
+    (16, 1): ("ได้", "อ่านอย่างเดียว (ต้องมีเน็ต). license อาจเปลี่ยนเวอร์ชันได้ ให้ดูชื่อไฟล์ใน repo ก่อน"),
+    (16, 2): ("ได้", "อ่านอย่างเดียว. ข้อมูลภายนอกเป็นของวันที่ 2026-10-15 ควรตรวจซ้ำก่อนใช้ตัดสินใจจริง"),
+    (16, 3): ("ไม่ต้องรัน", "เป็นการตัดสินใจ ถ้าเปลี่ยนให้เขียน ADR ใหม่"),
+    (16, 4): ("ได้", "อ่านอย่างเดียว"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
@@ -544,11 +567,14 @@ commits = [
     ("50f7437", "feat(workers): name the revert reason in worker errors", "workers/src/lib.ts, dvn.ts, executor.ts", "14.8", "npm test + typecheck ผ่าน"),
     ("6a61f5f", "docs: topic 14 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
     ("a9b3ca4", "feat(lz-potato): export LayerZero addresses for potato web and indexer", "lz-potato/export-to-potato.sh", "15.0", "— (shell)"),
-    ("potato 4150f89", "chore: LayerZero lab addresses for web and indexer  [repo potato-chain, branch feat/layerzero-bridge-ui]", "deployments/layerzero.json", "15.0", "— (generated)"),
+    ("potato 4150f89", "chore: LayerZero lab addresses for web and indexer  [repo potato-chain, merged to main (ff)]", "deployments/layerzero.json", "15.0", "— (generated)"),
     ("potato 58974ca", "feat(indexer): track LayerZero messages and OFT transfers", "indexer/abis/LayerZeroAbi.ts, ponder.config.ts, ponder.schema.ts, src/layerzero.ts", "15.1–15.2", "tsc ผ่าน"),
     ("potato be21c0d", "feat(web): LayerZero bridge card with live message status", "web/src/LzBridge.tsx, abis.ts, App.tsx", "15.3–15.5", "tsc + oxlint ผ่าน"),
     ("298251a", "chore: launch config for potato web against the lab ports", ".claude/launch.json", "15.3", "—"),
-    ("(commit นี้)", "docs: topic 15 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("3bf5d69", "docs: topic 15 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
+    ("09b6b62", "docs: IBC vs LayerZero comparison for potato", "docs/ibc-vs-layerzero.md", "16.0–16.2", "— (เอกสาร)"),
+    ("df2e396", "docs: ADR 0004 production routing and the path to production", "docs/adr/0004-production-routing.md, docs/production-path.md", "16.3–16.4", "— (เอกสาร)"),
+    ("(commit นี้)", "docs: topic 16 steps in the workshop runbook", "tools/workshop_xlsx.py, workshop-layerzero.xlsx", "—", "สร้าง xlsx ได้"),
 ]
 table(cm, ["Commit", "Message", "ไฟล์", "ใช้ใน step", "ตรวจแล้วว่า build ได้ลำพัง"],
       [list(c) for c in commits], {"A": 10, "B": 52, "C": 58, "D": 12, "E": 30}, mono_cols=("A",))
