@@ -354,11 +354,11 @@ steps = [
      "receiveGas 250000 → 260000 ผ่าน Safe, Safe nonce 0 → 1", "ผ่าน"),
     (8, 20, "อ่าน config ด้วย LayerZero DevTools", "ใช้เครื่องมือทางการเทียบ config ที่เราตั้งเองกับ default ของ LayerZero (แทนการ decode ด้วย cast)",
      S + "/testnet/devtools", "npm ci --legacy-peer-deps && node sync-deployments.mjs && npx hardhat lz:oapp:config:get --oapp-config layerzero.config.ts",
-     "ตาราง Custom / Default / Active ของทั้งสองเชน: Custom = Active requiredDVNCount 2 (LayerZero Labs + Nethermind), Default 1; library = ULN302 ที่ pin ไว้", "(commit นี้)",
+     "ตาราง Custom / Default / Active ของทั้งสองเชน: Custom = Active requiredDVNCount 2 (LayerZero Labs + Nethermind), Default 1; library = ULN302 ที่ pin ไว้", "e6c7a7e",
      "Active = Custom (2 DVN) ส่วน Default มี DVN ตัวเดียว, confirmations Sepolia→Arb 2, Arb→Sepolia 5", "ผ่าน"),
     (8, 21, "wire แบบ declarative ผ่าน Safe", "layerzero.config.ts คือ source of truth: DevTools คำนวณ diff แล้วเราส่งผ่าน Safe เพราะ owner ไม่ใช่ EOA แล้ว",
      S, "testnet/devtools/wire-via-safe.sh AC --dry; testnet/devtools/wire-via-safe.sh AC; testnet/devtools/wire-via-safe.sh AC",
-     "รอบแรกเจอ 4 tx (ULN setConfig) → Safe executed status 0x1 ทั้ง 4; รอบสุดท้าย: nothing to change", "(commit นี้)",
+     "รอบแรกเจอ 4 tx (ULN setConfig) → Safe executed status 0x1 ทั้ง 4; รอบสุดท้าย: nothing to change", "e6c7a7e",
      "diff เดียวคือ optionalDVNCount 0 (ตาม default ของ LayerZero) → 255 (ไม่มี optional DVN, ไม่ตาม default) ส่งผ่าน Safe A+C ทั้งสองเชน แล้ว DevTools ตอบ The OApp is wired", "ผ่าน"),
     (9, 0, "ให้ shell เจอ forge / cast / anvil", "Foundry ติดตั้งไว้ที่ ~/.foundry/bin แต่ไม่อยู่ใน PATH (พิมพ์ forge แล้วขึ้น command not found)",
      S, 'export PATH="$HOME/.foundry/bin:$PATH" && forge --version',
@@ -651,6 +651,14 @@ steps = [
     (16, 4, "อ่าน checklist ทางไป production", "goal ของ topic: รู้ขั้นตอน integration ทางการ และสิ่งที่ยังขาด",
      S, "cat docs/production-path.md", "รายการ ✅ ทำแล้ว / ⬜ ยังไม่ทำ / ❓ ต้องยืนยันกับ LayerZero Labs", "df2e396",
      "ขั้นตอน chain integration ทางการของ LayerZero หาเอกสารสาธารณะไม่เจอ → ❓ ต้องติดต่อ LayerZero Labs", "บางส่วน"),
+    (16, 5, "กู้ IBC client ที่หมดอายุ (P7)", "production ใช้ IBC สำหรับ POTATO และ USDC ของ issuer: client หมดอายุ = ขา IBC ตายทั้งเส้น ต้องกู้ผ่าน gov",
+     "potato-chain", "make ibc-up && POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh   # branch fix/ibc-client-recovery",
+     "แต่ละเชน: Expired → substitute client → proposal recover-client ผ่าน → 07-tendermint-0 Active (id เดิม), channel-0 OPEN", "bf8a669 (potato-chain)",
+     "potato proposal #3, gaia proposal #1 ผ่าน; ทั้งสองฝั่ง Active. รอบแรกสคริปต์จับ proposal ผิดตัว (#1 upgrade เก่า) → แก้ให้รอ id ใหม่", "ผ่าน"),
+    (16, 6, "พิสูจน์ว่า IBC กลับมาใช้ได้", "client Active ยังไม่พอ ต้องเห็น packet ไป-กลับจริงผ่าน relayer",
+     "potato-chain", "make relayer   # (อีก terminal: hermes ต้องชี้ port 36657/19090)\nPOTATO_RPC_PORT=36657 RPC=http://localhost:18545 scripts/smoke_ibc.sh",
+     "ok ทั้ง 7 ข้อ: potato→gaia, gaia→potato, ICS-20 precompile, PotatoBridge → ibc smoke test passed", "bf8a669 (potato-chain)",
+     "ibc smoke test passed (voucher ibc/6B1A5F…53A4 mint/burn ถูกต้อง)", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -802,6 +810,8 @@ RERUN = {
     (16, 2): ("ได้", "อ่านอย่างเดียว. ข้อมูลภายนอกเป็นของวันที่ 2026-10-15 ควรตรวจซ้ำก่อนใช้ตัดสินใจจริง"),
     (16, 3): ("ไม่ต้องรัน", "เป็นการตัดสินใจ ถ้าเปลี่ยนให้เขียน ADR ใหม่"),
     (16, 4): ("ได้", "อ่านอย่างเดียว"),
+    (16, 5): ("ได้", "client Active อยู่แล้ว → nothing to do; ถ้าหมดอายุอีกจะสร้าง substitute + proposal ใหม่ (gov proposal id เพิ่มขึ้น)"),
+    (16, 6): ("ได้ (มีผลข้างเคียง)", "โอน POTATO จริงบน localnet ทุกครั้ง (1 กลับมา, 2 ไปค้างเป็น voucher บน gaia) และใช้ค่า fee"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
