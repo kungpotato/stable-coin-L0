@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Topic 12: show the cosmos/evm eth_getLogs bug on potato (potato-chain/docs/known-issues.md):
 # right after a tx, fromBlock 0 returns the newest log twice; fromBlock 1 is always right.
+# On a potato built with patches/cosmos-evm/0001 (branch fix/cosmos-evm-rpc-bugs) every line says "same".
 # Sends one ping (potato -> anvil) to create a fresh log; the workers will deliver it as usual.
 set -euo pipefail
 export PATH="$HOME/.foundry/bin:$PATH"
