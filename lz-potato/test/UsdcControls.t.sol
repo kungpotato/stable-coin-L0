@@ -9,6 +9,7 @@ import {RateLimiter} from "@layerzerolabs/oapp-evm/contracts/oapp/utils/RateLimi
 import {IssuerUSDC} from "../src/token/IssuerUSDC.sol";
 import {UsdcAdapter} from "../src/token/UsdcAdapter.sol";
 import {UsdcOFT} from "../src/token/UsdcOFT.sol";
+import {StablecoinControls} from "../src/token/StablecoinControls.sol";
 
 /// Exposes the internal debit/credit hooks so the controls can be tested without a full pathway.
 contract UsdcOFTHarness is UsdcOFT {
@@ -25,6 +26,9 @@ contract UsdcAdapterHarness is UsdcAdapter {
     constructor(address t, address e, address o) UsdcAdapter(t, e, o) {}
     function debit(address from, uint256 amt, uint32 dst) external returns (uint256, uint256) {
         return _debit(from, amt, 0, dst);
+    }
+    function credit(address to, uint256 amt, uint32 src) external returns (uint256) {
+        return _credit(to, amt, src);
     }
 }
 
@@ -51,6 +55,84 @@ contract UsdcControlsTest is Test {
         usdc.mint(user, 50_000e6);
         vm.prank(user);
         usdc.approve(address(adapter), type(uint256).max);
+        oft.setBlacklister(blacklister);
+        adapter.setBlacklister(blacklister);
+    }
+
+    address blacklister = makeAddr("blacklister");
+    address bad = makeAddr("sanctioned");
+
+    function _blacklist(StablecoinControls leg, address who) internal {
+        vm.prank(blacklister);
+        leg.blacklist(who);
+    }
+
+    function test_blacklist_onlyBlacklister() public {
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.NotBlacklister.selector, address(this)));
+        oft.blacklist(bad); // not even the owner
+        _blacklist(oft, bad);
+        assertTrue(oft.isBlacklisted(bad));
+    }
+
+    function test_blacklist_blocksTransfersBothWays() public {
+        oft.credit(bad, 1_000e6, DST);
+        _blacklist(oft, bad);
+        vm.prank(bad);
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.AccountBlacklisted.selector, bad));
+        oft.transfer(user, 1e6);
+        vm.prank(user);
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.AccountBlacklisted.selector, bad));
+        oft.transfer(bad, 1e6);
+    }
+
+    function test_blacklist_blocksBridgingOut() public {
+        oft.credit(bad, 1_000e6, DST);
+        _blacklist(oft, bad);
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.AccountBlacklisted.selector, bad));
+        oft.debit(bad, 1e6, DST);
+        usdc.mint(bad, 1_000e6);
+        vm.prank(bad);
+        usdc.approve(address(adapter), type(uint256).max);
+        _blacklist(adapter, bad);
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.AccountBlacklisted.selector, bad));
+        adapter.debit(bad, 1e6, DST);
+    }
+
+    function test_quarantine_oftMintsToItselfAndReleases() public {
+        _blacklist(oft, bad);
+        uint256 supply = oft.totalSupply();
+        oft.credit(bad, 700e6, DST); // must not revert: a reverting lzReceive would strand the message
+        assertEq(oft.balanceOf(bad), 0);
+        assertEq(oft.balanceOf(address(oft)), 700e6);
+        assertEq(oft.quarantined(bad), 700e6);
+        assertEq(oft.totalSupply(), supply + 700e6); // still minted: it is backed on the home chain
+        vm.expectRevert(abi.encodeWithSelector(StablecoinControls.AccountBlacklisted.selector, bad));
+        oft.releaseQuarantined(bad, bad); // can't pay a still-blacklisted account
+        address issuer = makeAddr("issuer");
+        oft.releaseQuarantined(bad, issuer); // e.g. legal order: hand to the issuer
+        assertEq(oft.balanceOf(issuer), 700e6);
+        assertEq(oft.totalQuarantined(), 0);
+    }
+
+    function test_quarantine_adapterKeepsTokens() public {
+        adapter.debit(user, 5_000e6, DST); // lock some USDC first
+        _blacklist(adapter, bad);
+        adapter.credit(bad, 2_000e6, DST);
+        assertEq(usdc.balanceOf(bad), 0);
+        assertEq(usdc.balanceOf(address(adapter)), 5_000e6); // nothing released
+        assertEq(adapter.totalQuarantined(), 2_000e6);
+        vm.prank(blacklister);
+        adapter.unBlacklist(bad);
+        adapter.releaseQuarantined(bad, bad);
+        assertEq(usdc.balanceOf(bad), 2_000e6);
+    }
+
+    function test_releaseQuarantined_onlyOwner() public {
+        _blacklist(oft, bad);
+        oft.credit(bad, 1e6, DST);
+        vm.prank(stranger);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        oft.releaseQuarantined(bad, stranger);
     }
 
     function test_metadata() public view {
