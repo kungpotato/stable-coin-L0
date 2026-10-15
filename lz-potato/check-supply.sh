@@ -11,7 +11,7 @@ ASSET="${1:-POTATO}"
 get() { jq -r ".chains.$1.$2" "$T"; }
 dep() { jq -r ".$2 // empty" "deployments/$(get "$1" chainId).json"; }
 num() { awk '{print $1}'; }  # cast prints "123 [1.23e2]"
-fmt() { cast format-units "$1" "$DEC"; }
+fmt() { if [ "${1#-}" != "$1" ]; then echo "-$(cast format-units "${1#-}" "$DEC")"; else cast format-units "$1" "$DEC"; fi; }  # cast rejects negatives
 # executed <endpoint> <rpc> <receiver> <srcEid> <sender32> <sent>: how many of nonces 1..sent were executed.
 # Not inboundNonce: that counts committed (verified) packets, which a paused receiver has not executed yet.
 # Executed = payload hash cleared and nonce <= lazyInboundNonce (same rule as the executor worker).
@@ -37,7 +37,7 @@ esac
 echo "== $ASSET: home $HOME_CHAIN, adapter $HOME_LEG"
 echo "locked on $HOME_CHAIN: $(fmt "$locked")"
 
-minted=0; inflight=0
+minted=0; inflight=0; forged=0
 for c in $(jq -r '.chains | keys[]' "$T"); do
   [ "$c" = "$HOME_CHAIN" ] && continue
   leg=$(dep "$c" "$ASSET"); rpc=$(get "$c" rpc); ep=$(dep "$c" EndpointV2); eid=$(get "$c" eid); heid=$(get "$HOME_CHAIN" eid)
@@ -52,10 +52,17 @@ for c in $(jq -r '.chains | keys[]' "$T"); do
   back_in=$(executed "$HOME_EP" "$HOME_RPC" "$HOME_LEG" "$eid" "$L" "$back_out")
   echo "messages $HOME_CHAIN->$c: sent $out, delivered $in | $c->$HOME_CHAIN: sent $back_out, delivered $back_in"
   inflight=$((inflight + out - in + back_out - back_in))
+  # a destination that accepted more nonces than the source ever sent was fed forged messages
+  lazy=$(cast call "$ep" "lazyInboundNonce(address,uint32,bytes32)(uint64)" "$leg" "$heid" "$H" --rpc-url "$rpc" | num)
+  back_lazy=$(cast call "$HOME_EP" "lazyInboundNonce(address,uint32,bytes32)(uint64)" "$HOME_LEG" "$eid" "$L" --rpc-url "$HOME_RPC" | num)
+  [ "$lazy" -gt "$out" ] && { echo "❌ $c accepted $((lazy - out)) message(s) from $HOME_CHAIN that were never sent: FORGED"; forged=1; }
+  [ "$back_lazy" -gt "$back_out" ] && { echo "❌ $HOME_CHAIN accepted $((back_lazy - back_out)) message(s) from $c that were never sent: FORGED"; forged=1; }
 done
 
 diff=$(echo "$locked - $minted" | bc)
-if [ "$(echo "$diff < 0" | bc)" = 1 ]; then
+if [ "$forged" = 1 ]; then
+  echo "❌ forged messages on this asset's paths (locked - minted = $(fmt "$diff")): pause the legs and investigate the DVNs"; exit 1
+elif [ "$(echo "$diff < 0" | bc)" = 1 ]; then
   echo "❌ minted exceeds locked by $(fmt "${diff#-}") $ASSET: unbacked supply"; exit 1
 elif [ "$diff" = 0 ] && [ "$inflight" = 0 ]; then
   echo "✅ locked == minted, nothing in flight"
