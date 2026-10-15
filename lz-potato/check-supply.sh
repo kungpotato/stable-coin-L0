@@ -2,7 +2,7 @@
 # Topic 13: supply invariant of a bridged asset (ADR 0002).
 #   locked on the home chain (adapter) >= sum of OFT supply on the other chains
 #   equal when nothing is in flight; locked < minted means tokens were minted without backing.
-# usage: ./check-supply.sh [asset]        (default POTATO)
+# usage: ./check-supply.sh [asset]        (POTATO | USDC, default POTATO)
 set -uo pipefail
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$(dirname "$0")"
@@ -11,13 +11,14 @@ ASSET="${1:-POTATO}"
 get() { jq -r ".chains.$1.$2" "$T"; }
 dep() { jq -r ".$2 // empty" "deployments/$(get "$1" chainId).json"; }
 num() { awk '{print $1}'; }  # cast prints "123 [1.23e2]"
-fmt() { cast from-wei "$1"; }
-HOME_CHAIN=$(jq -r ".assets.$ASSET.home" "$T")
+fmt() { cast format-units "$1" "$DEC"; }
+HOME_CHAIN=$(jq -r ".assets.$ASSET.home" "$T"); DEC=$(jq -r ".assets.$ASSET.decimals" "$T")
 HOME_LEG=$(dep "$HOME_CHAIN" "$ASSET"); HOME_RPC=$(get "$HOME_CHAIN" rpc); HOME_EP=$(dep "$HOME_CHAIN" EndpointV2)
 [ -n "$HOME_LEG" ] || { echo "❌ no $ASSET leg recorded on $HOME_CHAIN"; exit 1; }
 
 case "$ASSET" in
   POTATO) locked=$(cast balance "$HOME_LEG" --rpc-url "$HOME_RPC") ;;  # native coin held by the adapter
+  USDC) locked=$(cast call "$(dep "$HOME_CHAIN" IssuerUSDC)" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num) ;;
   *) echo "❌ don't know how to read locked $ASSET yet"; exit 1 ;;
 esac
 echo "== $ASSET: home $HOME_CHAIN, adapter $HOME_LEG"
