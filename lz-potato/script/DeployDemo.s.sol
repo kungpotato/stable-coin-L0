@@ -26,8 +26,12 @@ contract DeployDemo is LabBase {
         OFTCore leg = OFTCore(existing(asset));
         if (address(leg) == address(0)) {
             if (isHome) {
-                address token = address(new DemoToken(asset, owner));
-                save(string.concat(asset, "Token"), token);
+                // a redeployed leg (incident recovery) keeps wrapping the same home token
+                address token = existing(string.concat(asset, "Token"));
+                if (token == address(0)) {
+                    token = address(new DemoToken(asset, owner));
+                    save(string.concat(asset, "Token"), token);
+                }
                 leg = OFTCore(address(new DemoAdapter(token, endpoint, owner)));
             } else {
                 leg = OFTCore(address(new DemoOFT(asset, endpoint, owner)));

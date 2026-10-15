@@ -11,6 +11,7 @@ import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBa
 ///   MODE=one       send + receive require LabDVN only                    (one key compromised = forged mints)
 ///   MODE=two       send + receive require LabDVN and LabDVN_B            (two independent operators)
 ///   MODE=mismatch  send requires LabDVN only, receive requires both      (B is never assigned: messages stall)
+///   MODE=bc        send + receive require LabDVN_B and LabDVN_C          (after LabDVN's key was compromised)
 /// The OApp's delegate (owner) calls EndpointV2.setConfig. Re-runnable: unchanged configs are skipped.
 /// env: KEY_<chain>, ASSET, MODE
 contract SetOAppSecurity is LabBase {
@@ -26,7 +27,7 @@ contract SetOAppSecurity is LabBase {
     function run() external {
         string memory asset = vm.envString("ASSET");
         string memory mode = vm.envString("MODE");
-        require(_eq(mode, "one") || _eq(mode, "two") || _eq(mode, "mismatch"), "MODE must be one|two|mismatch");
+        require(_eq(mode, "one") || _eq(mode, "two") || _eq(mode, "mismatch") || _eq(mode, "bc"), "MODE must be one|two|mismatch|bc");
         endpoint = EndpointV2(existing("EndpointV2"));
         oapp = existing(asset);
         sendLib = existing("SendUln302");
@@ -38,6 +39,10 @@ contract SetOAppSecurity is LabBase {
         address[] memory two = _sorted(existing("LabDVN"), existing("LabDVN_B"));
         sendDvns = _eq(mode, "two") ? two : one;
         receiveDvns = _eq(mode, "one") ? one : two;
+        if (_eq(mode, "bc")) {
+            address[] memory bc = _sorted(existing("LabDVN_B"), existing("LabDVN_C"));
+            (sendDvns, receiveDvns) = (bc, bc);
+        }
 
         string memory local = localName();
         string[] memory names = chainNames();
