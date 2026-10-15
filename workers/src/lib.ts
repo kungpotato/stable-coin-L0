@@ -53,7 +53,11 @@ export const endpointAbi = parseAbi([
   "function lazyInboundNonce(address receiver, uint32 srcEid, bytes32 sender) view returns (uint64)",
   "function inboundPayloadHash(address receiver, uint32 srcEid, bytes32 sender, uint64 nonce) view returns (bytes32)",
   "function lzReceive((uint32 srcEid, bytes32 sender, uint64 nonce) origin, address receiver, bytes32 guid, bytes message, bytes extraData) payable",
+  "function composeQueue(address from, address to, bytes32 guid, uint16 index) view returns (bytes32 messageHash)",
+  "function lzCompose(address from, address to, bytes32 guid, uint16 index, bytes message, bytes extraData) payable",
 ]);
+/** Emitted by the destination endpoint when an OApp (e.g. an OFT with composeMsg) queues a compose call. */
+export const composeSentEvent = parseAbiItem("event ComposeSent(address from, address to, bytes32 guid, uint16 index, bytes message)");
 export const receiveLibAbi = parseAbi([
   "function hashLookup(bytes32 headerHash, bytes32 payloadHash, address dvn) view returns (bool submitted, uint64 confirmations)",
   "function commitVerification(bytes packetHeader, bytes32 payloadHash)",

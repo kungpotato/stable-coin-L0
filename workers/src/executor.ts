@@ -1,9 +1,10 @@
 // Lab Executor worker (topic 12): for every PacketSent, wait until the DVN has verified it on the destination,
 // commit the verification to the endpoint, then deliver it with EndpointV2.lzReceive.
+// Topic 7: then run any compose the receiver queued (ComposeSent) with EndpointV2.lzCompose, as its own tx.
 // Run: npm run executor     State: workers/state/executor.json (all packets up to this block are delivered)
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, keccak256, type Log, decodeEventLog } from "viem";
 import { loadChains, byEid, scanPacketSent, signer, send, cursorStore, envKey, inboundState, log, short, sleep, errMsg,
-  endpointAbi, receiveLibAbi, type ChainCfg, type Packet } from "./lib.ts";
+  endpointAbi, receiveLibAbi, composeSentEvent, type ChainCfg, type Packet } from "./lib.ts";
 
 const ROLE = "executor";
 const POLL_MS = 2_000;
@@ -67,10 +68,45 @@ async function tick(src: ChainCfg) {
   if (done >= from) cursor.set(src.name, done);
 }
 
+const RECEIVED = `0x${"0".repeat(63)}1`; // composeQueue value once lzCompose ran
+
+/** Run every compose queued on `dst` (ComposeSent) that has not run yet. Cursor "compose-<chain>" only passes
+ *  blocks whose composes all ran; a failing compose (the composer reverted) is retried next tick. */
+async function composeTick(dst: ChainCfg) {
+  const key = `compose-${dst.name}`;
+  const latest = await dst.pub.getBlockNumber();
+  const from = cursor.get(key) + 1n;
+  if (from > latest) return;
+  let done = latest;
+  for (let start = from < 1n ? 1n : from; start <= latest; start += 1_000n) {
+    const end = start + 999n < latest ? start + 999n : latest;
+    const logs: Log[] = await dst.pub.getLogs({ address: dst.endpoint, event: composeSentEvent, fromBlock: start, toBlock: end });
+    for (const l of logs) {
+      const { args } = decodeEventLog({ abi: [composeSentEvent], data: l.data, topics: l.topics });
+      const what = `compose on ${dst.name} ${args.from.slice(0, 8)}… -> ${args.to.slice(0, 8)}… guid ${short(args.guid)}`;
+      try {
+        const queued = await dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "composeQueue",
+          args: [args.from, args.to, args.guid, args.index] });
+        if (queued === RECEIVED) continue;
+        if (queued !== keccak256(args.message)) { log(ROLE, `${what}: queue holds a different message, skip`); continue; }
+        const r = await send(dst, signers.get(dst.name)!, dst.endpoint, encodeFunctionData({
+          abi: endpointAbi, functionName: "lzCompose", args: [args.from, args.to, args.guid, args.index, args.message, "0x"],
+        }));
+        log(ROLE, `${what}: composed (tx ${short(r.transactionHash)}, gas ${r.gasUsed})`);
+      } catch (e) {
+        log(ROLE, `ERROR ${what}: ${errMsg(e)}`);
+        if (l.blockNumber! - 1n < done) done = l.blockNumber! - 1n;
+      }
+    }
+  }
+  if (done >= from) cursor.set(key, done);
+}
+
 log(ROLE, `signer ${signers.values().next().value!.account.address}, chains ${chains.map((c) => `${c.name}(eid ${c.eid})`).join(", ")}`);
 for (;;) {
   for (const src of chains) {
     try { await tick(src); } catch (e) { log(ROLE, `ERROR ${src.name}: ${errMsg(e)}`); }
+    try { await composeTick(src); } catch (e) { log(ROLE, `ERROR compose ${src.name}: ${errMsg(e)}`); }
   }
   await sleep(POLL_MS);
 }
