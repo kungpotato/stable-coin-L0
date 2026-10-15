@@ -86,7 +86,7 @@ topics = [
     (4, "OApp: cross-chain app ตัวแรก", "deploy OApp 2 testnet แล้วส่งข้อความข้ามเชนได้", "Solidity ระดับกลาง, RPC + faucet 2 testnet", "เสร็จ"),
     (5, "OFT: token ข้ามเชน", "เลือก OFT vs OFT Adapter ได้ และโอน token ข้ามเชนได้", "ผ่าน topic 4, ERC-20, ตัดสินใจ home chain / decimals", "เสร็จ"),
     (6, "Stablecoin-specific controls", "มี rate limit, pause, blacklist และ supply invariant ข้ามเชน", "ผ่าน topic 5, AccessControl/Pausable, ข้อกำหนด compliance", "เสร็จ"),
-    (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "เสร็จบางส่วน"),
+    (7, "Advanced patterns", "ออกแบบ lzCompose / lzRead สำหรับ use case จริงได้", "ผ่าน topic 5, ABI encode/decode, DeFi พื้นฐาน", "เสร็จ"),
     (8, "Deployment, operations, debugging", "มี runbook deploy + incident response", "ผ่านทุก topic, explorer API key, Safe multisig", "เสร็จบางส่วน"),
     (9, "ประเมินความพร้อมของ potato-chain", "ยืนยันว่า LayerZero V2 deploy และทำงานบน potato-chain ได้ และรู้ว่าต้องแก้หรือเลี่ยงอะไร", "potato localnet รันได้, อ่าน known-issues.md, เข้าใจ topic 2", "เสร็จ"),
     (10, "เลือกเชนคู่ และวาง topology", "เลือกเชนคู่ + EID + home chain ของแต่ละ asset", "RPC/gas ของเชนคู่, คุยฝั่งธุรกิจเรื่อง home chain", "เสร็จ"),
@@ -108,7 +108,7 @@ note_row = ov.max_row + 2
 ov.cell(note_row, 1, "หมายเหตุ").font = BOLD
 notes = [
     "Topic 9 ปิดครบ 4/4 เกณฑ์แล้ว: เกณฑ์ known-issues พิสูจน์ใน step 12.7–12.8",
-    "Topic 1–8: 1–6 เสร็จ (2 และ 5 ทำผ่าน topic 9–14; 4 บน testnet ทางการ); เหลือ 7 (lzRead) และ 8 (DevTools/multisig/Scan) บน testnet",
+    "Topic 1–7 เสร็จ (2 และ 5 ทำผ่าน topic 9–14; 4 และ lzRead ของ 7 บน testnet ทางการ); เหลือ 8 (DevTools/multisig/pin library) บน testnet",
     "แต่ละ step ใน sheet Steps อ้าง commit ใน repo stable-coin-L0 (git log --oneline)",
 ]
 for k, t in enumerate(notes, start=1):
@@ -273,8 +273,12 @@ steps = [
      "default ต้องผ่าน read DVN ตัวเดียวอีกเช่นกัน → จะตั้ง LayerZero Labs + Horizen", "ผ่าน"),
     (7, 6, "deploy CrossChainReader (OAppRead) บน Arbitrum Sepolia", "contract ที่ถามค่า view บนเชนอื่น; ตั้ง read DVN 2 ตัวเอง",
      L, "set -a; . ../.env; set +a; forge script script/testnet/DeployReaderTestnet.s.sol --rpc-url $ARBITRUM_SEPOLIA_RPC_URL --broadcast --slow --skip-simulation",
-     "deployed Reader, set read channel 4294967295, set read DVNs: LayerZero Labs + Horizen (รันซ้ำ: reused/ok)", "(commit นี้)",
+     "deployed Reader, set read channel 4294967295, set read DVNs: LayerZero Labs + Horizen (รันซ้ำ: reused/ok)", "45b40c1",
      "Reader 0x05bB…9648", "ผ่าน"),
+    (7, 7, "อ่าน Ping.received() บน Sepolia จาก Arbitrum Sepolia ผ่าน lzRead", "goal ของ lzRead: ได้ค่าข้ามเชนบน chain โดยมี read DVN 2 ตัวยืนยัน",
+     S, "testnet/read.sh",
+     "lzRead fee ~0.000155 ETH; scan INFLIGHT → ✅ answered: lastValue == ค่าที่อ่านตรงจาก RPC", "(commit นี้)",
+     "ได้ 1 == 1 ใน 289 วินาที; scan: read DVN ทั้ง 2 ตัว SUCCEEDED", "ผ่าน"),
     (8, 0, "ยืนยันข้อเท็จจริงก่อนตอบ: path พังจริงไหม", "ตอนแรกสรุปว่า 'พังถาวร' ต้องพิสูจน์ก่อนตัดสินใจ",
      L, "./bridge.sh DEMOWEAK anvil potato 1; ./bridge.sh DEMOWEAK anvil potato 2",
      "nonce 2 (1 DEMOWEAK) ❌ ค้าง, nonce 3 (2 DEMOWEAK) ✅ ถึง → เสียแค่ช่อง nonce ที่ถูกปลอม", "—",
@@ -645,6 +649,7 @@ RERUN = {
     (7, 4): ("ได้ (มีผลข้างเคียง)", "เพิ่ม compose ขยะใน queue ของ endpoint (ไม่มีผลกับเงิน); guid ต้องเปลี่ยนทุกครั้ง ไม่งั้น LZ_ComposeExists"),
     (7, 5): ("ได้", "อ่านอย่างเดียว"),
     (7, 6): ("ได้", "รันซ้ำ = reused/ok ไม่มี tx"),
+    (7, 7): ("ได้ (มีผลข้างเคียง)", "จ่าย lzRead fee จริงทุกครั้ง (~0.00016 ETH testnet); รอ ~5 นาทีเพราะรอ 15 confirmations บน Sepolia"),
     (3, 0): ("ได้", "รันซ้ำไม่มี tx (reused)"),
     (3, 1): ("ได้", "รันซ้ำไม่มี tx; เติม gas เมื่อ operator เหลือ < 5"),
     (3, 2): ("ได้", "รันซ้ำ = ok ไม่มี tx"),
