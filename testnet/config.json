@@ -20,7 +20,12 @@
           "layerzero-labs"
         ]
       },
-      "pingReceiveGas": 1000000
+      "pingReceiveGas": 1000000,
+      "readLib1002": "0x908e86e9cb3f16cc94ae7569bf64ce2ce04bbcbe",
+      "readDvns": {
+        "layerzero-labs": "0x530fbe405189204ef459fa4b767167e4d41e3a37",
+        "horizen": "0x76b3c210a22402e5e95f938074234676136c6023"
+      }
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
@@ -41,7 +46,19 @@
           "layerzero-labs"
         ]
       },
-      "pingReceiveGas": 250000
+      "pingReceiveGas": 250000,
+      "readLib1002": "0x54320b901FDe49Ba98de821Ccf374BA4358a8bf6",
+      "readDvns": {
+        "layerzero-labs": "0x5C8C267174e1F345234FF5315D6cfd6716763BaC",
+        "horizen": "0xaea6677ece4534bb29a9c63a3475fdb02709f179"
+      },
+      "defaultRead": {
+        "requiredDVNs": [
+          "layerzero-labs"
+        ],
+        "executor": "0x5Df3a1cEbBD9c8BA7F8dF51Fd632A9aef8308897"
+      }
     }
-  }
+  },
+  "readChannel": 4294967295
 }
