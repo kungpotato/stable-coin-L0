@@ -8,6 +8,7 @@ export PATH="$HOME/.foundry/bin:$PATH"
 cd "$(dirname "$0")"
 T=config/topology.json
 ASSET="${1:-POTATO}"
+BASE="${ASSET%_V[0-9]*}"  # archived legs (e.g. USDC_V1) use their asset's topology settings
 get() { jq -r ".chains.$1.$2" "$T"; }
 dep() { jq -r ".$2 // empty" "deployments/$(get "$1" chainId).json"; }
 num() { awk '{print $1}'; }  # cast prints "123 [1.23e2]"
@@ -23,14 +24,17 @@ executed() {
   done
   echo $count
 }
-HOME_CHAIN=$(jq -r ".assets.$ASSET.home" "$T"); DEC=$(jq -r ".assets.$ASSET.decimals" "$T")
+HOME_CHAIN=$(jq -r ".assets.$BASE.home" "$T"); DEC=$(jq -r ".assets.$BASE.decimals" "$T")
 HOME_LEG=$(dep "$HOME_CHAIN" "$ASSET"); HOME_RPC=$(get "$HOME_CHAIN" rpc); HOME_EP=$(dep "$HOME_CHAIN" EndpointV2)
 [ -n "$HOME_LEG" ] || { echo "❌ no $ASSET leg recorded on $HOME_CHAIN"; exit 1; }
 
-case "$ASSET" in
+case "$BASE" in
   POTATO) locked=$(cast balance "$HOME_LEG" --rpc-url "$HOME_RPC") ;;  # native coin held by the adapter
-  USDC) locked=$(cast call "$(dep "$HOME_CHAIN" IssuerUSDC)" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num) ;;
-  *) TOKEN=$(dep "$HOME_CHAIN" "${ASSET}Token")  # demo assets: DemoToken held by the adapter
+  USDC) locked=$(cast call "$(dep "$HOME_CHAIN" IssuerUSDC)" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num)
+     # USDC held for blacklisted recipients (ADR 0005) is not backing anything on the other chains
+     q=$(cast call "$HOME_LEG" "totalQuarantined()(uint256)" --rpc-url "$HOME_RPC" 2>/dev/null | num)
+     [ -n "$q" ] && [ "$q" != 0 ] && { echo "quarantined in adapter: $(cast format-units "$q" 6)"; locked=$(echo "$locked - $q" | bc); } ;;
+  *) TOKEN=$(dep "$HOME_CHAIN" "${BASE}Token")  # demo assets: DemoToken held by the adapter
      [ -n "$TOKEN" ] || { echo "❌ don't know how to read locked $ASSET"; exit 1; }
      locked=$(cast call "$TOKEN" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num) ;;
 esac

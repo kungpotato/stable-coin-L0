@@ -14,7 +14,7 @@ import {UsdcOFT} from "../src/token/UsdcOFT.sol";
 /// (.assets.USDC.home) IssuerUSDC + UsdcAdapter, elsewhere UsdcOFT, recorded as "USDC" (and "IssuerUSDC").
 /// Peers, enforced lzReceive gas and the lab rate limit for every other chain. Run on every chain, then once
 /// more on the first (peers need the remote address). Re-runnable.
-/// env: KEY_<chain>
+/// env: KEY_<chain>, BLACKLISTER (optional address)
 contract DeployUsdcBridge is LabBase {
     using OptionsBuilder for bytes;
 
@@ -49,6 +49,13 @@ contract DeployUsdcBridge is LabBase {
             save("USDC", address(leg));
         } else {
             console.log("reused   USDC leg", address(leg));
+        }
+
+        // compliance role (ADR 0005); legs deployed before the blacklist (v1) have no blacklister()
+        address blacklister = vm.envOr("BLACKLISTER", address(0));
+        if (blacklister != address(0) && leg.blacklister() != blacklister) {
+            leg.setBlacklister(blacklister);
+            console.log("  set  blacklister", blacklister);
         }
 
         bytes memory opts = OptionsBuilder.newOptions().addExecutorLzReceiveOption(LZ_RECEIVE_GAS, 0);
