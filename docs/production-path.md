@@ -34,6 +34,11 @@
 - ✅ **potato เหมาะกับ LayerZero:** EVM ระดับ Prague, gas ตรงกับ Ethereum และ finality ทันที (`confirmations = 1`) ตามที่พิสูจน์ใน topic 9
 - ⬜ **เลิกใช้ contract ของ lab:** EndpointV2/ULN302 ที่ deploy เอง, `LabDVN`, `LabExecutor` และ workers ห้ามใช้ใน production (license LZBL-1.2)
 - ⬜ **deploy `PotatoNativeAdapter` และ `PotatoOFT`** โดยชี้ไปที่ endpoint ทางการ แล้วตั้ง peer, enforced options, DVN config (send/receive ต้องตรงกันทั้งสองฝั่ง) และ rate limit ให้กับ POTATO ด้วย
+- ⬜ **ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริง ต่อเชนปลายทาง** (topic 4 บน testnet ทางการ)
+  - executor ทางการให้ gas เท่าที่ผู้ส่งจ่ายมาเท่านั้น ถ้าไม่พอ message จะ FAILED แล้วต้องส่งเองด้วย `testnet/execute.sh`
+  - ค่าที่วัดได้: Ping บน Arbitrum Sepolia ใช้ 174k, บน Sepolia (Glamsterdam) ใช้ 697k ทั้งที่ตั้งไว้ 100k
+  - `DeployPotatoBridge`/`DeployUsdcBridge` ยังตั้ง enforced options ไว้ 100k ซึ่งใช้ได้แค่ใน lab (executor ของเราประเมิน gas เอง) ต้องวัดใหม่ทุกเชนก่อนขึ้น production รวมถึง lzCompose ของ composer ด้วย
+- ⬜ **เครื่องมือ deploy ต้องใช้ค่าประมาณ gas จาก node จริง** เพราะเชนเปลี่ยนกฎ gas ได้ (Sepolia เปิด Glamsterdam เมื่อ 2026-10-06) forge ที่ pin `evm_version` จะจำลองผิด ใช้ `--skip-simulation`
 - ⬜ **owner และ delegate ของ OApp เป็น multisig** (เช่น Safe) ไม่ใช่ EOA
 - ⬜ **audit** `PotatoNativeAdapter`, `StablecoinControls` และ config ของ path ทั้งหมด
 - ✅ supply invariant checker (`check-supply.sh`) นำไปใช้กับ monitoring จริงได้ ต้องเปลี่ยนให้อ่านจาก endpoint ทางการ
