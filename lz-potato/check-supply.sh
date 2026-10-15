@@ -12,6 +12,17 @@ get() { jq -r ".chains.$1.$2" "$T"; }
 dep() { jq -r ".$2 // empty" "deployments/$(get "$1" chainId).json"; }
 num() { awk '{print $1}'; }  # cast prints "123 [1.23e2]"
 fmt() { cast format-units "$1" "$DEC"; }
+# executed <endpoint> <rpc> <receiver> <srcEid> <sender32> <sent>: how many of nonces 1..sent were executed.
+# Not inboundNonce: that counts committed (verified) packets, which a paused receiver has not executed yet.
+# Executed = payload hash cleared and nonce <= lazyInboundNonce (same rule as the executor worker).
+executed() {
+  local lazy n count=0
+  lazy=$(cast call "$1" "lazyInboundNonce(address,uint32,bytes32)(uint64)" "$3" "$4" "$5" --rpc-url "$2" | num)
+  for ((n = 1; n <= $6; n++)); do
+    [ "$n" -le "$lazy" ] && [ "$(cast call "$1" "inboundPayloadHash(address,uint32,bytes32,uint64)(bytes32)" "$3" "$4" "$5" "$n" --rpc-url "$2")" = 0x0000000000000000000000000000000000000000000000000000000000000000 ] && count=$((count + 1))
+  done
+  echo $count
+}
 HOME_CHAIN=$(jq -r ".assets.$ASSET.home" "$T"); DEC=$(jq -r ".assets.$ASSET.decimals" "$T")
 HOME_LEG=$(dep "$HOME_CHAIN" "$ASSET"); HOME_RPC=$(get "$HOME_CHAIN" rpc); HOME_EP=$(dep "$HOME_CHAIN" EndpointV2)
 [ -n "$HOME_LEG" ] || { echo "❌ no $ASSET leg recorded on $HOME_CHAIN"; exit 1; }
@@ -34,9 +45,9 @@ for c in $(jq -r '.chains | keys[]' "$T"); do
   echo "minted on $c:   $(fmt "$s")"
   H=$(cast abi-encode "f(address)" "$HOME_LEG"); L=$(cast abi-encode "f(address)" "$leg")
   out=$(cast call "$HOME_EP" "outboundNonce(address,uint32,bytes32)(uint64)" "$HOME_LEG" "$eid" "$L" --rpc-url "$HOME_RPC" | num)
-  in=$(cast call "$ep" "inboundNonce(address,uint32,bytes32)(uint64)" "$leg" "$heid" "$H" --rpc-url "$rpc" | num)
+  in=$(executed "$ep" "$rpc" "$leg" "$heid" "$H" "$out")
   back_out=$(cast call "$ep" "outboundNonce(address,uint32,bytes32)(uint64)" "$leg" "$heid" "$H" --rpc-url "$rpc" | num)
-  back_in=$(cast call "$HOME_EP" "inboundNonce(address,uint32,bytes32)(uint64)" "$HOME_LEG" "$eid" "$L" --rpc-url "$HOME_RPC" | num)
+  back_in=$(executed "$HOME_EP" "$HOME_RPC" "$HOME_LEG" "$eid" "$L" "$back_out")
   echo "messages $HOME_CHAIN->$c: sent $out, delivered $in | $c->$HOME_CHAIN: sent $back_out, delivered $back_in"
   inflight=$((inflight + out - in + back_out - back_in))
 done
