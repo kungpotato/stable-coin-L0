@@ -3,477 +3,1836 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>บทเรียน LayerZero Workshop</title>
-<meta name="description" content="สรุปบทเรียนจาก workshop LayerZero 16 topics: พื้นฐาน LayerZero และการเชื่อม potato-chain เพื่อ bridge crypto และ stablecoin">
+<title>LayerZero ฉบับลงมือทำ</title>
+<meta name="description" content="หนังสือสรุปบทเรียนจาก workshop LayerZero 16 topics: ตั้งแต่พื้นฐาน messaging, security model, OFT และ stablecoin controls จนถึงการเชื่อม potato-chain เข้ากับเชนอื่น ซ้อมรับมือเหตุโจมตี และทางไป production">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f7f6f2; --surface: #ffffff; --surface-2: #f0eee7; --text: #1d1c1a; --muted: #6a675f;
-  --border: #e2dfd5; --accent: #b4521f; --accent-soft: #f6e5da; --ok: #2f7a4b; --ok-soft: #e1f0e6;
-  --warn: #9a6a00; --warn-soft: #f8edcf; --bad: #a83232; --bad-soft: #f6dddd; --code-bg: #efece4;
-  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+  --bg: #f8f6f1; --surface: #ffffff; --surface-2: #f1eee6; --text: #1f1d1a; --muted: #6b675e;
+  --border: #e3dfd4; --accent: #b0501d; --accent-soft: #f7e6da; --ok: #2e7a4a; --ok-soft: #e2f1e7;
+  --warn: #946500; --warn-soft: #f8eed0; --bad: #a83232; --bad-soft: #f7dfdf; --info: #2a5f9e; --info-soft: #e3edf8;
+  --code-bg: #f3f0e8; --code-text: #2b2925; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161513; --surface: #1f1e1b; --surface-2: #282622; --text: #ece9e2; --muted: #a29e94;
-    --border: #36332d; --accent: #f08a4b; --accent-soft: #3a261a; --ok: #6cc28c; --ok-soft: #1c2e22;
-    --warn: #e2b54a; --warn-soft: #33290f; --bad: #ec7d7d; --bad-soft: #3a1d1d; --code-bg: #2a2824;
-    --shadow: none;
+    --bg: #151412; --surface: #1d1c19; --surface-2: #26241f; --text: #ebe7df; --muted: #a39f95;
+    --border: #35322c; --accent: #f08a4b; --accent-soft: #3a2618; --ok: #6cc28c; --ok-soft: #1b2d21;
+    --warn: #e0b44b; --warn-soft: #32290f; --bad: #ec7d7d; --bad-soft: #3a1c1c; --info: #7fb0ea; --info-soft: #1a2738;
+    --code-bg: #23211d; --code-text: #e4e0d7; --shadow: none;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161513; --surface: #1f1e1b; --surface-2: #282622; --text: #ece9e2; --muted: #a29e94;
-  --border: #36332d; --accent: #f08a4b; --accent-soft: #3a261a; --ok: #6cc28c; --ok-soft: #1c2e22;
-  --warn: #e2b54a; --warn-soft: #33290f; --bad: #ec7d7d; --bad-soft: #3a1d1d; --code-bg: #2a2824;
-  --shadow: none;
+  --bg: #151412; --surface: #1d1c19; --surface-2: #26241f; --text: #ebe7df; --muted: #a39f95;
+  --border: #35322c; --accent: #f08a4b; --accent-soft: #3a2618; --ok: #6cc28c; --ok-soft: #1b2d21;
+  --warn: #e0b44b; --warn-soft: #32290f; --bad: #ec7d7d; --bad-soft: #3a1c1c; --info: #7fb0ea; --info-soft: #1a2738;
+  --code-bg: #23211d; --code-text: #e4e0d7; --shadow: none;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 16px/1.7 "IBM Plex Sans Thai", system-ui, sans-serif;
-}
-code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .86em; }
-code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 16px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.8 "IBM Plex Sans Thai", system-ui, sans-serif; }
 a { color: var(--accent); }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
-header.hero { padding: 56px 0 32px; border-bottom: 1px solid var(--border); }
-.eyebrow { color: var(--accent); font-weight: 600; letter-spacing: .04em; font-size: .85rem; text-transform: uppercase; }
-h1 { font-size: clamp(1.9rem, 4.5vw, 2.8rem); line-height: 1.25; margin: .3em 0 .4em; }
-.lede { font-size: 1.12rem; color: var(--muted); max-width: 46em; margin: 0; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 28px; }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
-.stat b { display: block; font-size: 1.6rem; line-height: 1.2; }
-.stat span { color: var(--muted); font-size: .88rem; }
-nav.toc { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
-nav.toc .wrap { display: flex; gap: 6px; overflow-x: auto; padding-top: 10px; padding-bottom: 10px; scrollbar-width: none; }
-nav.toc a { white-space: nowrap; text-decoration: none; color: var(--muted); font-size: .9rem; padding: 4px 10px; border-radius: 999px; }
-nav.toc a:hover { background: var(--surface-2); color: var(--text); }
-#theme { margin-left: auto; border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  border-radius: 999px; padding: 4px 12px; font: inherit; font-size: .85rem; cursor: pointer; white-space: nowrap; }
-section { padding: 44px 0 8px; }
-h2 { font-size: 1.55rem; margin: 0 0 6px; }
-.sub { color: var(--muted); margin: 0 0 22px; }
-.big { counter-reset: n; display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
-.big li { counter-increment: n; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px 16px 14px 58px; position: relative; box-shadow: var(--shadow); }
-.big li::before { content: counter(n); position: absolute; left: 16px; top: 14px; width: 28px; height: 28px; border-radius: 50%;
-  background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: .9rem; }
-.big b { display: block; }
-.big span { color: var(--muted); font-size: .95rem; }
-.group-title { margin: 30px 0 12px; font-size: 1.05rem; color: var(--muted); font-weight: 600; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow);
-  display: flex; flex-direction: column; min-width: 0; }
-.card .num { font-family: "JetBrains Mono", monospace; color: var(--accent); font-weight: 600; font-size: .85rem; }
-.card h3 { margin: 2px 0 6px; font-size: 1.08rem; line-height: 1.4; }
-.card .goal { color: var(--muted); font-size: .9rem; margin: 0 0 10px; }
-.card ul { margin: 0; padding-left: 1.1em; font-size: .95rem; }
-.card li { margin: 4px 0; }
-.card .proof { margin-top: auto; padding-top: 12px; font-size: .85rem; color: var(--muted); border-top: 1px dashed var(--border); }
-.card .proof b { color: var(--text); font-weight: 600; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
-table { width: 100%; border-collapse: collapse; font-size: .93rem; min-width: 640px; }
-th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-th { background: var(--surface-2); font-weight: 600; font-size: .85rem; color: var(--muted); }
+code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+code { font-size: .84em; background: var(--code-bg); color: var(--code-text); padding: .08em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); color: var(--code-text); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px;
+  overflow-x: auto; font-size: .8rem; line-height: 1.6; margin: 14px 0 18px; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+pre .c { color: var(--muted); }
+h1, h2, h3, .serif { font-family: "Noto Serif Thai", "IBM Plex Sans Thai", serif; }
+
+/* layout */
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); max-width: 1220px; margin: 0 auto; }
+aside.toc { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 28px 18px 40px 24px; border-right: 1px solid var(--border);
+  font-size: .86rem; line-height: 1.5; scrollbar-width: thin; }
+aside.toc .brand { font-family: "Noto Serif Thai", serif; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+aside.toc .brand-sub { color: var(--muted); font-size: .8rem; margin-bottom: 14px; }
+aside.toc .part { margin: 18px 0 6px; color: var(--muted); font-weight: 600; font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; }
+aside.toc ol { list-style: none; margin: 0; padding: 0; }
+aside.toc a { display: block; color: var(--text); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+aside.toc a .n { display: inline-block; min-width: 2.1em; color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: .78rem; }
+aside.toc a:hover { background: var(--surface-2); }
+aside.toc a.active { background: var(--accent-soft); color: var(--accent); }
+aside.toc a.active .n { color: var(--accent); }
+#theme { margin-top: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px;
+  padding: 5px 14px; font: inherit; font-size: .82rem; cursor: pointer; }
+main { min-width: 0; padding: 0 40px 80px; }
+.page { max-width: 760px; margin: 0 auto; }
+details.mtoc { display: none; }
+
+/* cover */
+.cover { min-height: 88vh; display: flex; flex-direction: column; justify-content: center; padding: 60px 0 40px; border-bottom: 1px solid var(--border); }
+.cover .kicker { color: var(--accent); font-weight: 600; letter-spacing: .06em; font-size: .82rem; text-transform: uppercase; }
+.cover h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.2; margin: .25em 0 .3em; }
+.cover .subtitle { font-size: 1.18rem; color: var(--muted); max-width: 34em; margin: 0; }
+.cover .meta { margin-top: 34px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.cover .meta div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow); }
+.cover .meta b { display: block; font-size: 1.5rem; line-height: 1.25; font-family: "Noto Serif Thai", serif; }
+.cover .meta span { color: var(--muted); font-size: .84rem; }
+
+/* chapters */
+section.front, section.chapter, section.appendix { padding: 64px 0 24px; border-bottom: 1px solid var(--border); }
+.ch-num { font-family: "JetBrains Mono", monospace; color: var(--accent); font-weight: 600; font-size: .82rem; letter-spacing: .06em; }
+section h2 { font-size: clamp(1.6rem, 3.6vw, 2.1rem); line-height: 1.3; margin: .2em 0 .5em; }
+section h3 { font-size: 1.25rem; margin: 1.8em 0 .5em; line-height: 1.4; }
+section h4 { font-size: 1.02rem; margin: 1.4em 0 .4em; }
+p { margin: 0 0 1em; }
+ul, ol { padding-left: 1.3em; margin: 0 0 1em; }
+li { margin: .25em 0; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+.goalbox { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 18px 0 26px; }
+.goalbox div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: .92rem; box-shadow: var(--shadow); }
+.goalbox b { display: block; font-size: .76rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 2px; }
+.callout { border-radius: 10px; padding: 14px 16px; margin: 18px 0; font-size: .95rem; border: 1px solid transparent; }
+.callout > b:first-child { display: block; margin-bottom: 4px; }
+.callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+.callout.note { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 25%, transparent); }
+.callout.note > b:first-child { color: var(--info); }
+.callout.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 25%, transparent); }
+.callout.warn > b:first-child { color: var(--warn); }
+.callout.bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 25%, transparent); }
+.callout.bad > b:first-child { color: var(--bad); }
+.callout.lesson { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
+.callout.lesson > b:first-child { color: var(--ok); }
+.table-wrap { overflow-x: auto; margin: 14px 0 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; line-height: 1.6; }
+table.wide { min-width: 620px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 600; font-size: .8rem; color: var(--muted); }
 tr:last-child td { border-bottom: 0; }
-.tag { display: inline-block; font-size: .78rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
-.tag.ok { background: var(--ok-soft); color: var(--ok); }
-.tag.warn { background: var(--warn-soft); color: var(--warn); }
-.tag.bad { background: var(--bad-soft); color: var(--bad); }
-.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
-.panel h3 { margin: 0 0 8px; font-size: 1.05rem; }
-.panel ul { margin: 0; padding-left: 1.1em; }
-.panel li { margin: 5px 0; }
-.drill { display: grid; gap: 0; border-left: 2px solid var(--border); margin-left: 8px; padding-left: 0; list-style: none; }
-.drill li { position: relative; padding: 0 0 14px 22px; }
-.drill li::before { content: ""; position: absolute; left: -7px; top: 8px; width: 12px; height: 12px; border-radius: 50%;
-  background: var(--surface); border: 2px solid var(--accent); }
-.drill li.bad::before { border-color: var(--bad); background: var(--bad-soft); }
-.drill li.ok::before { border-color: var(--ok); background: var(--ok-soft); }
-.drill b { display: block; }
-.drill span { color: var(--muted); font-size: .93rem; }
-footer { margin: 56px 0 0; padding: 24px 0 40px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
-footer ul { padding-left: 1.1em; margin: 8px 0 0; }
-@media (max-width: 520px) {
-  header.hero { padding-top: 36px; }
-  .card { padding: 16px; }
-  .big li { padding-left: 52px; }
+.num { font-family: "JetBrains Mono", monospace; font-size: .85em; white-space: nowrap; }
+.tag { display: inline-block; font-size: .74rem; font-weight: 600; padding: 0 8px; border-radius: 999px; white-space: nowrap; line-height: 1.7; }
+.tag.ok { background: var(--ok-soft); color: var(--ok); } .tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); } .tag.info { background: var(--info-soft); color: var(--info); }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 14px 0 20px; }
+.steps > li { counter-increment: s; position: relative; padding: 0 0 4px 44px; margin: 0 0 14px; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .85rem; display: grid; place-items: center; }
+.steps > li > b { display: block; }
+.result { font-size: .9rem; color: var(--muted); }
+.result b { color: var(--text); }
+figure { margin: 22px 0 26px; }
+figure svg { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+figcaption { color: var(--muted); font-size: .85rem; margin-top: 8px; text-align: center; }
+svg .box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+svg .box-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .box-ok { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+svg .box-bad { fill: var(--bad-soft); stroke: var(--bad); stroke-width: 1.5; }
+svg .box-info { fill: var(--info-soft); stroke: var(--info); stroke-width: 1.5; }
+svg .ln { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+svg .ln-a { stroke: var(--accent); stroke-width: 1.8; fill: none; }
+svg .ln-bad { stroke: var(--bad); stroke-width: 1.8; fill: none; stroke-dasharray: 5 4; }
+svg .ln-ok { stroke: var(--ok); stroke-width: 1.8; fill: none; }
+svg text { fill: var(--text); font-family: "IBM Plex Sans Thai", sans-serif; font-size: 13px; }
+svg text.t-s { font-size: 11px; fill: var(--muted); }
+svg text.t-b { font-weight: 600; }
+svg text.t-a { fill: var(--accent); font-weight: 600; }
+svg text.t-bad { fill: var(--bad); font-weight: 600; }
+svg text.t-ok { fill: var(--ok); font-weight: 600; }
+svg .ah { fill: var(--muted); } svg .ah-a { fill: var(--accent); } svg .ah-bad { fill: var(--bad); } svg .ah-ok { fill: var(--ok); }
+.summary { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 14px 18px; margin: 26px 0 16px; box-shadow: var(--shadow); }
+.summary h4 { margin: 0 0 6px; font-size: .95rem; }
+.summary ul { margin: 0; }
+.quiz { margin: 16px 0 8px; }
+.quiz h4 { margin: 0 0 6px; font-size: .95rem; }
+.quiz details { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; margin: 6px 0; font-size: .93rem; }
+.quiz summary { cursor: pointer; font-weight: 500; }
+.quiz details p { margin: 8px 0 4px; color: var(--muted); }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: .9rem; margin: 10px 0 16px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.timeline { list-style: none; padding: 0 0 0 4px; margin: 16px 0; border-left: 2px solid var(--border); }
+.timeline li { position: relative; padding: 0 0 14px 22px; margin: 0; }
+.timeline li::before { content: ""; position: absolute; left: -8px; top: 9px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.timeline li.bad::before { border-color: var(--bad); background: var(--bad-soft); }
+.timeline li.ok::before { border-color: var(--ok); background: var(--ok-soft); }
+.timeline b { display: block; }
+.timeline span { color: var(--muted); font-size: .92rem; }
+.glossary dt { font-weight: 600; margin-top: 12px; }
+.glossary dd { margin: 2px 0 0; color: var(--muted); font-size: .94rem; }
+.tabpanel { display: none; }
+.tabpanel.active { display: block; animation: fadein .18s ease; }
+@keyframes fadein { from { opacity: .4; } to { opacity: 1; } }
+.pager { display: flex; justify-content: space-between; gap: 12px; margin: 36px 0 10px; }
+.pager a { flex: 1; max-width: 48%; display: block; text-decoration: none; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow); font-size: .9rem; }
+.pager a:hover { border-color: var(--accent); }
+.pager a small { display: block; color: var(--muted); font-size: .74rem; }
+.pager a.next { text-align: right; margin-left: auto; }
+footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; }
+
+@media (max-width: 980px) {
+  .layout { display: block; }
+  aside.toc { display: none; }
+  main { padding: 0 16px 60px; }
+  details.mtoc { display: block; position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border);
+    margin: 0 -16px; padding: 10px 16px; font-size: .9rem; }
+  details.mtoc summary { cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  details.mtoc nav { max-height: 65vh; overflow-y: auto; padding-top: 8px; }
+  details.mtoc a { display: block; padding: 5px 2px; color: var(--text); text-decoration: none; }
+  details.mtoc .part { margin: 10px 0 2px; color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+  #theme-m { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 2px 10px; font: inherit; font-size: .78rem; }
+  body { font-size: 16px; }
+  .cover { min-height: auto; padding-top: 36px; }
+  section.front, section.chapter, section.appendix { padding-top: 44px; }
 }
 @media print {
-  nav.toc { display: none; }
-  .card, .panel, .stat, .big li { box-shadow: none; break-inside: avoid; }
+  aside.toc, details.mtoc, #theme { display: none !important; }
+  .layout { display: block; } main { padding: 0; }
+  section.chapter, section.appendix { break-before: page; }
+  pre, figure, .callout, .table-wrap { break-inside: avoid; }
+  .quiz details { display: block; } .quiz details > *:not(summary) { display: block; }
 }
 </style>
 </head>
 <body>
+<div class="layout">
+<aside class="toc" aria-label="สารบัญ">
+  <div class="brand">LayerZero ฉบับลงมือทำ</div>
+  <div class="brand-sub">บทเรียนจาก workshop 16 topics</div>
+  <ol>
+    <li><a href="#home"><span class="n">·</span>หน้าแรก · คำนำ · วิธีอ่าน</a></li>
+  </ol>
+  <div class="part">ภาค 1 · พื้นฐาน LayerZero</div>
+  <ol>
+    <li><a href="#ch1"><span class="n">01</span>Messaging ไม่ใช่ bridge</a></li>
+    <li><a href="#ch2"><span class="n">02</span>ชีวิตของ message หนึ่งตัว</a></li>
+    <li><a href="#ch3"><span class="n">03</span>Security model และ DVN</a></li>
+    <li><a href="#ch4"><span class="n">04</span>OApp บน testnet ทางการ</a></li>
+    <li><a href="#ch5"><span class="n">05</span>OFT: token ข้ามเชน</a></li>
+    <li><a href="#ch6"><span class="n">06</span>Control ของ stablecoin</a></li>
+    <li><a href="#ch7"><span class="n">07</span>lzCompose และ lzRead</a></li>
+    <li><a href="#ch8"><span class="n">08</span>Operations และ incident</a></li>
+  </ol>
+  <div class="part">ภาค 2 · เชื่อม potato-chain</div>
+  <ol>
+    <li><a href="#ch9"><span class="n">09</span>ประเมินความพร้อมของเชน</a></li>
+    <li><a href="#ch10"><span class="n">10</span>เชนคู่และ topology</a></li>
+    <li><a href="#ch11"><span class="n">11</span>Deploy protocol เอง</a></li>
+    <li><a href="#ch12"><span class="n">12</span>เขียน DVN และ Executor</a></li>
+    <li><a href="#ch13"><span class="n">13</span>Bridge POTATO</a></li>
+    <li><a href="#ch14"><span class="n">14</span>Bridge USDC</a></li>
+    <li><a href="#ch15"><span class="n">15</span>Frontend และ indexer</a></li>
+    <li><a href="#ch16"><span class="n">16</span>IBC กับทางไป production</a></li>
+  </ol>
+  <div class="part">ภาคผนวก</div>
+  <ol>
+    <li><a href="#apx-a"><span class="n">A</span>บทเรียนรวม 20 ข้อ</a></li>
+    <li><a href="#apx-b"><span class="n">B</span>แคตตาล็อก bug</a></li>
+    <li><a href="#apx-c"><span class="n">C</span>Checklist ก่อน production</a></li>
+    <li><a href="#apx-d"><span class="n">D</span>คำสั่งที่ใช้บ่อย</a></li>
+    <li><a href="#apx-e"><span class="n">E</span>อภิธานศัพท์</a></li>
+    <li><a href="#apx-f"><span class="n">F</span>ไฟล์และเอกสารอ้างอิง</a></li>
+  </ol>
+  <button id="theme" type="button">ธีม</button>
+</aside>
 
-<header class="hero">
-  <div class="wrap">
-    <div class="eyebrow">stable-coin-L0 · workshop จบ 2026-10-15</div>
-    <h1>บทเรียนจาก LayerZero Workshop 16 topics</h1>
-    <p class="lede">เรียน LayerZero ตั้งแต่พื้นฐานจนเชื่อม potato-chain (EVM บน cosmos/evm, chainId 707070) เข้ากับเชนอื่นได้จริง: bridge POTATO และ USDC, เขียน DVN/Executor เอง, ซ้อมรับมือเหตุโจมตี และใช้งานบน testnet ทางการผ่าน Safe multisig</p>
-    <div class="stats">
-      <div class="stat"><b>16</b><span>topics เสร็จทั้งหมด</span></div>
-      <div class="stat"><b>152</b><span>step ใน runbook</span></div>
-      <div class="stat"><b>109</b><span>commit (small batch)</span></div>
-      <div class="stat"><b>5</b><span>ADR</span></div>
-      <div class="stat"><b>2</b><span>bug ของ cosmos/evm ที่ patch แล้ว</span></div>
-      <div class="stat"><b>1</b><span>drill โจมตี + postmortem</span></div>
-    </div>
+<main>
+<details class="mtoc">
+  <summary><span>สารบัญ</span><button id="theme-m" type="button">ธีม</button></summary>
+  <nav>
+    <a href="#home">หน้าแรก · คำนำ · วิธีอ่าน</a>
+    <div class="part">ภาค 1 · พื้นฐาน</div>
+    <a href="#ch1">1 · Messaging ไม่ใช่ bridge</a><a href="#ch2">2 · ชีวิตของ message</a><a href="#ch3">3 · Security model และ DVN</a>
+    <a href="#ch4">4 · OApp บน testnet</a><a href="#ch5">5 · OFT</a><a href="#ch6">6 · Control ของ stablecoin</a>
+    <a href="#ch7">7 · lzCompose และ lzRead</a><a href="#ch8">8 · Operations และ incident</a>
+    <div class="part">ภาค 2 · potato-chain</div>
+    <a href="#ch9">9 · ความพร้อมของเชน</a><a href="#ch10">10 · เชนคู่และ topology</a><a href="#ch11">11 · Deploy protocol เอง</a>
+    <a href="#ch12">12 · DVN และ Executor</a><a href="#ch13">13 · Bridge POTATO</a><a href="#ch14">14 · Bridge USDC</a>
+    <a href="#ch15">15 · Frontend และ indexer</a><a href="#ch16">16 · IBC กับ production</a>
+    <div class="part">ภาคผนวก</div>
+    <a href="#apx-a">A · บทเรียนรวม</a><a href="#apx-b">B · แคตตาล็อก bug</a><a href="#apx-c">C · Checklist</a>
+    <a href="#apx-d">D · คำสั่ง</a><a href="#apx-e">E · อภิธานศัพท์</a><a href="#apx-f">F · ไฟล์อ้างอิง</a>
+  </nav>
+</details>
+<div class="page">
+
+<div class="tabpanel" id="home">
+<header class="cover">
+  <div class="kicker">stable-coin-L0 · บันทึก workshop · ตุลาคม 2026</div>
+  <h1>LayerZero ฉบับลงมือทำ</h1>
+  <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
+  <div class="meta">
+    <div><b>16</b><span>บท ตาม 16 topics</span></div>
+    <div><b>152</b><span>step ใน runbook</span></div>
+    <div><b>109</b><span>commit แบบ small batch</span></div>
+    <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
+    <div><b>5</b><span>ADR</span></div>
+    <div><b>1</b><span>drill โจมตี + postmortem</span></div>
   </div>
 </header>
 
-<nav class="toc" aria-label="สารบัญ">
-  <div class="wrap">
-    <a href="#top10">10 บทเรียนหลัก</a>
-    <a href="#topics">ราย topic</a>
-    <a href="#drill">drill โจมตี</a>
-    <a href="#bugs">bug ที่เจอ</a>
-    <a href="#decisions">การตัดสินใจ</a>
-    <a href="#gaps">ก่อน production</a>
-    <button id="theme" type="button" aria-label="สลับธีม">ธีม</button>
+<section class="front" id="preface">
+  <div class="ch-num">คำนำ</div>
+  <h2>หนังสือเล่มนี้มาจากไหน</h2>
+  <p>หนังสือเล่มนี้เรียบเรียงจาก workshop ที่ตั้งโจทย์ไว้ข้อเดียวคือ <b>"อยากเข้าใจ LayerZero จริงๆ"</b> แต่เมื่อทำไปเรื่อยๆ โจทย์ก็ขยายเป็น "เอาเชนของเราเอง (potato-chain) มาเชื่อมกับเชนอื่น แล้ว bridge ทั้ง native coin และ stablecoin ให้ได้" และจบที่คำถามว่า "ถ้าจะใช้จริง ต้องทำอะไรอีก"</p>
+  <p>ทุกตัวเลขในเล่มวัดจากเชนจริงทั้งหมด ไม่ว่าจะเป็นค่า gas, เวลาที่ message ใช้เดินทาง, ยอดเงินที่ถูกดูดออกจาก lockbox หรือจำนวนวันที่ IBC client หมดอายุ แต่ละขั้นตอนมีคำสั่งที่รันซ้ำได้ใน <code>workshop-layerzero.xlsx</code> และโค้ดทุกบรรทัดอยู่ใน commit ขนาดเล็กตามแนวทางของหนังสือ <i>Accelerate</i></p>
+  <p>เล่มนี้ไม่ใช่คู่มือแทนเอกสารทางการของ LayerZero แต่เป็นบันทึกว่า<b>เมื่อลงมือทำจริงแล้วเจออะไร</b> หลายบทเรียนที่สำคัญที่สุดไม่ได้มาจากตอนที่ทุกอย่างผ่าน แต่มาจากตอนที่มันพัง เช่น deploy บน Sepolia แล้ว out of gas เพราะเชนเปลี่ยนกฎ gas, message ค้างเพราะ config สองฝั่งไม่ตรงกัน, เครื่องมือตรวจจับที่ถูกหลอกได้ และสคริปต์ที่รายงานว่า "ผ่าน" ทั้งที่ยังไม่ได้ทำอะไรเลย</p>
+  <div class="callout note"><b>สำหรับใคร</b>
+    <p>นักพัฒนาที่เขียน Solidity ได้และรู้จัก EVM แล้วต้องการเข้าใจ cross-chain messaging ในระดับที่ออกแบบระบบเองได้ รวมถึงทีมที่กำลังวางแผนนำ stablecoin หรือ native coin ของเชนตัวเองไปเชื่อมกับเครือข่ายอื่น</p>
   </div>
-</nav>
+</section>
 
-<main class="wrap">
+<section class="front" id="how">
+  <div class="ch-num">ก่อนเริ่ม</div>
+  <h2>วิธีอ่าน และ lab ที่ใช้ตลอดเล่ม</h2>
+  <p>เล่มนี้แบ่งเป็นสองภาค <b>ภาค 1 (บท 1–8)</b> เป็นแนวคิดหลักของ LayerZero ที่ใช้ได้กับทุกเชน <b>ภาค 2 (บท 9–16)</b> เป็นการเชื่อม potato-chain ทีละขั้น ตั้งแต่ตรวจว่าเชนพร้อมไหม ไปจนถึงตัดสินใจเส้นทาง production</p>
+  <p>ลำดับที่ทำจริงไม่ได้ตรงกับเลขบท เพราะ workshop เริ่มที่ภาค 2 ก่อน (สร้าง lab แล้ว bridge ให้ได้) แล้วย้อนกลับมาทำบทของภาค 1 ที่ต้องใช้ lab ตามลำดับความสำคัญ คือ security (บท 3), stablecoin controls (บท 6), testnet (บท 4), lzCompose/lzRead (บท 7) และ operations (บท 8) หนังสือจัดเรียงตามเนื้อหาเพื่อให้อ่านต่อเนื่อง แต่จะบอกไว้เมื่อบทหนึ่งอ้างผลจากอีกบท</p>
 
-<section id="top10">
-  <h2>10 บทเรียนหลัก</h2>
-  <p class="sub">สิ่งที่ควรจำ แม้จะลืมรายละเอียดของแต่ละ topic ไปแล้ว</p>
-  <ol class="big">
-    <li><b>LayerZero ส่งข้อความ ไม่ได้ถือเงิน</b><span>EndpointV2 ถือ 0 ส่วนเงินอยู่ใน OApp ที่เราเขียนเอง ความปลอดภัยของเงินจึงเป็นความรับผิดชอบของเราเกือบทั้งหมด</span></li>
-    <li><b>DVN ตัวเดียว = key ดอกเดียวก็ mint ได้ไม่จำกัด</b><span>drill ปลอม mint ได้ 1,000,000 แล้วดูด lockbox จนหมด ส่วน path ที่ต้องผ่าน 2 DVN อิสระ การโจมตีเดียวกันถูกบล็อกด้วย <code>LZ_ULN_Verifying</code></span></li>
-    <li><b>อย่าพึ่ง default ของ endpoint</b><span>default บน testnet ทางการใช้ DVN ตัวเดียว ทั้ง messaging และ lzRead ต้องตั้ง DVN, pin library และใส่ <code>optionalDVNCount = 255</code> เองทุก OApp</span></li>
-    <li><b>config ฝั่งส่งกับฝั่งรับต้องตรงกัน</b><span>ถ้าไม่ตรง message จะค้าง แก้ config ทีหลังก็ไม่ช่วย message ที่ค้างไปแล้ว ต้องให้ DVN ที่ขาดไป attest เอง</span></li>
-    <li><b>gas ปลายทางต้องวัดจากเชนจริง</b><span>ตั้ง lzReceive ไว้ 100k แต่ใช้จริง 174k (Arbitrum Sepolia) และ 697k (Sepolia) และ forge จำลอง deploy ต่ำกว่าจริง 7.7 เท่า เพราะ Sepolia เปิด Glamsterdam</span></li>
-    <li><b>นับ nonce จับการปลอมไม่ได้เสมอ</b><span>พอ nonce จริงตามทัน ตัวเลขก็ตรงกัน ต้อง audit ด้วย payload hash ทีละ nonce และเฝ้า invariant minted ≤ locked</span></li>
-    <li><b>stablecoin ต้องมี control ตั้งแต่วันแรก</b><span>rate limit, pause, blacklist (แยก role จาก owner) และ quarantine แทน revert เพราะ <code>lzReceive</code> ที่ revert ทำให้ message ค้างถาวร</span></li>
-    <li><b>owner ต้องเป็น multisig และ config ต้องเป็น code</b><span>Safe 2-of-3 คุม OApp และ <code>layerzero.config.ts</code> เป็น source of truth ส่วน DevTools คำนวณ diff ให้ทุกครั้ง</span></li>
-    <li><b>IBC กับ LayerZero ใช้คู่กันได้</b><span>IBC (light client) ไปฝั่ง Cosmos และ LayerZero ทางการไปฝั่ง EVM ส่วน USDC ให้ใช้ของ issuer ไม่ต้อง bridge เอง</span></li>
-    <li><b>infra ที่ไม่มีใครเฝ้าจะพังเงียบๆ</b><span>ไม่มี relayer 14 วัน IBC client ก็หมดอายุทั้งสองฝั่ง ต้องมี relayer รันตลอดและมี alert ก่อนหมดอายุ</span></li>
+  <h3>สภาพแวดล้อมของ lab</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>เชน</th><th>chainId / EID</th><th>บทบาท</th><th>RPC ใน lab</th></tr></thead>
+    <tbody>
+      <tr><td><b>potato-chain</b></td><td class="num">707070 / 40707</td><td>เชนของเรา: EVM บน cosmos/evm v0.7.3, 4 validators (CometBFT) เป็น home ของ POTATO</td><td class="num">localhost:18545</td></tr>
+      <tr><td><b>anvil-home</b></td><td class="num">31338 / 40338</td><td>เชนคู่ใน lab และเป็น home ของ USDC (จำลอง issuer)</td><td class="num">localhost:28545</td></tr>
+      <tr><td><b>Sepolia</b></td><td class="num">11155111 / 40161</td><td>testnet ทางการ ใช้ endpoint, DVN และ executor ของ LayerZero จริง</td><td>public RPC</td></tr>
+      <tr><td><b>Arbitrum Sepolia</b></td><td class="num">421614 / 40231</td><td>testnet ทางการฝั่งที่สอง และเป็นที่ตั้งของ lzRead reader</td><td>public RPC</td></tr>
+      <tr><td><b>gaia-local</b></td><td class="num">gaia-local</td><td>เชน Cosmos สำหรับเส้นทาง IBC (บท 16)</td><td class="num">localhost:27657</td></tr>
+    </tbody>
+  </table></div>
+  <p>ใน lab เราต้อง deploy LayerZero ทั้ง stack เอง (EndpointV2, SendUln302, ReceiveUln302) และเขียน DVN กับ Executor เองด้วย TypeScript เพราะ potato ยังไม่อยู่ในเครือข่ายของ LayerZero ส่วนบน testnet ทางการ เราใช้ของจริงทั้งหมดเพื่อดูว่าโลกจริงต่างจาก lab ตรงไหน</p>
+
+  <h3>โครงสร้าง repo</h3>
+  <pre><code>stable-coin-L0/
+├── lz-potato/          <span class="c"># Foundry: contract, script, test, deployments/*.json</span>
+│   ├── src/lab/        <span class="c"># LabDVN, LabExecutor, PingOApp</span>
+│   ├── src/token/      <span class="c"># PotatoNativeAdapter, UsdcAdapter, UsdcOFT, StablecoinControls</span>
+│   ├── src/compose/    <span class="c"># UsdcVault (ERC-4626), UsdcDepositComposer</span>
+│   ├── src/read/       <span class="c"># CrossChainReader (OAppRead)</span>
+│   └── *.sh            <span class="c"># bridge.sh, check-supply.sh, check-security.sh ...</span>
+├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
+├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
+├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 152 step</span></code></pre>
+
+  <h3>สัญลักษณ์ในเล่ม</h3>
+  <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
+  <div class="callout warn"><b>กับดัก</b><p>สิ่งที่พลาดได้ง่าย หรือที่เราพลาดจริงมาแล้ว</p></div>
+  <div class="callout bad"><b>อันตราย</b><p>สิ่งที่ทำให้เสียเงินหรือเสียข้อมูลถาวร</p></div>
+  <div class="callout lesson"><b>บทเรียน</b><p>ข้อสรุปที่ควรจำไปใช้</p></div>
+</section>
+</div>
+
+<!-- ===================== ภาค 1 ===================== -->
+<section class="chapter tabpanel" id="ch1">
+  <div class="ch-num">บทที่ 1 · TOPIC 1</div>
+  <h2>LayerZero ส่ง "ข้อความ" ไม่ได้ถือ "เงิน"</h2>
+  <p class="lead">ความเข้าใจผิดที่พบบ่อยที่สุดคือคิดว่า LayerZero เป็น bridge บทนี้พิสูจน์ด้วยยอดเงินบนเชนว่ามันไม่ใช่ และอธิบายว่าทำไมเรื่องนี้ถึงเปลี่ยนวิธีคิดเรื่องความปลอดภัยทั้งหมด</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>อธิบายได้ว่า LayerZero เป็น messaging layer และไม่ถือเงินผู้ใช้</div>
+    <div><b>ต้องเตรียม</b>พื้นฐาน blockchain และอ่านเคส bridge hack (Ronin, Wormhole, Nomad)</div>
+    <div><b>ผลลัพธ์</b>ตารางบทบาท, ตารางเทียบ hack 3 เคส, ข้อค้นพบเรื่อง default library</div>
+  </div>
+
+  <h3>1.1 พิสูจน์ด้วยยอดเงิน</h3>
+  <p>ถ้า LayerZero เป็น bridge เงินที่ผู้ใช้ส่งข้ามเชนก็ต้องไปกองอยู่ใน contract ของ LayerZero แต่เมื่อเช็คยอดจริงใน lab (หลังจาก bridge ไปมาแล้วหลายสิบรอบ) ผลออกมาแบบนี้</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ใครถือเงิน</th><th>เป็นของใคร</th><th>ยอด</th></tr></thead>
+    <tbody>
+      <tr><td>EndpointV2 บน potato</td><td>LayerZero (protocol)</td><td class="num"><b>0 POTATO</b></td></tr>
+      <tr><td>EndpointV2 บน anvil</td><td>LayerZero (protocol)</td><td class="num"><b>0 USDC</b></td></tr>
+      <tr><td><code>PotatoNativeAdapter</code></td><td>เรา (OApp)</td><td class="num">68.88 POTATO</td></tr>
+      <tr><td><code>UsdcAdapter</code> v2 / v1</td><td>เรา (OApp)</td><td class="num">852.5 / 20 USDC</td></tr>
+    </tbody>
+  </table></div>
+  <pre><code><span class="c"># step 1.0: endpoint ถือ 0, adapter ของเราถือทั้งหมด</span>
+cast call $USDC 'balanceOf(address)(uint256)' $ENDPOINT --rpc-url http://localhost:28545
+cast call $USDC 'balanceOf(address)(uint256)' $USDC_ADAPTER --rpc-url http://localhost:28545
+cast balance $POTATO_ADAPTER --rpc-url http://localhost:18545</code></pre>
+  <p>"bridge" ที่ผู้ใช้เห็นจริงๆ คือ <b>OApp ที่เราเขียนเอง</b> ได้แก่ <code>OFTAdapter</code>, <code>OFT</code> และ <code>NativeOFTAdapter</code> ซึ่งเป็นคน lock, mint และ burn เหรียญ ส่วน LayerZero ทำแค่นำข้อความ "lock ไว้ X แล้ว ให้ mint X ให้ Y" ไปส่งที่อีกเชน และรับรองว่าข้อความนั้นมาจากต้นทางจริง</p>
+  <div class="callout lesson"><b>บทเรียน</b><p>ความปลอดภัยของเงินเป็นความรับผิดชอบของเจ้าของ OApp ทั้งโค้ดของ OApp, การเลือก DVN, การตั้ง config และ control ฉุกเฉิน LayerZero ให้เครื่องมือมา แต่ไม่ได้ตัดสินใจแทน</p></div>
+
+  <h3>1.2 ใครทำอะไรได้ และทำร้ายเราได้แค่ไหน</h3>
+  <p>วิธีคิดเรื่องความปลอดภัยที่ใช้ได้ผลคือถามทีละผู้เล่นว่า "ถ้าคนนี้เป็นฝ่ายร้าย จะทำอะไรได้" คำตอบด้านล่างไม่ได้มาจากเอกสารอย่างเดียว ทุกแถวมีบทที่ลองทำจริงใน lab</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ผู้เล่น</th><th>หน้าที่</th><th>ถ้าเป็นฝ่ายร้าย ทำอะไรได้</th><th>ลองใน</th></tr></thead>
+    <tbody>
+      <tr><td><b>Endpoint</b> (immutable)</td><td>รับและส่ง message, เก็บ nonce, เรียก <code>lzReceive</code></td><td>ไม่มีใครแก้ code ได้</td><td>บท 9</td></tr>
+      <tr><td><b>เจ้าของ endpoint</b><br><span class="result">(production คือ LayerZero Labs)</span></td><td>ตั้ง <b>default</b> library และ config</td><td>เปลี่ยน default ได้ ซึ่ง<b>มีผลกับ OApp ที่ใช้ default</b> แต่ย้ายเงินของ OApp ไม่ได้</td><td>บท 11</td></tr>
+      <tr><td><b>DVN</b><br><span class="result">(ครบ quorum ที่ OApp เลือก)</span></td><td>ยืนยันว่า packet มีอยู่จริงบนต้นทาง</td><td><b>ปลอม message ได้: mint ได้ไม่จำกัดและดูด lockbox</b></td><td>บท 3</td></tr>
+      <tr><td><b>Executor</b></td><td>ส่งของถึงปลายทาง (commit + <code>lzReceive</code>)</td><td>ปลอมไม่ได้ ทำได้แค่ส่งช้าหรือไม่ส่ง ซึ่งเป็นปัญหาเรื่อง liveness</td><td>บท 12</td></tr>
+      <tr><td><b>เจ้าของ OApp</b> (เรา)</td><td>peers, DVN config, pause, rate limit, blacklist</td><td>ทำได้ทุกอย่างกับแอป จึงต้องเป็น multisig</td><td>บท 6, 8</td></tr>
+    </tbody>
+  </table></div>
+  <p>ตารางนี้บอกว่า <b>จุดที่อันตรายที่สุดคือชุด DVN</b> เพราะ DVN ที่ครบ quorum มีอำนาจรับรองว่า "message นี้จริง" และ OApp จะทำตามโดยไม่ถามอะไรอีก ส่วน executor มีอำนาจน้อยกว่าที่คนส่วนใหญ่คิด เพราะ executor ส่งได้เฉพาะ message ที่ DVN ยืนยันแล้ว</p>
+
+  <h3>1.3 bridge hack ในโลกจริง เทียบกับสิ่งที่เราสร้าง</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>เหตุการณ์</th><th>เกิดอะไรขึ้น</th><th>ประเภท</th><th>ใน lab ของเรา</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ronin</b><br>มี.ค. 2022<br>~$625M</td><td>bridge ต้องใช้ลายเซ็น 5 ใน 9 ผู้โจมตี phishing ได้ key 4 ดอกจากบริษัทเดียวกัน และได้ดอกที่ 5 จากสิทธิ์ของ Axie DAO ที่ลืมถอน กว่าจะรู้ตัวก็ผ่านไป 6 วัน</td><td>key ของผู้ยืนยันหลุด และผู้ยืนยันไม่อิสระต่อกันจริง</td><td>ตรงกับ drill บท 3 (key ของ DVN-A หลุด) ป้องกันด้วย DVN หลายรายที่<b>อิสระจริง</b>, rate limit และ alert ที่เร็ว</td></tr>
+      <tr><td><b>Wormhole</b><br>ก.พ. 2022<br>~$320M</td><td>โปรแกรมบน Solana ไม่ตรวจว่า account ที่ใช้ยืนยันลายเซ็นเป็นของจริง จึงปลอม message ให้ mint 120,000 wETH ได้ทั้งที่ไม่มี ETH ถูก lock</td><td>bug ในโค้ดของผู้ยืนยัน</td><td>ผลเหมือน forged mint ในบท 3 การใช้ DVN ที่ใช้<b>โค้ดคนละชุด</b>ลดผลจาก bug ตัวเดียว และ invariant จับได้ทันที</td></tr>
+      <tr><td><b>Nomad</b><br>ส.ค. 2022<br>~$190M</td><td>upgrade ตามปกติตั้ง trusted root เป็น <code>0x00</code> ซึ่งตรงกับค่าของ message ที่ยังไม่ถูกพิสูจน์ <b>ทุก message จึงผ่าน</b> คนก๊อป tx ของผู้โจมตีไปทำตามเป็นร้อย address</td><td>config/upgrade ผิดพลาด</td><td>endpoint ของ LayerZero immutable แต่<b>config ของ OApp ผิดได้</b> เราเห็นแล้วทั้ง DEMOWEAK ที่ใช้ default แล้วโดนเจาะ และ config ไม่ตรงกันจน message ค้าง</td></tr>
+    </tbody>
+  </table></div>
+  <p>ทั้งสามเหตุการณ์จบแบบเดียวกัน คือ <b>mint หรือถอนเงินได้โดยไม่มีของจริงรองรับ</b> และสิ่งที่ช่วยได้ทุกกรณีมีสี่อย่าง</p>
+  <ol>
+    <li><b>ผู้ยืนยันหลายรายที่อิสระต่อกัน</b> ทั้งคนละองค์กร คนละ key และคนละ codebase</li>
+    <li><b>เพดานความเสียหายต่อช่วงเวลา</b> (rate limit) เพื่อให้เสียได้ไม่เกินที่รับได้ ระหว่างที่ยังไม่มีใครรู้ตัว</li>
+    <li><b>ตรวจ invariant แบบ real-time</b> ว่ายอดที่ mint ไม่เกินยอดที่ lock</li>
+    <li><b>สวิตช์หยุดฉุกเฉิน</b> (pause หรือ BlockedMessageLib)</li>
+  </ol>
+  <p>สี่ข้อนี้คือโครงของภาค 1 ทั้งหมด: บท 3 ว่าด้วยข้อ 1, บท 6 ว่าด้วยข้อ 2 และ 4, บท 8 ว่าด้วยข้อ 3 และการรับมือเมื่อทุกอย่างล้มเหลว</p>
+
+  <h3>1.4 ข้อค้นพบ: เรายังพึ่ง default อยู่โดยไม่รู้ตัว</h3>
+  <p>ระหว่างเขียนตารางบทบาท เราพบว่า OApp ของเราตั้ง DVN เองแล้ว แต่ <b>send library และ receive library ยังใช้ default ของ endpoint</b> แปลว่าถ้าเจ้าของ endpoint เปลี่ยน default library ข้อความของเราจะไปวิ่งผ่าน library ใหม่ทันทีโดยเราไม่ได้ตัดสินใจ</p>
+  <div class="callout warn"><b>กับดัก</b><p>"ตั้ง config เองแล้ว" ไม่ได้แปลว่าไม่ได้พึ่ง default เลย config ของ OApp มีหลายชั้น (library, ULN config, executor config) และชั้นที่ไม่ได้ตั้งจะ fallback ไปที่ default เสมอ ทางแก้คือ pin library ด้วย <code>setSendLibrary</code> และ <code>setReceiveLibrary</code> ซึ่งทำในบท 8</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 1</h4><ul>
+    <li>LayerZero เป็น messaging layer ส่วนเงินอยู่ใน OApp ที่เราเขียน</li>
+    <li>DVN ที่ครบ quorum มีอำนาจสูงสุด ส่วน executor ทำได้แค่เรื่อง liveness</li>
+    <li>bridge hack ทุกเคสคือ "mint โดยไม่มีของรองรับ" ป้องกันด้วยผู้ยืนยันที่อิสระ, rate limit, invariant และ pause</li>
+    <li>ต้องตรวจทุกชั้นของ config ว่ายังพึ่ง default ตรงไหน</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ถ้า LayerZero Labs ถูกเจาะ เงินใน UsdcAdapter จะถูกย้ายออกได้ไหม</summary><p>ย้ายตรงๆ ไม่ได้ เพราะ endpoint ไม่ได้ถือเงินและไม่มีสิทธิ์สั่ง adapter แต่เจ้าของ endpoint เปลี่ยน default library และ default config ได้ OApp ที่ยังใช้ default (เช่นไม่ได้ pin library หรือใช้ DVN ตาม default) จึงอาจถูกเปลี่ยนเส้นทางการยืนยันได้ OApp ที่ตั้ง config เองครบทุกชั้นจะไม่ได้รับผล</p></details>
+    <details><summary>Executor ที่ถูกเจาะทำอะไรได้ และทำอะไรไม่ได้</summary><p>ทำได้แค่ไม่ส่งหรือส่งช้า (เหมือนตอน worker ปิดในบท 12) ปลอม message ไม่ได้เพราะ endpoint จะรับเฉพาะ payload ที่ DVN ยืนยันแล้วเท่านั้น และใครก็เรียก lzReceive แทน executor ได้</p></details>
+    <details><summary>Ronin ใช้ 5 ใน 9 ทำไมถึงยังไม่พอ</summary><p>เพราะ 4 ใน 9 key อยู่ในองค์กรเดียวกัน และอีกหนึ่งดอกเข้าถึงได้ผ่านสิทธิ์ที่ลืมถอน จำนวนผู้ยืนยันจึงไม่ได้สะท้อนความอิสระจริง ความปลอดภัยมาจากจำนวนฝ่ายที่<b>ต้องถูกเจาะพร้อมกัน</b> ไม่ใช่จำนวน key</p></details>
+    <details><summary>ถ้ามีคนปลอม message แต่ supply รวมยังเท่าเดิม (ปลอมแล้วเผาทิ้ง) check-supply จะจับได้ไหม</summary><p>การเทียบ locked กับ minted อย่างเดียวจับไม่ได้ ต้องใช้ audit ที่เทียบ payload hash ของแต่ละ nonce กับ packet ที่ถูกส่งจริงบนต้นทาง (บท 8)</p></details>
+  </div>
+</section>
+
+<section class="chapter tabpanel" id="ch2">
+  <div class="ch-num">บทที่ 2 · TOPIC 2</div>
+  <h2>ชีวิตของ message หนึ่งตัว</h2>
+  <p class="lead">ถ้าไล่ได้ว่า message หนึ่งตัวผ่านอะไรบ้าง ตั้งแต่ถูกส่งจนไปถึงปลายทาง ทุกบทหลังจากนี้จะเข้าใจง่ายขึ้นมาก เพราะทุกปัญหาที่เจอคือ message ที่ติดอยู่ที่ขั้นใดขั้นหนึ่ง</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ไล่ lifecycle ได้: send → DVN verify → commit → lzReceive</div>
+    <div><b>ต้องเตรียม</b>เข้าใจ event/log ของ EVM, เปิด LayerZero Scan ได้</div>
+    <div><b>ผลลัพธ์</b>relay ด้วยมือได้ทุกขั้น (บท 9, 11) แล้วจึงทำให้อัตโนมัติ (บท 12)</div>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 720 330" role="img" aria-label="ขั้นตอนของ message จากเชนต้นทางไปเชนปลายทาง">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-a"/></marker>
+      </defs>
+      <text x="110" y="26" class="t-b" text-anchor="middle">เชนต้นทาง</text>
+      <text x="610" y="26" class="t-b" text-anchor="middle">เชนปลายทาง</text>
+      <rect x="30" y="44" width="160" height="44" rx="8" class="box-a"/><text x="110" y="71" text-anchor="middle">OApp._lzSend</text>
+      <rect x="30" y="118" width="160" height="44" rx="8" class="box"/><text x="110" y="145" text-anchor="middle">EndpointV2.send</text>
+      <rect x="30" y="192" width="160" height="60" rx="8" class="box"/><text x="110" y="216" text-anchor="middle">SendUln302</text><text x="110" y="236" text-anchor="middle" class="t-s">assign DVN + executor</text>
+      <line x1="110" y1="88" x2="110" y2="116" class="ln" marker-end="url(#m1)"/>
+      <line x1="110" y1="162" x2="110" y2="190" class="ln" marker-end="url(#m1)"/>
+      <text x="110" y="280" text-anchor="middle" class="t-a">event PacketSent</text>
+      <text x="110" y="298" text-anchor="middle" class="t-s">(header + payload, nonce, GUID)</text>
+      <rect x="280" y="120" width="160" height="56" rx="8" class="box-info"/><text x="360" y="144" text-anchor="middle" class="t-b">DVN (off-chain)</text><text x="360" y="163" text-anchor="middle" class="t-s">รอ confirmations</text>
+      <rect x="280" y="214" width="160" height="56" rx="8" class="box-info"/><text x="360" y="238" text-anchor="middle" class="t-b">Executor (off-chain)</text><text x="360" y="257" text-anchor="middle" class="t-s">รอจน DVN ครบ</text>
+      <path d="M190,222 C230,222 240,150 278,148" class="ln-a" marker-end="url(#m1a)"/>
+      <path d="M190,236 C230,236 240,242 278,242" class="ln-a" marker-end="url(#m1a)"/>
+      <rect x="530" y="44" width="160" height="60" rx="8" class="box"/><text x="610" y="68" text-anchor="middle">ReceiveUln302.verify</text><text x="610" y="88" text-anchor="middle" class="t-s">เก็บลายเซ็นของ DVN</text>
+      <rect x="530" y="134" width="160" height="60" rx="8" class="box"/><text x="610" y="158" text-anchor="middle">commitVerification</text><text x="610" y="178" text-anchor="middle" class="t-s">PacketVerified</text>
+      <rect x="530" y="224" width="160" height="60" rx="8" class="box-ok"/><text x="610" y="248" text-anchor="middle">Endpoint.lzReceive</text><text x="610" y="268" text-anchor="middle" class="t-s">OApp._lzReceive · PacketDelivered</text>
+      <path d="M440,140 C480,140 490,74 528,74" class="ln" marker-end="url(#m1)"/>
+      <path d="M440,236 C480,236 490,170 528,166" class="ln" marker-end="url(#m1)"/>
+      <path d="M440,250 C480,250 490,254 528,254" class="ln" marker-end="url(#m1)"/>
+      <line x1="610" y1="104" x2="610" y2="132" class="ln" marker-end="url(#m1)"/>
+      <line x1="610" y1="194" x2="610" y2="222" class="ln" marker-end="url(#m1)"/>
+      <text x="475" y="312" class="t-s" text-anchor="middle">gas ที่วัดได้บน potato: verify 55,615 · commit 79,357 · lzReceive 173,989</text>
+    </svg>
+    <figcaption>รูป 2.1 · เส้นทางของ message หนึ่งตัว: ฝั่งต้นทางจบที่ event, งานข้ามเชนทำโดย off-chain worker, ฝั่งปลายทางมี 3 tx</figcaption>
+  </figure>
+
+  <h3>2.1 ฝั่งต้นทาง: จบที่ event</h3>
+  <p>เมื่อ OApp เรียก <code>_lzSend(dstEid, message, options, fee, refundAddress)</code> สิ่งที่เกิดขึ้นบนต้นทางมีแค่ใน tx เดียว</p>
+  <ol>
+    <li><b>Endpoint</b> เพิ่ม outbound nonce ของ path (OApp ต้นทาง, EID ปลายทาง, peer ปลายทาง) แล้วสร้าง packet ซึ่งมี GUID ไม่ซ้ำกัน</li>
+    <li><b>SendUln302</b> (send library ตาม config ของ OApp) คิดค่าธรรมเนียมของ DVN ทุกตัวและ executor แล้ว<b>มอบงาน</b>ให้แต่ละตัว ซึ่งเห็นได้จาก event <code>JobAssigned</code> ที่ contract ของ DVN</li>
+    <li>emit <code>PacketSent(encodedPacket, options, sendLibrary)</code> ซึ่งเป็นสิ่งเดียวที่ off-chain worker ใช้รู้ว่ามีงาน</li>
+  </ol>
+  <p>ค่าธรรมเนียมทั้งหมดจ่ายครั้งเดียวบนต้นทาง (<code>quote</code> แล้วส่ง <code>msg.value</code>) ส่วน <code>options</code> คือสิ่งที่ผู้ส่งขอ เช่น "ให้ executor ใช้ gas 100,000 ตอนเรียก lzReceive" ซึ่งกลายเป็นต้นเหตุของปัญหาในบท 4</p>
+
+  <h3>2.2 ระหว่างทาง: งานของ off-chain worker</h3>
+  <p><b>DVN</b> ดู event <code>PacketSent</code> แล้วรอให้ block ของ packet ผ่านจำนวน confirmations ที่ config กำหนด (กันการ reorg) จากนั้นเรียก <code>verify(header, payloadHash, confirmations)</code> บน ReceiveUln302 ของปลายทาง DVN แต่ละตัวเซ็นเอง ไม่รับข้อมูลต่อจาก DVN อื่น</p>
+  <p><b>Executor</b> รอจนครบ quorum ของ DVN แล้วทำสองอย่างบนปลายทาง คือเรียก <code>commitVerification</code> ให้ endpoint บันทึก payload hash ที่ผ่านการยืนยันแล้ว และเรียก <code>lzReceive</code> เพื่อส่ง message ให้ OApp</p>
+  <div class="callout note"><b>ทุกคนเป็น executor ได้</b><p>หลังจาก DVN ยืนยันครบแล้ว ใครก็เรียก <code>commitVerification</code> และ <code>lzReceive</code> ได้ เพราะ endpoint ตรวจ payload กับ hash ที่ยืนยันแล้วเสมอ ความจริงข้อนี้ช่วยเราไว้สองครั้ง คือกู้ message ที่ FAILED บน testnet (บท 4) และกู้ message ที่ค้างตอน worker ปิด (บท 12)</p></div>
+
+  <h3>2.3 ฝั่งปลายทาง: 3 tx และ 3 event</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ขั้น</th><th>ใครเรียก</th><th>event บน endpoint</th><th>gas (potato)</th></tr></thead>
+    <tbody>
+      <tr><td>verify</td><td>DVN แต่ละตัว</td><td>(event ใน ReceiveUln302)</td><td class="num">55,615</td></tr>
+      <tr><td>commitVerification</td><td>executor หรือใครก็ได้</td><td><code>PacketVerified</code></td><td class="num">79,357</td></tr>
+      <tr><td>lzReceive</td><td>executor หรือใครก็ได้</td><td><code>PacketDelivered</code></td><td class="num">173,989</td></tr>
+    </tbody>
+  </table></div>
+  <p>ใน lab เราตรวจว่า message ผ่านครบทุกด่านด้วยการนับ event บน endpoint ผลคือ 1 / 1 / 1 ตรงกัน (step 9.12) และค่า gas บน potato ต่างจาก anvil แค่ 12 gas ต่อขั้น ซึ่งยืนยันว่า EVM ของ potato ทำงานเหมือน Ethereum</p>
+
+  <h3>2.4 nonce: ตัวบอกว่ามีอะไรค้าง</h3>
+  <p>ทุก path มี nonce สองตัว คือ <b>outbound nonce</b> บนต้นทาง (ส่งไปแล้วกี่ตัว) และ <b>inbound nonce</b> บนปลายทาง (รับมาแล้วถึงตัวไหน) ถ้า outbound มากกว่า inbound แปลว่ามี message อยู่ระหว่างทาง ใน lab เราใช้การเทียบนี้เป็นเครื่องมือแรกในการหาของที่ค้าง</p>
+  <pre><code><span class="c"># step 11.8: out ต้องเท่ากับ in ถ้าไม่มีอะไรค้าง</span>
+cast call $EP_ANVIL  'outboundNonce(address,uint32,bytes32)(uint64)' $PING 40707 $PEER
+cast call $EP_POTATO 'inboundNonce(address,uint32,bytes32)(uint64)'  $PING 40338 $PEER</code></pre>
+  <div class="callout warn"><b>กับดัก</b><p>nonce บอกได้ว่า "มีของค้าง" แต่บอกไม่ได้ว่า "ของที่ถึงเป็นของจริง" ในบท 8 เราเจอว่าการนับ nonce ถูกหลอกได้เมื่อ message ปลอมไปแย่ง nonce แล้ว message จริงที่ตามมาทำให้ตัวเลขกลับมาตรงกัน</p></div>
+
+  <h3>2.5 relay ด้วยมือก่อนทำให้อัตโนมัติ</h3>
+  <p>ใน lab เราทำทุกขั้นด้วยมือผ่าน <code>Relay.s.sol</code> ก่อน (ทำหน้าที่ทั้ง DVN และ executor ใน script เดียว) แล้วจึงเขียน worker ในบท 12 การเห็นแต่ละ tx ด้วยตาช่วยให้เวลาเจอปัญหารู้ทันทีว่าติดอยู่ที่ขั้นไหน</p>
+  <pre><code>./lab-crosschain.sh potato anvil
+<span class="c"># == sent on potato in block N</span>
+<span class="c"># == PacketSent on potato after 1 confirmation(s)</span>
+<span class="c"># == anvil Ping.received: 0 -> 1</span>
+<span class="c"># == anvil Ping.lastSrcEid: 40707</span></code></pre>
+
+  <div class="summary"><h4>สรุปบทที่ 2</h4><ul>
+    <li>ต้นทางจบที่ <code>PacketSent</code> ส่วนปลายทางมี verify (ต่อ DVN), commit และ lzReceive</li>
+    <li>ผู้ส่งจ่ายค่าธรรมเนียมทั้งหมดบนต้นทาง และกำหนด gas ปลายทางผ่าน options</li>
+    <li>หลัง DVN ยืนยันครบ ใครก็ส่งของต่อได้ ทำให้กู้ message ที่ค้างได้เสมอ</li>
+    <li>outbound กับ inbound nonce บอกว่ามีของค้าง แต่ไม่ได้พิสูจน์ว่าของที่ถึงเป็นของจริง</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch3">
+  <div class="ch-num">บทที่ 3 · TOPIC 3</div>
+  <h2>Security model: DVN ตัวเดียวพอไหม</h2>
+  <p class="lead">บทที่สำคัญที่สุดในเล่ม เราไม่ได้แค่อ่านว่า "ควรใช้ DVN หลายตัว" แต่ลงมือโจมตี token ทดลองสองชุดด้วย key ที่ "หลุด" แล้วดูว่าชุดไหนรอด</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ออกแบบ DVN set, threshold และ confirmations ที่เหมาะกับ stablecoin</div>
+    <div><b>ต้องเตรียม</b>เข้าใจ lifecycle (บท 2), DVN อิสระอย่างน้อย 2 ราย</div>
+    <div><b>ผลลัพธ์</b>พิสูจน์ว่า path ที่มี DVN ตัวเดียวถูกเจาะได้ด้วย key ดอกเดียว และ 2 DVN กันได้</div>
+  </div>
+
+  <h3>3.1 ULN config: หกค่าที่กำหนดความปลอดภัย</h3>
+  <p>ความปลอดภัยของ path หนึ่งๆ กำหนดด้วย <code>UlnConfig</code> ที่ OApp ตั้งผ่าน <code>endpoint.setConfig</code> (config type 2) แยกฝั่งส่งและฝั่งรับ</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ฟิลด์</th><th>ความหมาย</th><th>ค่าที่เราใช้</th></tr></thead>
+    <tbody>
+      <tr><td><code>confirmations</code></td><td>DVN ต้องรอกี่ block บนต้นทางก่อนยืนยัน</td><td>1 ใน lab (finality ทันที), 2 และ 5 บน testnet</td></tr>
+      <tr><td><code>requiredDVNCount</code></td><td>จำนวน DVN ที่<b>ต้อง</b>ยืนยันทุกตัว</td><td>2</td></tr>
+      <tr><td><code>requiredDVNs</code></td><td>address ของ DVN ข้างบน (เรียงจากน้อยไปมาก)</td><td>LabDVN_B + LabDVN_C / LayerZero Labs + Nethermind</td></tr>
+      <tr><td><code>optionalDVNCount</code></td><td>จำนวน DVN ทางเลือก (<b>255 = ไม่มีเลยและห้ามใช้ default</b>)</td><td>255 (หลังบท 8)</td></tr>
+      <tr><td><code>optionalDVNThreshold</code></td><td>ต้องได้ optional DVN อย่างน้อยกี่ตัว</td><td>0</td></tr>
+      <tr><td><code>optionalDVNs</code></td><td>address ของ optional DVN</td><td>[]</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>กับดัก: 0 ไม่ได้แปลว่า "ไม่มี"</b><p>ใน ULN ค่า 0 ของ count แปลว่า "ใช้ค่า default" ส่วนค่า "ไม่มี" จริงๆ ต้องใช้ 255 (NIL) ในบท 8 DevTools พบว่า Ping บน testnet ยังมี <code>optionalDVNCount = 0</code> หมายความว่าถ้า LayerZero เพิ่ม optional DVN ใน default ในอนาคต OApp ของเราจะได้ตามไปด้วยโดยไม่รู้ตัว</p></div>
+  <p>ถ้า OApp ไม่เคยตั้ง config เอง จะได้ <b>default ของ endpoint</b> ซึ่งทั้งใน lab และบน testnet ทางการต้องผ่าน <b>DVN แค่ตัวเดียว</b> (step 4.2 อ่าน default ของ Sepolia ได้ <code>(2, 1, 0, 0, [LayerZero Labs DVN], [])</code>)</p>
+
+  <h3>3.2 ตั้งฉากการทดลอง</h3>
+  <p>การปลอม message จะกิน nonce ของ path ไปถาวร เราจึงไม่ทดลองกับ POTATO หรือ USDC แต่สร้าง token ทิ้งได้สองชุด</p>
+  <ul>
+    <li><b>DEMOWEAK</b>: ไม่ตั้ง security เอง จึงใช้ default คือ DVN-A ตัวเดียว</li>
+    <li><b>DEMOSAFE</b>: ตั้งให้ต้องผ่าน DVN-A <b>และ</b> DVN-B ซึ่งเป็น operator คนละคน ใช้ key คนละดอก</li>
+  </ul>
+  <p>สมมติฐานของการโจมตีคือ <b>key ของ DVN-A หลุด</b> ซึ่งเป็นเหตุการณ์แบบเดียวกับ Ronin</p>
+
+  <figure>
+    <svg viewBox="0 0 720 260" role="img" aria-label="เปรียบเทียบ path ที่มี DVN ตัวเดียวกับสองตัวเมื่อ key ของ DVN-A หลุด">
+      <defs>
+        <marker id="m3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-bad"/></marker>
+        <marker id="m3o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-ok"/></marker>
+      </defs>
+      <text x="180" y="26" text-anchor="middle" class="t-b">DEMOWEAK · ต้องผ่าน 1 DVN</text>
+      <text x="540" y="26" text-anchor="middle" class="t-b">DEMOSAFE · ต้องผ่าน 2 DVN</text>
+      <line x1="360" y1="12" x2="360" y2="248" class="ln" stroke-dasharray="3 5"/>
+      <rect x="40" y="50" width="120" height="44" rx="8" class="box-bad"/><text x="100" y="77" text-anchor="middle">ผู้โจมตี + key A</text>
+      <rect x="200" y="50" width="120" height="44" rx="8" class="box"/><text x="260" y="77" text-anchor="middle">DVN-A ✓</text>
+      <line x1="160" y1="72" x2="198" y2="72" class="ln-bad" marker-end="url(#m3b)"/>
+      <rect x="110" y="134" width="140" height="44" rx="8" class="box-bad"/><text x="180" y="155" text-anchor="middle" class="t-bad">quorum ครบ 1/1</text><text x="180" y="171" text-anchor="middle" class="t-s">ปลายทางเชื่อ</text>
+      <line x1="260" y1="94" x2="210" y2="132" class="ln-bad" marker-end="url(#m3b)"/>
+      <text x="180" y="214" text-anchor="middle" class="t-bad">mint 1,000,000 ไม่มีของรองรับ</text>
+      <text x="180" y="234" text-anchor="middle" class="t-s">แล้วดูด lockbox 100 → 0</text>
+      <rect x="390" y="50" width="120" height="44" rx="8" class="box-bad"/><text x="450" y="77" text-anchor="middle">ผู้โจมตี + key A</text>
+      <rect x="560" y="50" width="120" height="44" rx="8" class="box"/><text x="620" y="77" text-anchor="middle">DVN-A ✓</text>
+      <rect x="560" y="112" width="120" height="44" rx="8" class="box-ok"/><text x="620" y="133" text-anchor="middle">DVN-B ✗</text><text x="620" y="149" text-anchor="middle" class="t-s">ไม่มี key</text>
+      <line x1="510" y1="72" x2="558" y2="72" class="ln-bad" marker-end="url(#m3b)"/>
+      <rect x="460" y="176" width="140" height="44" rx="8" class="box-ok"/><text x="530" y="197" text-anchor="middle" class="t-ok">quorum 1/2</text><text x="530" y="213" text-anchor="middle" class="t-s">LZ_ULN_Verifying</text>
+      <line x1="620" y1="156" x2="580" y2="174" class="ln-ok" marker-end="url(#m3o)"/>
+      <text x="530" y="244" text-anchor="middle" class="t-ok">ผู้โจมตีได้ 0 · invariant ✅</text>
+    </svg>
+    <figcaption>รูป 3.1 · การโจมตีเดียวกัน ผลต่างกันเพราะจำนวน DVN ที่ต้องถูกเจาะพร้อมกัน</figcaption>
+  </figure>
+
+  <h3>3.3 การโจมตี DEMOWEAK</h3>
+  <ol class="steps">
+    <li><b>baseline</b> โอน DEMOWEAK จริง 100 จาก anvil ไป potato ให้มีของจริงอยู่ใน lockbox <span class="result">ผล: locked 100 = minted 100 ✅</span></li>
+    <li><b>ปลอม mint</b> สคริปต์ <code>ForgeMint.s.sol</code> ใช้ key ของ DVN-A สร้าง packet ปลอมว่า "anvil lock ไว้ 1,000,000 แล้ว" จากนั้น verify, commit และ lzReceive เอง
+      <pre><code>PRIVATE_KEY=$DVN_KEY ASSET=DEMOWEAK AMOUNT=1000000 \
+  forge script script/ForgeMint.s.sol --rpc-url http://localhost:18545 --broadcast</code></pre>
+      <span class="result">ผล: <b>ผู้โจมตีได้ 1,000,000 DEMOWEAK.lz โดยไม่มีอะไรถูก lock</b> และ <code>check-supply.sh</code> ขึ้น ❌ FORGED</span></li>
+    <li><b>ดูด lockbox</b> ผู้โจมตีส่ง 100 จากของปลอมกลับไป anvil ระบบทำงานถูกต้องทุกอย่าง คือ burn บน potato แล้ว unlock บน anvil <span class="result">ผล: <b>lockbox 100 → 0</b> ผู้โจมตีได้ DEMOWEAK จริง 100 ส่วนผู้ใช้จริงถือเหรียญที่ไม่มีหลักประกันเหลืออยู่</span></li>
+  </ol>
+  <div class="callout bad"><b>อันตราย</b><p>ความเสียหายจริงของ bridge hack ไม่ได้อยู่ที่เหรียญปลอมที่ mint ออกมา แต่อยู่ที่<b>ของจริงใน lockbox</b> ที่ถูกถอนออกไปด้วยเหรียญปลอม เพราะเหรียญปลอมกับเหรียญจริงบนปลายทางแยกจากกันไม่ได้</p></div>
+
+  <h3>3.4 การโจมตี DEMOSAFE</h3>
+  <p>ก่อนโจมตีเราเปิด DVN-B worker ซึ่งเป็น operator คนที่สอง worker ตัวนี้ยืนยันเฉพาะงานที่ถูก assign ให้ตัวเองเท่านั้น (มันข้ามข้อความเก่า 42 ตัวเพราะไม่เคยถูก assign) แล้วทดสอบการโอนปกติก่อน เพื่อยืนยันว่า config ที่เข้มขึ้นไม่ทำให้ของจริงพัง (delivered ใน 7 วินาที โดยทั้ง A และ B verify)</p>
+  <p>จากนั้นใช้การโจมตีเดิมทุกอย่าง ผลคือสคริปต์รายงาน <code>BLOCKED: requires DVNs: 2</code> และถ้าบังคับให้ส่งต่อ (<code>FORCE=true</code>) endpoint จะ revert ด้วย <code>LZ_ULN_Verifying()</code> <b>ผู้โจมตีได้ 0 และ invariant ยัง ✅</b></p>
+
+  <h3>3.5 config สองฝั่งต้องตรงกัน</h3>
+  <p>การทดลองที่สองในบทนี้ตอบคำถามว่า "ถ้าฝั่งส่งกับฝั่งรับตั้งไม่เหมือนกันจะเกิดอะไร" เราตั้งให้ฝั่งส่งบน anvil assign งานให้ DVN-A ตัวเดียว แต่ฝั่งรับบน potato ต้องการ A + B</p>
+  <ol class="steps">
+    <li><b>ส่ง 10 DEMOSAFE</b> <span class="result">ผล: ไม่ถึงหลัง 90 วินาที DVN-A verify แล้ว แต่ DVN-B บอกว่า "not assigned, skip" ส่วน executor รอไม่สิ้นสุด และ check-supply ขึ้น ⏳ 10</span></li>
+    <li><b>แก้ config กลับให้ตรงกัน</b> <span class="result">ผล: <b>ยังค้างอยู่</b> เพราะการแก้ config มีผลกับ message ใหม่เท่านั้น ไม่ได้ย้อนไป assign งานเก่าให้ DVN-B</span></li>
+    <li><b>ให้ DVN-B attest เอง</b> operator ตรวจ packet บนต้นทางด้วยตัวเองแล้วเซ็น (ไม่รับข้อมูลต่อจากใคร)
+      <pre><code>DVN_ID=LabDVN_B DVN_KEY_VAR=DVN_B_KEY npm run attest -- anvil $DEMOSAFE 2</code></pre>
+      <span class="result">ผล: delivered ภายใน 3 วินาทีหลัง attest</span></li>
+  </ol>
+  <div class="callout lesson"><b>บทเรียน</b><p>ก่อนเปลี่ยน DVN config ต้องแน่ใจว่าไม่มี message ค้างอยู่ และต้องเปลี่ยนทั้งสองฝั่งให้ใกล้กันที่สุด ถ้ามี pause ให้ pause ก่อน วิธีนี้กลายเป็นขั้นตอนมาตรฐานในบท 8</p></div>
+
+  <h3>3.6 "อิสระ" แปลว่าอะไร</h3>
+  <p>DVN สองตัวที่รันโดยทีมเดียวกัน ใช้ server เดียวกัน หรือ key อยู่ใน vault เดียวกัน ไม่ได้ปลอดภัยกว่า DVN ตัวเดียวมากนัก ความอิสระที่ต้องการมีหลายมิติ</p>
+  <ul>
+    <li><b>องค์กร</b>: คนละบริษัท ไม่มีใครสั่งอีกฝ่ายได้</li>
+    <li><b>key management</b>: คนละ HSM คนละขั้นตอนการเข้าถึง</li>
+    <li><b>codebase</b>: ลดโอกาสที่ bug ตัวเดียวจะทำให้ทุกตัวยืนยันผิดพร้อมกัน (บทเรียนจาก Wormhole)</li>
+    <li><b>แหล่งข้อมูล</b>: อ่าน RPC ของต้นทางจากคนละ node</li>
+  </ul>
+  <p>บน testnet เราเลือก <b>LayerZero Labs + Nethermind</b> สำหรับ messaging และ <b>LayerZero Labs + Horizen</b> สำหรับ lzRead</p>
+
+  <div class="summary"><h4>สรุปบทที่ 3</h4><ul>
+    <li>default ของ endpoint ใช้ DVN ตัวเดียว ทั้งใน lab และบน testnet ทางการ</li>
+    <li>path ที่มี DVN ตัวเดียว: key หลุดหนึ่งดอก = mint ได้ไม่จำกัดและดูด lockbox ได้</li>
+    <li>path ที่ต้องผ่าน 2 DVN อิสระ: การโจมตีเดียวกันถูกบล็อกที่ <code>LZ_ULN_Verifying</code></li>
+    <li>config ฝั่งส่งและฝั่งรับต้องตรงกัน ไม่งั้น message ค้าง และแก้ config ทีหลังไม่ช่วย message เก่า</li>
+    <li><code>optionalDVNCount = 0</code> คือ "ใช้ default" ส่วน "ไม่มี" ต้องเป็น 255</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ทำไม DEMOSAFE ยังถูก check-security ตั้งธงว่าเสี่ยงหลังจาก A หลุด ทั้งที่การโจมตีถูกบล็อก</summary><p>เพราะ DEMOSAFE ยังเชื่อ DVN-A ซึ่งหลุดไปแล้ว ตอนนี้ความปลอดภัยของมันเหลือเท่ากับ DVN-B ตัวเดียว ถ้า B หลุดอีกดอกก็โดนเจาะ จึงต้องย้ายไปใช้ B + C (บท 8)</p></details>
+    <details><summary>ใน drill config mismatch ทำไมการแก้ config แล้ว message เก่าไม่ถึง</summary><p>เพราะการ assign งานให้ DVN เกิดตอนส่ง (บน SendUln302 ของต้นทาง) message เก่าถูก assign ให้ A ตัวเดียวไปแล้ว DVN-B จึงไม่เคยได้รับงานนั้น ต้องให้ B ตรวจและ attest เองด้วยมือ</p></details>
+  </div>
+</section>
+
+<section class="chapter tabpanel" id="ch4">
+  <div class="ch-num">บทที่ 4 · TOPIC 4</div>
+  <h2>OApp บน testnet ทางการ: โลกจริงไม่เหมือน lab</h2>
+  <p class="lead">ใน lab เราคุมทุกอย่าง แต่บน testnet ของจริง endpoint, DVN และ executor เป็นของ LayerZero บทนี้ deploy Ping บน Sepolia และ Arbitrum Sepolia แล้วพังสามครั้งก่อนจะส่งได้</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>deploy OApp บน 2 testnet แล้วส่งข้อความข้ามเชนได้</div>
+    <div><b>ต้องเตรียม</b>wallet ใหม่, RPC และ testnet ETH บนทั้งสองเชน</div>
+    <div><b>ผลลัพธ์</b>ping ไปและกลับอัตโนมัติใน 94 และ 142 วินาที</div>
+  </div>
+
+  <h3>4.1 ทำไมต้องใช้ testnet อื่น ในเมื่อ potato ไม่มี testnet</h3>
+  <p>potato ยังไม่อยู่ในเครือข่ายของ LayerZero จึงต่อกับ endpoint ทางการไม่ได้ เราจึงใช้ Sepolia เป็น "ตัวแทน" ของ potato เพื่อเรียนสิ่งที่ lab ให้ไม่ได้ ได้แก่ DVN และ executor ของจริง, ค่าธรรมเนียมจริง, LayerZero Scan และพฤติกรรมของเชนที่เราไม่ได้คุม</p>
+
+  <h3>4.2 เตรียมของ</h3>
+  <ul>
+    <li><b>wallet ใหม่</b> สร้างด้วย <code>cast wallet new</code> ใช้เฉพาะ workshop ห้ามใช้ wallet ที่มีเงินจริง key อยู่ใน <code>.env</code> ซึ่ง gitignore ไว้และไม่เคยถูกพิมพ์ลงแชทหรือ commit</li>
+    <li><b>testnet ETH</b> faucet ส่วนใหญ่ (เช่น Alchemy) ปฏิเสธเพราะ wallet ใหม่ไม่มียอดบน mainnet สิ่งที่ใช้ได้คือ faucet ของ Google Cloud สำหรับ Sepolia แล้ว bridge ส่วนหนึ่งไป Arbitrum Sepolia ผ่าน Inbox ทางการ (มาถึงในราว 10 นาที)</li>
+  </ul>
+  <pre><code>cast send 0xaAe29B0366299461418F5324a79Afc425BE5ae21 'depositEth()' --value 0.02ether \
+  --rpc-url $SEPOLIA_RPC_URL --private-key $TESTNET_PRIVATE_KEY</code></pre>
+  <div class="callout warn"><b>กับดัก</b><p>ห้ามเดา address ของ endpoint, library, executor หรือ DVN ให้ดึงจากรายการ deployment ทางการแล้วตรวจบนเชนอีกรอบ เราเก็บไว้ที่ <code>testnet/config.json</code> ไฟล์เดียว และอ่าน default config ของ Sepolia ได้ว่าใช้ DVN ตัวเดียว เราจึงตั้ง 2 ตัวเองตั้งแต่ deploy</p></div>
+
+  <h3>4.3 พังครั้งที่ 1: deploy แล้ว out of gas</h3>
+  <p>forge จำลองการ deploy Ping ได้ 1.47M gas แต่ของจริงบน Sepolia ใช้ <b>11.39M gas (มากกว่า 7.7 เท่า)</b> สาเหตุคือ Sepolia เปิด hardfork <b>Glamsterdam</b> แล้ว ซึ่งมี EIP-8037 ที่ทำให้ gas ของการสร้าง state แพงขึ้นมาก แต่ forge จำลองด้วยกฎ Prague ที่เรา pin ไว้ให้ potato</p>
+  <pre><code><span class="c"># แก้: ไม่จำลองด้วย forge แต่ให้ node ของเชนจริงประเมิน gas เอง</span>
+forge script script/testnet/DeployPingTestnet.s.sol --rpc-url $SEPOLIA_RPC_URL \
+  --broadcast --slow --skip-simulation</code></pre>
+  <div class="callout lesson"><b>บทเรียน</b><p>เชนเปลี่ยนกฎ gas ได้เมื่อมี hardfork เครื่องมือ deploy ต้องใช้ค่าประมาณจาก node ของเชนจริง ไม่ใช่จากการจำลองในเครื่อง</p></div>
+
+  <h3>4.4 พังครั้งที่ 2: ping แล้ว FAILED</h3>
+  <p>ping แรกทั้งสองทางขึ้นใน LayerZero Scan ว่า DVN ทั้งสองตัว SUCCEEDED แต่ executor <b>FAILED</b> ด้วยข้อความ "Executor transaction simulation reverted" สาเหตุคือ Ping ขอ lzReceive gas ไว้ 100,000 แต่ของจริงต้องการ <b>174k บน Arbitrum Sepolia</b> และ <b>697k บน Sepolia</b> (Sepolia แพงกว่ามากเพราะ Glamsterdam อีกเช่นกัน)</p>
+  <p>executor ทางการให้ gas <b>เท่าที่ผู้ส่งจ่ายมาเท่านั้น</b> ไม่ได้ประเมินให้ ต่างจาก executor ใน lab ของเรา ซึ่งเป็นเหตุผลที่ lab ไม่เคยเจอปัญหานี้</p>
+  <h4>กู้ message ที่ FAILED</h4>
+  <p>message ผ่าน DVN และ commit ได้แล้ว ใครก็เรียก lzReceive ด้วย gas ที่พอได้ (บท 2) สคริปต์ <code>testnet/execute.sh</code> ทำแบบนั้น</p>
+  <pre><code>testnet/execute.sh sepolia &lt;src tx&gt;           <span class="c"># ใช้ 696,971 gas</span>
+testnet/execute.sh arbitrum-sepolia &lt;src tx&gt;  <span class="c"># ใช้ 174,179 gas</span></code></pre>
+  <h4>แก้ต้นเหตุ: gas ต่อเชนปลายทาง</h4>
+  <p>Ping v2 เก็บ gas แยกตามเชนปลายทาง และ owner ปรับได้โดยไม่ต้อง deploy ใหม่</p>
+  <pre><code>mapping(uint32 dstEid =&gt; uint128 gas) public receiveGas;
+
+function setReceiveGas(uint32 _dstEid, uint128 _gas) external onlyOwner {
+    receiveGas[_dstEid] = _gas;
+}
+
+function options(uint32 _dstEid) public view returns (bytes memory) {
+    uint128 gas = receiveGas[_dstEid];
+    return OptionsBuilder.newOptions()
+        .addExecutorLzReceiveOption(gas == 0 ? DEFAULT_RECEIVE_GAS : gas, 0);
+}</code></pre>
+  <p>ค่าที่ตั้ง: ไป Sepolia 1,000,000 และไป Arbitrum Sepolia 250,000 ผลคือ <b>ping ทั้งสองทาง delivered อัตโนมัติใน 94 และ 142 วินาที</b> ค่าธรรมเนียมต่อ message ราว 0.00014 ETH</p>
+
+  <h3>4.5 เทียบ lab กับ testnet</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>เรื่อง</th><th>lab (potato ↔ anvil)</th><th>testnet ทางการ</th></tr></thead>
+    <tbody>
+      <tr><td>เวลาส่งถึง</td><td>6–11 วินาที</td><td>94–142 วินาที (lzRead 289 วินาที)</td></tr>
+      <tr><td>gas ปลายทาง</td><td>executor ของเราประเมินเอง</td><td>ได้เท่าที่ผู้ส่งจ่าย ไม่พอ = FAILED</td></tr>
+      <tr><td>default DVN</td><td>LabDVN 1 ตัว</td><td>LayerZero Labs 1 ตัว</td></tr>
+      <tr><td>confirmations</td><td>1</td><td>Sepolia → Arb 2, Arb → Sepolia 5</td></tr>
+      <tr><td>debug</td><td>อ่าน log ของ worker</td><td>LayerZero Scan (สถานะของแต่ละ DVN และ executor)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="summary"><h4>สรุปบทที่ 4</h4><ul>
+    <li>ใช้ address ทางการจากแหล่งเดียว ตรวจบนเชน และอ่าน default ก่อนตัดสินใจ</li>
+    <li>การจำลองของ forge ผิดได้มากเมื่อเชนเปลี่ยนกฎ gas ให้ใช้ค่าจาก node จริง</li>
+    <li>executor ทางการให้ gas เท่าที่จ่าย ต้องวัดจากเชนจริงและตั้งแยกต่อเชนปลายทาง</li>
+    <li>message ที่ FAILED หลัง commit แล้วกู้ได้ด้วยการเรียก lzReceive เองด้วย gas ที่พอ</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch5">
+  <div class="ch-num">บทที่ 5 · TOPIC 5</div>
+  <h2>OFT: ทำให้ token ข้ามเชนได้</h2>
+  <p class="lead">OFT (Omnichain Fungible Token) คือ OApp สำเร็จรูปสำหรับ token ที่ใช้ message ของบทก่อนๆ ส่งคำสั่ง "burn ที่นี่ mint ที่โน่น" หรือ "lock ที่นี่ mint ที่โน่น" บทนี้ว่าด้วยการเลือกแบบให้ถูกกับ token แต่ละตัว</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>เลือก OFT, OFTAdapter หรือ NativeOFTAdapter ได้ และโอน token ข้ามเชนได้</div>
+    <div><b>ต้องเตรียม</b>บท 4, ERC-20, ตัดสินใจ home chain และ decimals</div>
+    <div><b>ผลลัพธ์</b>ใช้ครบทั้งสามแบบกับ POTATO, USDC และ DEMO* (บท 13–14)</div>
+  </div>
+
+  <h3>5.1 สามแบบ เลือกจากคำถามเดียว</h3>
+  <p>คำถามที่ใช้เลือกคือ <b>"token ตัวจริงมีอยู่แล้วหรือยัง และเราแก้ contract ของมันได้ไหม"</b></p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>แบบ</th><th>ใช้เมื่อ</th><th>ฝั่งส่ง</th><th>ฝั่งรับ</th><th>ใน workshop</th></tr></thead>
+    <tbody>
+      <tr><td><b>OFT</b></td><td>token ใหม่ หรือฝั่งที่ไม่ใช่ home</td><td>burn</td><td>mint</td><td>PotatoOFT (anvil), UsdcOFT (potato)</td></tr>
+      <tr><td><b>OFTAdapter</b></td><td>ERC-20 ที่มีอยู่แล้วและแก้ไม่ได้ (เช่น USDC ของ issuer)</td><td>lock ใน adapter</td><td>unlock จาก adapter</td><td>UsdcAdapter, DEMO* adapter (anvil)</td></tr>
+      <tr><td><b>NativeOFTAdapter</b></td><td>native coin ของเชน (ไม่ใช่ ERC-20)</td><td>รับเป็น <code>msg.value</code></td><td>จ่ายด้วย <code>call{value}</code></td><td>PotatoNativeAdapter (potato)</td></tr>
+    </tbody>
+  </table></div>
+  <p>กฎสำคัญคือ <b>แต่ละ asset มี adapter ได้แค่ที่เดียว คือบน home chain</b> เชนอื่นทั้งหมดเป็น OFT ถ้ามี adapter สองที่ supply จะนับซ้ำและ invariant ใช้ไม่ได้ ใน lab เราเขียน <code>check-topology.sh</code> ให้ตรวจข้อนี้ (step 10.6 ลองใส่ adapter ผิดเชนแล้วถูกจับได้)</p>
+
+  <figure>
+    <svg viewBox="0 0 720 230" role="img" aria-label="การ lock บน home chain และ mint บนเชนอื่น">
+      <defs>
+        <marker id="m5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-a"/></marker>
+        <marker id="m5o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-ok"/></marker>
+      </defs>
+      <text x="150" y="26" text-anchor="middle" class="t-b">home chain (anvil)</text>
+      <text x="570" y="26" text-anchor="middle" class="t-b">เชนอื่น (potato)</text>
+      <rect x="40" y="46" width="220" height="70" rx="10" class="box-a"/><text x="150" y="74" text-anchor="middle" class="t-b">UsdcAdapter (lockbox)</text><text x="150" y="96" text-anchor="middle" class="t-s">ถือ USDC จริงที่ถูก lock</text>
+      <rect x="460" y="46" width="220" height="70" rx="10" class="box-ok"/><text x="570" y="74" text-anchor="middle" class="t-b">UsdcOFT (USDC.lz)</text><text x="570" y="96" text-anchor="middle" class="t-s">totalSupply = ยอดที่ mint</text>
+      <path d="M262,70 L456,70" class="ln-a" marker-end="url(#m5)"/><text x="360" y="62" text-anchor="middle" class="t-a">lock X → mint X</text>
+      <path d="M458,100 L264,100" class="ln-ok" marker-end="url(#m5o)"/><text x="360" y="120" text-anchor="middle" class="t-ok">burn Y → unlock Y</text>
+      <rect x="150" y="156" width="420" height="52" rx="10" class="box"/>
+      <text x="360" y="178" text-anchor="middle" class="t-b">invariant: locked บน home ≥ minted บนเชนอื่น</text>
+      <text x="360" y="198" text-anchor="middle" class="t-s">เท่ากันพอดีเมื่อไม่มี message ค้างระหว่างทาง · ถ้า minted &gt; locked = เหตุร้ายแรง</text>
+    </svg>
+    <figcaption>รูป 5.1 · OFTAdapter บน home chain คู่กับ OFT บนเชนอื่น และ invariant ที่ต้องเป็นจริงเสมอ</figcaption>
+  </figure>
+
+  <h3>5.2 shared decimals และ dust</h3>
+  <p>OFT ส่งจำนวนเงินข้ามเชนด้วย <b>shared decimals = 6</b> เพื่อให้ใช้ได้กับทุกเชน (บางเชนเก็บได้แค่ uint64) token ที่มี 18 decimals อย่าง POTATO จึงถูกตัดเศษที่ละเอียดกว่า 10<sup>-6</sup> ทิ้ง เศษนั้นเรียกว่า <b>dust</b> และ<b>ไม่ออกจาก wallet ผู้ส่ง</b> ไม่ได้หายไปไหน</p>
+  <pre><code>./bridge-potato.sh anvil potato 40.123456789123456789
+<span class="c"># dust kept by sender: 789123456789 wei</span>
+<span class="c"># recipient on potato +40.123456</span>
+<span class="c"># locked 59.876544 = minted 59.876544 ✅</span></code></pre>
+  <p>USDC มี 6 decimals เท่ากับ shared decimals จึงไม่มี dust</p>
+
+  <h3>5.3 การส่งหนึ่งครั้งประกอบด้วยอะไร</h3>
+  <pre><code>struct SendParam {
+    uint32  dstEid;        <span class="c">// เชนปลายทาง</span>
+    bytes32 to;            <span class="c">// ผู้รับ (address ของ EVM แปลงเป็น bytes32)</span>
+    uint256 amountLD;      <span class="c">// จำนวนใน local decimals</span>
+    uint256 minAmountLD;   <span class="c">// รับได้อย่างน้อยเท่าไหร่ (กัน slippage / dust)</span>
+    bytes   extraOptions;  <span class="c">// options เพิ่มเติม เช่น gas ของ compose</span>
+    bytes   composeMsg;    <span class="c">// payload สำหรับ lzCompose (บท 7)</span>
+    bytes   oftCmd;        <span class="c">// ไม่ใช้</span>
+}
+<span class="c">// send(SendParam, MessagingFee{nativeFee, lzTokenFee}, refundAddress)</span></code></pre>
+  <p>นอกจาก options ที่ผู้ส่งใส่ OApp ยังตั้ง <b>enforced options</b> ได้ คือ gas ขั้นต่ำที่ทุก message ไปยังเชนนั้นต้องมี ใน lab เราตั้ง 100k ซึ่งพอสำหรับ lab เท่านั้น บนเชนจริงต้องวัดใหม่ (บท 4)</p>
+
+  <h3>5.4 การ wire สองเชนแบบสองรอบ</h3>
+  <p>OApp สองฝั่งต้องรู้จักกัน (<code>setPeer</code>) แต่ตอน deploy ฝั่งแรก ฝั่งที่สองยังไม่มี address สคริปต์ deploy ของเราจึงออกแบบให้รัน <b>สองรอบ</b>: รอบแรก deploy ทั้งสองฝั่งและบันทึกว่า peer ยังค้าง รอบสองตั้ง peer ที่ค้าง และถ้ารันซ้ำอีกจะได้ "ok" ทั้งหมดโดยไม่มี tx</p>
+  <pre><code>for pass in 1 2; do
+  for r in http://localhost:18545 http://localhost:28545; do
+    forge script script/DeployPotatoBridge.s.sol --rpc-url $r --broadcast --slow
+  done
+done</code></pre>
+  <div class="callout lesson"><b>บทเรียน</b><p>สคริปต์ deploy และ config ทุกตัวต้อง <b>idempotent</b> คืออ่านสถานะบนเชนก่อน แล้วทำเฉพาะสิ่งที่ยังไม่ตรง รันซ้ำกี่ครั้งก็ปลอดภัย คุณสมบัตินี้ทำให้ runbook ทั้งเล่มบอกได้ว่าแต่ละคำสั่ง "รันซ้ำได้ไหม และมีผลอะไร"</p></div>
+
+  <h3>5.5 ตรวจ invariant ด้วย check-supply</h3>
+  <p><code>check-supply.sh</code> เทียบยอด lock บน home กับยอด mint บนเชนอื่น และแยกสามสถานะออกจากกัน</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ผล</th><th>ความหมาย</th></tr></thead>
+    <tbody>
+      <tr><td>✅ locked == minted</td><td>ปกติ ไม่มีอะไรค้าง</td></tr>
+      <tr><td>⏳ locked − minted = X, N message in flight</td><td>ปกติ มี message อยู่ระหว่างทาง (step 13.6 เห็น ⏳ 5 POTATO แล้วกลายเป็น ✅ เมื่อถึง)</td></tr>
+      <tr><td>❌ minted &gt; locked หรือ FORGED</td><td>อันตราย มีการ mint เกินของที่ lock ไว้</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="summary"><h4>สรุปบทที่ 5</h4><ul>
+    <li>adapter อยู่บน home chain ที่เดียว เชนอื่นเป็น OFT</li>
+    <li>shared decimals 6 ทำให้มี dust กับ token 18 decimals และ dust ยังอยู่ใน wallet ผู้ส่ง</li>
+    <li>invariant: locked ≥ minted และต้องแยก "ระหว่างทาง" ออกจาก "mint เกิน"</li>
+    <li>สคริปต์ deploy ต้อง idempotent และ wire สองรอบ</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch6">
+  <div class="ch-num">บทที่ 6 · TOPIC 6</div>
+  <h2>Control ของ stablecoin</h2>
+  <p class="lead">bridge ของ stablecoin ต่างจาก bridge ทั่วไป เพราะผู้ออกเหรียญต้องคุมได้ว่าเงินไปไหน หยุดได้เมื่อมีเหตุ และไม่ให้ address ที่ถูก sanction ใช้ได้ บทนี้ออกแบบ control สี่อย่างโดยไม่ให้ message ค้าง</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>มี rate limit, pause, blacklist และ supply invariant ข้ามเชน</div>
+    <div><b>ต้องเตรียม</b>บท 5, AccessControl/Pausable, ข้อกำหนด compliance</div>
+    <div><b>ผลลัพธ์</b>USDC v2 ที่มี control ครบ, unit test 15/15, ADR 0003 และ 0005</div>
+  </div>
+
+  <h3>6.1 Rate limit: เพดานความเสียหาย</h3>
+  <p>rate limit จำกัดยอดที่ส่งออกได้ต่อเชนปลายทางต่อช่วงเวลา ใน lab ตั้งไว้ <b>10,000 USDC ต่อ 60 วินาที</b> ถ้า DVN, executor หรือ key ถูกเจาะ ความเสียหายต่อ window จะไม่เกินเพดานนี้ ทำให้มีเวลาให้ alert และ pause ทำงาน</p>
+  <ul>
+    <li>นับเฉพาะ<b>ขาออก</b> (<code>_outflow</code>) ส่วนขาเข้า (<code>_inflow</code>) คืนโควตาให้ path เดียวกัน</li>
+    <li>เกิน limit จะ revert <b>ตอนส่ง</b> ไม่ใช่ตอนรับ ไม่มี message ค้าง (step 14.7: ส่ง 15,000 ได้ <code>RateLimitExceeded</code> และ supply ไม่เปลี่ยน)</li>
+  </ul>
+
+  <h3>6.2 Pause: สวิตช์ฉุกเฉิน</h3>
+  <ul>
+    <li><b>ขาส่ง</b>: ส่งไม่ได้ revert ด้วย <code>EnforcedPause</code></li>
+    <li><b>ขารับ</b>: message ที่มาถึงตอน pause จะ<b>รออยู่ที่ executor</b> ไม่หาย และ delivered เองหลัง unpause (step 14.8: ⏳ 50 ระหว่าง pause แล้ว delivered 23 วินาทีหลัง unpause)</li>
+  </ul>
+  <p>pause จึงเป็นเครื่องมือที่ปลอดภัยที่จะกดทันทีที่สงสัย เพราะยกเลิกได้และไม่ทำให้เงินหาย</p>
+
+  <h3>6.3 Blacklist: แยกหน้าที่ออกจาก owner</h3>
+  <p>ใน ADR 0003 เราตั้งใจไม่ใส่ blacklist เพราะคิดว่า issuer blacklist บน home chain เองก็พอ แต่ blacklist บน home หยุดได้แค่บน home ส่วน USDC.lz บน potato ยังโอนได้อิสระ ADR 0005 จึงเพิ่ม blacklist ในทุก leg ด้วยหลักการเหล่านี้</p>
+  <ul>
+    <li><b>role <code>blacklister</code> แยกจาก owner</b>: owner แต่งตั้ง blacklister ได้ แต่ blacklist เองไม่ได้ (step 6.5: owner ได้ <code>NotBlacklister</code>) เหมือนการแยกหน้าที่ของ Circle</li>
+    <li>address ที่ถูก blacklist <b>bridge ออกไม่ได้</b> และบน <code>UsdcOFT</code> <b>โอนเข้าหรือออกไม่ได้เลย</b> เพราะบล็อกที่ <code>_update</code></li>
+  </ul>
+
+  <h3>6.4 Quarantine: ทำไมห้าม revert ตอนรับ</h3>
+  <p>คำถามที่ยากที่สุดของบทนี้คือ "ถ้ามีคนส่งเงินข้ามเชนมาให้ address ที่ถูก blacklist จะทำอย่างไร" คำตอบที่ดูง่ายคือ revert ใน <code>lzReceive</code> แต่นั่นทำให้ <b>message ค้างตลอดไป</b> และ nonce ถัดไปอาจติดอยู่ข้างหลังด้วย (เราเห็นผลของ message ที่ค้างถาวรแล้วในบท 8 และ CreditFailed ในบท 13)</p>
+  <p>ทางที่เลือกคือ <b>quarantine</b>: message ถึงตามปกติ แต่เงินถูกกักไว้</p>
+  <ul>
+    <li><b>ฝั่ง potato (OFT)</b>: mint เข้าตัว contract เองแล้วบันทึกใน <code>quarantined[to]</code> เหรียญยังมีหลักประกันแต่ใช้ไม่ได้</li>
+    <li><b>ฝั่ง anvil (adapter)</b>: เหรียญอยู่ใน adapter ต่อ แต่ถูกบันทึกว่ากักไว้ และ <code>check-supply</code> ต้องหักออกจากยอด lock เพราะไม่ได้เป็นหลักประกันให้ supply บนเชนอื่นแล้ว</li>
+    <li><b>ปล่อยเงิน</b> ด้วย <code>releaseQuarantined(to, payee)</code> เป็นการตัดสินใจของ owner เท่านั้น จ่ายคืนเจ้าของเมื่อปลด blacklist หรือจ่ายให้ issuer ตามคำสั่งศาลก็ได้ แต่<b>ห้ามจ่ายให้ address ที่ยังถูก blacklist</b></li>
+  </ul>
+  <pre><code><span class="c">// StablecoinControls.sol (ย่อ)</span>
+function _beforeDebit(address _from, uint32 _dstEid, uint256 _amountSentLD) internal whenNotPaused {
+    if (isBlacklisted[_from]) revert AccountBlacklisted(_from);
+    _outflow(_dstEid, _amountSentLD);                 <span class="c">// rate limit ขาออก</span>
+}
+
+function _quarantines(address _to, uint32 _srcEid, uint256 _amountLD) internal whenNotPaused returns (bool) {
+    _inflow(_srcEid, _amountLD);                      <span class="c">// คืนโควตาให้ path</span>
+    if (!isBlacklisted[_to]) return false;
+    quarantined[_to] += _amountLD;
+    totalQuarantined += _amountLD;
+    emit Quarantined(_to, _srcEid, _amountLD);
+    return true;                                      <span class="c">// ไม่ revert: message ถึงตามปกติ</span>
+}
+
+<span class="c">// UsdcOFT.sol</span>
+function _credit(address _to, uint256 _amountLD, uint32 _srcEid) internal override returns (uint256) {
+    if (_quarantines(_to, _srcEid, _amountLD)) {
+        _mint(address(this), _amountLD);              <span class="c">// มีหลักประกัน แต่ใช้ไม่ได้</span>
+        return _amountLD;
+    }
+    return super._credit(_to, _amountLD, _srcEid);
+}
+
+function _update(address _from, address _to, uint256 _value) internal override {
+    if (isBlacklisted[_from]) revert AccountBlacklisted(_from);
+    if (isBlacklisted[_to]) revert AccountBlacklisted(_to);
+    super._update(_from, _to, _value);
+}</code></pre>
+
+  <h3>6.5 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
+  <p>leg v1 ไม่มี blacklist และ upgrade ไม่ได้ เราจึง deploy <b>v2</b> ที่ใช้ IssuerUSDC ตัวเดิม พร้อม blacklister และ DVN B + C ตั้งแต่ก่อนมี traffic แรก แล้วย้ายแบบ<b>ผู้ใช้ย้ายเอง</b></p>
+  <ol class="steps">
+    <li><b>ปิด v1 แค่ขาเข้า</b> ตั้ง BlockedMessageLib ให้ฝั่งส่งของ anvil และฝั่งรับของ potato ฝากเข้า v1 ใหม่ไม่ได้ (<code>LZ_NotImplemented</code>) แต่ผู้ถือ v1 ยังถอนกลับ anvil ได้</li>
+    <li><b>ผู้ใช้ถอนจาก v1 แล้วฝากเข้า v2</b> dev0 ย้าย 807.5 USDC ได้โดย treasury ไม่ต้องจ่ายอะไร เพราะของ v1 ยังมีหลักประกันครบ</li>
+  </ol>
+  <div class="callout warn"><b>ผลที่ตามมา</b><p>ระหว่างช่วงย้าย ผู้ที่ยังถือ v1 ยังมีความเสี่ยงเดิม และ blacklist ของแต่ละ leg แยกกัน blacklister ต้อง blacklist ทุกเชนเอง ระบบไม่ sync ให้</p></div>
+
+  <h3>6.6 ทดสอบครบทุกกรณี</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>กรณี</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">6.5</td><td>owner พยายาม blacklist</td><td><code>NotBlacklister</code> · blacklister ทำได้</td></tr>
+      <tr><td class="num">6.6</td><td>โอน USDC.lz ให้ address ที่ถูก blacklist</td><td><code>AccountBlacklisted</code></td></tr>
+      <tr><td class="num">6.7</td><td>bridge 50 USDC จาก anvil ไปหา address ที่ถูก blacklist</td><td>message ถึงปกติ, balance 0, quarantined 50, invariant ✅</td></tr>
+      <tr><td class="num">6.8</td><td>bridge จาก potato กลับ anvil หา address ที่ถูก blacklist</td><td>กักใน adapter 5, check-supply หักยอดกักแล้ว ✅</td></tr>
+      <tr><td class="num">6.9</td><td>release ให้ address ที่ยังถูก blacklist</td><td><code>AccountBlacklisted</code> · release ให้ address อื่นได้</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>งานที่ยังค้าง</b><p>indexer และ UI ยังไม่ได้ index event <code>Quarantined</code> จึงแสดงการโอนที่ถูกกักว่า "delivered" ผู้ใช้อาจเข้าใจผิดว่าได้เงินแล้ว</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 6</h4><ul>
+    <li>rate limit นับขาออกและ revert ตอนส่ง จึงไม่ทำให้ message ค้าง</li>
+    <li>pause ขารับทำให้ message รอ ไม่หาย กดได้ทันทีที่สงสัย</li>
+    <li>blacklister เป็น role แยกจาก owner</li>
+    <li>ปฏิเสธเงินขาเข้าด้วย quarantine ห้าม revert ใน lzReceive</li>
+    <li>contract ที่ upgrade ไม่ได้ เพิ่ม control ด้วย v2 + ปิดขาเข้าของ v1 แต่เปิดขาออกไว้</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch7">
+  <div class="ch-num">บทที่ 7 · TOPIC 7</div>
+  <h2>lzCompose และ lzRead</h2>
+  <p class="lead">สอง pattern ที่ทำให้ LayerZero เป็นมากกว่าการโอน token: lzCompose ให้ทำงานต่อบนปลายทางในคำสั่งเดียว เช่น "bridge แล้วฝากเข้า vault" ส่วน lzRead ให้อ่านค่าจากเชนอื่นบน chain โดยไม่ต้องส่ง message ไปเขียน</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ออกแบบ lzCompose และ lzRead สำหรับ use case จริงได้</div>
+    <div><b>ต้องเตรียม</b>บท 5, ABI encode/decode, ERC-4626</div>
+    <div><b>ผลลัพธ์</b>bridge + deposit ใน 12 วินาที, lzRead ได้ค่าตรงกันใน 289 วินาที</div>
+  </div>
+
+  <h3>7.1 lzCompose: งานต่อเนื่องคนละ transaction</h3>
+  <p>เมื่อ OFT ได้รับ message ที่มี <code>composeMsg</code> มันจะ credit เงินให้ composer แล้ว<b>ฝากงานไว้ในคิว</b>ของ endpoint (<code>sendCompose</code> → event <code>ComposeSent</code>) จากนั้น executor เรียก <code>lzCompose</code> เป็น<b>อีก transaction หนึ่ง</b></p>
+  <figure>
+    <svg viewBox="0 0 720 200" role="img" aria-label="ลำดับของ lzReceive และ lzCompose">
+      <defs><marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect x="20" y="40" width="150" height="60" rx="8" class="box"/><text x="95" y="66" text-anchor="middle" class="t-b">tx 1: lzReceive</text><text x="95" y="86" text-anchor="middle" class="t-s">UsdcOFT credit composer</text>
+      <rect x="210" y="40" width="150" height="60" rx="8" class="box-info"/><text x="285" y="66" text-anchor="middle" class="t-b">composeQueue</text><text x="285" y="86" text-anchor="middle" class="t-s">ComposeSent</text>
+      <rect x="400" y="40" width="150" height="60" rx="8" class="box"/><text x="475" y="66" text-anchor="middle" class="t-b">tx 2: lzCompose</text><text x="475" y="86" text-anchor="middle" class="t-s">executor เรียก</text>
+      <rect x="590" y="22" width="115" height="44" rx="8" class="box-ok"/><text x="647" y="49" text-anchor="middle">vault.deposit</text>
+      <rect x="590" y="80" width="115" height="44" rx="8" class="box-a"/><text x="647" y="100" text-anchor="middle">refund</text><text x="647" y="116" text-anchor="middle" class="t-s">หรือ park</text>
+      <line x1="170" y1="70" x2="208" y2="70" class="ln" marker-end="url(#m7)"/>
+      <line x1="360" y1="70" x2="398" y2="70" class="ln" marker-end="url(#m7)"/>
+      <path d="M550,62 L588,46" class="ln" marker-end="url(#m7)"/>
+      <path d="M550,80 L588,100" class="ln" marker-end="url(#m7)"/>
+      <text x="360" y="160" text-anchor="middle" class="t-s">ระหว่าง tx 1 กับ tx 2 เงินอยู่ใน composer · ใครก็ queue compose หา composer ได้ด้วยยอดใดก็ได้</text>
+      <text x="360" y="182" text-anchor="middle" class="t-a">composer ต้องตรวจทั้ง msg.sender และ _from</text>
+    </svg>
+    <figcaption>รูป 7.1 · lzCompose เป็น transaction แยก จึงต้องออกแบบให้ปลอดภัยทั้งตอนสำเร็จและตอนล้มเหลว</figcaption>
+  </figure>
+
+  <h3>7.2 เงื่อนไขความปลอดภัยของ composer</h3>
+  <p><code>UsdcDepositComposer</code> รับ USDC.lz ที่ bridge มาแล้วฝากเข้า vault (ERC-4626) ให้ผู้รับ เงื่อนไขที่ต้องมีครบคือ</p>
+  <ol>
+    <li><b>เรียกได้เฉพาะ endpoint</b> (<code>OnlyEndpoint</code>)</li>
+    <li><b>รับเฉพาะ compose ที่ queue โดย UsdcOFT ของเรา</b> (<code>UntrustedOApp</code>) เพราะ OApp ใดๆ บน endpoint เดียวกันก็ queue compose หาเราได้ และอ้างยอดเท่าไหร่ก็ได้</li>
+    <li><b>ฝากไม่สำเร็จต้อง refund ไม่ใช่ revert</b> เพราะ lzCompose ที่ revert จะทำให้เงินค้างใน composer</li>
+    <li><b>ถ้า refund ก็ไม่สำเร็จ</b> (เช่นผู้รับถูก blacklist) ให้ park ไว้ให้ owner ตัดสิน เงินไม่หาย</li>
+  </ol>
+  <pre><code>function lzCompose(address _from, bytes32 _guid, bytes calldata _message, address, bytes calldata)
+    external payable override
+{
+    if (msg.sender != endpoint) revert OnlyEndpoint(msg.sender);
+    if (_from != oft) revert UntrustedOApp(_from);
+
+    uint256 amount = OFTComposeMsgCodec.amountLD(_message);
+    <span class="c">// [nonce 0..8][srcEid 8..12][amountLD 12..44][composeFrom 44..76][app payload 76..]</span>
+    address beneficiary = abi.decode(_message[PAYLOAD_OFFSET:], (address));
+
+    try vault.deposit(amount, beneficiary) returns (uint256 shares) {
+        emit Deposited(_guid, beneficiary, amount, shares);
+    } catch {
+        try IERC20(oft).transfer(beneficiary, amount) returns (bool ok) {
+            if (ok) { emit Refunded(_guid, beneficiary, amount); return; }
+        } catch {}
+        parked[beneficiary] += amount;
+        emit Parked(_guid, beneficiary, amount);
+    }
+}</code></pre>
+  <div class="callout lesson"><b>unit test จับ bug ได้ก่อน deploy</b><p>เวอร์ชันแรกอ่าน payload ที่ offset 108 ซึ่งผิด ค่าที่ถูกคือ 76 (จุดที่ <code>composeFrom</code> 32 byte จบ) test 4 ข้อ (deposit, ผู้เรียกไม่ใช่ endpoint, compose จาก OApp อื่น, ฝากไม่สำเร็จแล้ว refund) จับได้ก่อนขึ้นเชน</p></div>
+
+  <h3>7.3 ทดลองบนเชน</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>กรณี</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">7.2</td><td><code>./bridge-and-deposit.sh 100</code></td><td>12 วินาที, compose ตามหลัง lzReceive 3 วินาที, vault shares 0 → 100</td></tr>
+      <tr><td class="num">7.3</td><td>vault ปิดรับฝาก แล้ว bridge-and-deposit 10</td><td>ผู้รับได้ USDC.lz คืน 10 (852.5 → 862.5), composer เหลือ 0</td></tr>
+      <tr><td class="num">7.4</td><td>ผู้โจมตีเรียก <code>sendCompose</code> เองหา composer อ้างยอด 1,000,000</td><td>composer revert <code>UntrustedOApp</code> เงินปลอดภัย</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>กับดักฝั่ง executor</b><p>ใน step 7.4 แม้เงินจะปลอดภัย แต่ executor ของเรา retry compose ปลอมทุก 2 วินาทีไม่สิ้นสุด เพราะเห็นว่ามีงานในคิว แก้ด้วย <b>allowlist</b>: executor ทำ compose เฉพาะที่ queue โดย OApp ที่รู้จัก ที่เหลือ log ครั้งเดียวแล้ว skip</p></div>
+
+  <h3>7.4 lzRead: อ่านค่าจากเชนอื่น</h3>
+  <p>lzRead กลับทิศของ messaging: แทนที่จะส่งข้อมูลออกไป OApp ส่ง "คำถาม" ไปแล้ว <b>read DVN</b> อ่านค่าจากเชนเป้าหมาย (เช่นผลของ view function) แล้วตอบกลับมาพร้อมยืนยัน</p>
+  <ul>
+    <li>ใช้ <b>read channel</b> แทน EID ปลายทาง: <code>4294967295</code></li>
+    <li>ใช้ library เฉพาะ: <b>ReadLib1002</b> (ไม่มีใน lab เราจึงทดลองบน testnet)</li>
+    <li>default ของ read <b>ใช้ read DVN ตัวเดียวอีกเช่นกัน</b> เราตั้ง LayerZero Labs + Horizen เอง</li>
+  </ul>
+  <p><code>CrossChainReader</code> (OAppRead) บน Arbitrum Sepolia ถามค่า <code>Ping.received()</code> บน Sepolia ผลคือได้ <b>1 == 1</b> ตรงกับค่าที่อ่านจาก RPC โดยตรง ใช้เวลา 289 วินาที และ LayerZero Scan แสดงว่า read DVN ทั้งสองตัว SUCCEEDED ค่าธรรมเนียมราว 0.000155 ETH</p>
+  <div class="callout note"><b>เมื่อไหร่ควรใช้ lzRead</b><p>เมื่อต้องการค่าจากเชนอื่นมาตัดสินใจบน chain เช่นราคา, ยอดคงเหลือ หรือสถานะของ contract โดยไม่ต้องให้อีกเชนส่ง message มาทุกครั้งที่ค่าเปลี่ยน แต่ต้องยอมรับ latency ระดับนาทีและความปลอดภัยเท่ากับชุด read DVN</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 7</h4><ul>
+    <li>lzCompose เป็น tx แยก เงินจะพักใน composer ระหว่างนั้น</li>
+    <li>composer ต้องตรวจ <code>msg.sender == endpoint</code> และ <code>_from == OFT ที่ไว้ใจ</code> และ refund แทน revert</li>
+    <li>executor ต้องมี allowlist ไม่งั้นงานปลอมจะถูก retry ไม่สิ้นสุด</li>
+    <li>lzRead ใช้ read channel และ ReadLib1002 และ default ก็ใช้ read DVN ตัวเดียว</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch8">
+  <div class="ch-num">บทที่ 8 · TOPIC 8</div>
+  <h2>Operations: เมื่อเกิดเหตุจริง และวิธีดูแลระบบให้ไม่เกิด</h2>
+  <p class="lead">บทที่ยาวที่สุดในเล่ม แบ่งเป็นสองครึ่ง ครึ่งแรกคือ incident drill เต็มรูปแบบบน DEMOWEAK ที่ถูกเจาะในบท 3 ตั้งแต่ตรวจจับจนชดเชยผู้ใช้ ครึ่งหลังคือการปิดช่องที่ drill เปิดให้เห็น: ย้าย DVN, pin library, ย้าย owner ไป Safe และจัดการ config ด้วย DevTools</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>มี runbook สำหรับ deploy และรับมือเหตุการณ์</div>
+    <div><b>ต้องเตรียม</b>ผ่านทุกบทก่อนหน้า, explorer, Safe multisig</div>
+    <div><b>ผลลัพธ์</b>playbook 5 ขั้น, postmortem, Safe 2-of-3, DevTools wire ผ่าน Safe</div>
+  </div>
+
+  <h3>8.1 ก่อนตัดสินใจ: ยืนยันข้อเท็จจริง</h3>
+  <p>หลังการโจมตีในบท 3 เราสรุปไว้ว่า "path ของ DEMOWEAK พังถาวร" แต่ก่อนตัดสินใจอะไรเราทดสอบก่อน ผลคือ <b>ไม่ได้พังทั้ง path</b> เสียแค่ช่อง nonce ที่ถูกปลอม</p>
+  <ul>
+    <li>ส่งจริง 1 DEMOWEAK ได้ nonce 2 ซึ่ง message ปลอมใช้ไปแล้ว จึง<b>ค้างตลอดไป</b> (endpoint บันทึก payload hash ของ nonce 2 เป็นของปลอม ของจริงจึงไม่มีวันตรง)</li>
+    <li>ส่งจริง 2 DEMOWEAK ได้ nonce 3 <b>ถึงปกติ</b></li>
+  </ul>
+  <div class="callout bad"><b>เครื่องมือตรวจจับถูกหลอก</b><p>หลังจาก nonce 3 ถึง <code>check-supply</code> ที่นับ nonce ก็ไม่ขึ้น FORGED อีก เพราะ sent 3 = delivered 3 ส่วน worker ก็แสดงผิดว่า nonce 2 "already delivered" ทั้งที่ message จริงไม่มีวันถึง</p></div>
+
+  <h3>8.2 แก้การตรวจจับ</h3>
+  <ul>
+    <li><b>audit ด้วย payload hash</b> (<code>npm run audit</code>): สำหรับทุก nonce เทียบ payload hash ที่ปลายทางรับไว้กับ packet ที่ต้นทางส่งจริง ได้ผลแยกเป็น OK, FORGED (ปลายทางรับ payload ที่ต้นทางไม่เคยส่ง) และ POISONED (ช่อง nonce ถูกใช้ไปกับ payload อื่น ของจริงจึงไม่มีวันถึง) <code>check-supply</code> เรียก audit ทุกครั้ง</li>
+    <li><b>worker แจ้ง <code>ALERT POISONED</code></b> แทนการบอกว่า "already delivered" ตรวจโดยดู event PacketVerified ของ nonce นั้นว่า payload hash ตรงกับที่ส่งจริงหรือไม่ ผลคือ rescan 48 message แล้วแจ้ง POISONED 1 ครั้งตรงตัว</li>
+  </ul>
+  <pre><code>npm run audit -- DEMOWEAK_V1
+<span class="c"># anvil-&gt;potato: 3 nonce(s), 2 OK | nonce 2 FORGED+POISONED   (exit 2)</span>
+npm run audit -- DEMOSAFE
+<span class="c"># clean   (exit 0)</span></code></pre>
+
+  <h3>8.3 Incident drill: ลำดับเหตุการณ์</h3>
+  <ol class="timeline">
+    <li class="bad"><b>โจมตี</b><span>ใช้ key ของ DVN-A ปลอม mint 1,000,000 DEMOWEAK.lz (nonce 2) แล้วดูด lockbox 100 → 0</span></li>
+    <li><b>ตรวจจับ</b><span>check-supply ❌ minted &gt; locked, audit เจอ FORGED+POISONED, worker แจ้ง ALERT POISONED</span></li>
+    <li><b>หยุดความเสียหาย (14 วินาที)</b><span>DEMOWEAK ไม่มี pause จึงตั้ง BlockedMessageLib ให้ทั้งสองเชน ผู้ใช้ส่งไม่ได้ (<code>LZ_NotImplemented</code>) ผู้โจมตีปลอมซ้ำไม่ได้ (<code>LZ_InvalidReceiveLibrary</code>)</span></li>
+    <li><b>อุดรู</b><span>deploy v2 (adapter + OFT ใหม่ ใช้ DemoToken เดิม) ต้องผ่าน DVN-B + DVN-C ถอด A ออก ลอง ForgeMint ด้วย key A ได้ <code>LZ_ULN_Verifying</code></span></li>
+    <li><b>ประเมินสิทธิ์ (snapshot)</b><span>ไล่ประวัติทั้งหมด ไม่นับเหรียญปลอมไม่ว่าจะถูกย้ายไปไหน: dev0 มีสิทธิ์ 102, ผู้โจมตี 0, ถูกตัดออก 999,900</span></li>
+    <li class="ok"><b>ชดเชย</b><span>คืนเงิน 1 ให้ผู้ส่ง nonce 2 บน home และ treasury lock ของจริง 102 แล้ว bridge ผ่าน v2 ไปให้ dev0 รวม treasury จ่าย 103</span></li>
+    <li class="ok"><b>ยืนยัน</b><span>v2: locked 102 = minted 102 ✅, audit clean, โอนกลับได้ใน 9 วินาที โดย B และ C verify ส่วน A 0 ครั้ง</span></li>
+  </ol>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ผลกระทบ</th><th>จำนวน</th></tr></thead>
+    <tbody>
+      <tr><td>mint ปลอม (ไม่มีหลักประกัน)</td><td class="num">1,000,000 DEMOWEAK.lz</td></tr>
+      <tr><td>ถูกดูดออกจาก lockbox</td><td class="num">100 DEMOWEAK</td></tr>
+      <tr><td>การโอนจริงที่ค้างตลอดไป (POISONED)</td><td class="num">1 DEMOWEAK</td></tr>
+      <tr><td>ค้างใน adapter v1 ถอนคืนไม่ได้</td><td class="num">3 DEMOWEAK</td></tr>
+      <tr><td><b>treasury จ่ายชดเชย</b></td><td class="num"><b>103</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>POTATO, USDC.lz และ DEMOSAFE ไม่ได้รับผลกระทบเลย เพราะ OApp แต่ละตัวมี config และ nonce space ของตัวเอง</p>
+
+  <h3>8.4 Playbook 5 ขั้น</h3>
+  <ol class="steps">
+    <li><b>หยุดความเสียหาย</b> ทำทันทีที่สงสัย ไม่ต้องรอยืนยัน เพราะยกเลิกได้: leg ที่มี pause ให้ pause ทุกเชน, leg ที่ไม่มีให้ตั้ง BlockedMessageLib ถ้าเจอ message ปลอมที่ commit แล้วแต่ยังไม่ execute owner ใช้ <code>endpoint.burn(...)</code> ทิ้ง payload นั้นได้ก่อนใครเรียก lzReceive</li>
+    <li><b>ประเมินความเสียหาย</b> ด้วย audit, check-supply และ snapshot แล้วบันทึกตัวเลขลง incident doc</li>
+    <li><b>อุดรู</b> ถอด DVN ที่หลุดออกจากทุก OApp ห้ามเปิด path ใหม่จนกว่าจะพิสูจน์ว่า key ที่หลุดใช้ไม่ได้แล้ว</li>
+    <li><b>กู้คืน</b> deploy v2, เปลี่ยนชื่อ key เก่าเป็น <code>_V1</code>, ชดเชยตาม snapshot ให้ supply ใหม่มีหลักประกันครบ</li>
+    <li><b>หลังเหตุการณ์</b> เขียน postmortem แบบ blameless และไล่ดูว่ามี OApp อื่นใช้ config แบบเดียวกันอีกไหม</li>
+  </ol>
+
+  <h3>8.5 ย้าย DVN ของ asset จริงไป B + C</h3>
+  <p>action item แรกจาก postmortem คือทุก OApp ต้องผ่าน ≥ 2 DVN ที่อิสระ เราย้าย POTATO และ USDC.lz ด้วยสองขั้นตอนที่ต่างกันตาม control ที่มี</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>leg</th><th>ขั้นตอน</th><th>window</th></tr></thead>
+    <tbody>
+      <tr><td>USDC.lz (มี pause)</td><td>ตรวจว่าไม่มี message ค้าง → pause ทั้งสองเชน → setConfig B+C ทั้งสองเชน → unpause</td><td class="num">16 วินาที</td></tr>
+      <tr><td>POTATO (ไม่มี pause)</td><td>ตรวจว่าไม่มี message ค้าง → setConfig ทั้งสองเชนต่อกันทันที</td><td class="num">10 วินาที</td></tr>
+    </tbody>
+  </table></div>
+  <p>จากนั้นรัน <code>check-security.sh</code> ซึ่งอ่าน config จากเชนทุก path ไม่เชื่อ log ของ script รอบแรก<b>เจอว่า DEMOSAFE ยังเชื่อ DVN-A ที่หลุด</b> จึงย้ายตามไปด้วย แล้วทดสอบด้วยการโอนจริง 4 ครั้ง (B และ C verify ทุกครั้ง A 0 ครั้ง) และลอง ForgeMint ด้วย key A กับทั้ง USDC และ POTATO ได้ <code>LZ_ULN_Verifying</code></p>
+
+  <h3>8.6 Pin library</h3>
+  <p>ปิดช่องที่พบในบท 1: ตั้ง send/receive library ของ Ping บน testnet เป็น ULN302 ตายตัว แล้วอ่านกลับว่า <code>isDefaultSendLibrary = false</code> และ <code>getReceiveLibrary(...).isDefault = false</code></p>
+
+  <h3>8.7 owner และ delegate เป็น Safe 2-of-3</h3>
+  <p>OApp มีผู้มีอำนาจสองตำแหน่ง ต้องย้ายทั้งคู่</p>
+  <ul>
+    <li><b>owner</b> ของ contract: peers, gas, pause และ control อื่นๆ</li>
+    <li><b>delegate</b> บน endpoint: DVN config และ library</li>
+  </ul>
+  <p>ลำดับสำคัญ: <b>ตั้ง delegate ก่อน</b> เพราะการตั้ง delegate ต้องใช้ owner เดิม ถ้าโอน owner ไปก่อน EOA จะตั้ง delegate ไม่ได้อีก Safe ที่สร้างเป็น v1.4.1 บนทั้ง Sepolia และ Arbitrum Sepolia owners คือ wallet ของ workshop และ owner B, C ที่สร้างขึ้นใหม่สำหรับ testnet</p>
+  <p>พิสูจน์การควบคุม (step 8.19)</p>
+  <ul>
+    <li>EOA เดิมเรียก Ping → <code>OwnableUnauthorizedAccount</code>, เรียก endpoint.setConfig → <code>LZ_Unauthorized</code></li>
+    <li>Safe ที่มีลายเซ็นเดียว → <code>GS020</code> (ลายเซ็นไม่พอ)</li>
+    <li>Safe ลายเซ็น A + C → executed, receiveGas 250,000 → 260,000</li>
+  </ul>
+  <div class="callout note"><b>ลายเซ็นต้องเรียงตาม address</b><p>Safe ตรวจลายเซ็นตามลำดับ address ของผู้เซ็นจากน้อยไปมาก <code>testnet/safe-exec.sh</code> เซ็น hash ของ Safe tx แบบ off-line แล้วเรียงให้เองก่อนส่ง <code>execTransaction</code></p></div>
+
+  <h3>8.8 Config as code: LayerZero DevTools</h3>
+  <p>DevTools ใช้ไฟล์ <code>layerzero.config.ts</code> เป็น source of truth บอกว่า "ควรเป็นอย่างไร" แล้วเครื่องมือคำนวณ diff กับบนเชนให้</p>
+  <pre><code>const edge = (from, to, confirmations) =&gt; ({
+  sendLibrary: from.sendUln302,
+  receiveLibraryConfig: { receiveLibrary: from.receiveUln302, gracePeriod: 0n },
+  sendConfig: {
+    executorConfig: { maxMessageSize: 10000, executor: from.executor },
+    ulnConfig: { confirmations, requiredDVNs: sorted([lzLabs, nethermind]),
+                 optionalDVNs: [], optionalDVNThreshold: 0 },
+  },
+  receiveConfig: { ulnConfig: { /* เหมือนกัน ใช้ confirmations ของเชนต้นทาง */ } },
+})</code></pre>
+  <ul>
+    <li><code>lz:oapp:config:get</code> แสดงตาราง Custom / Default / Active ของทุก path ผลคือ Active = Custom (2 DVN) ส่วน Default มี DVN ตัวเดียว</li>
+    <li><code>lz:oapp:wire --dry-run</code> เจอ diff 4 tx ซึ่งเป็นจุดเดียวกันทุก path: <b><code>optionalDVNCount</code> บนเชนเป็น 0 แต่ config ต้องการ 255</b> ทั้งที่เราตั้ง config ด้วยมือมาแล้วหลายรอบ</li>
+  </ul>
+  <p>เพราะ owner เป็น Safe แล้ว DevTools ส่ง tx เองไม่ได้ เราจึงเขียน <code>wire-via-safe.sh</code> ให้นำ calldata จาก dry-run มาส่งผ่าน Safe ทีละ tx หลังส่งครบ DevTools ตอบว่า <b>"The OApp is wired, no action is necessary"</b></p>
+  <div class="callout lesson"><b>บทเรียน</b><p>การตั้ง config ด้วยมือ แม้จะระวังแค่ไหนก็พลาดรายละเอียดได้ เครื่องมือที่เทียบ "ที่ควรเป็น" กับ "ที่เป็นอยู่" ทั้งหมดในครั้งเดียวจับสิ่งที่ตาคนมองข้ามได้</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 8</h4><ul>
+    <li>ยืนยันข้อเท็จจริงก่อนตัดสินใจ: path ไม่ได้พังทั้งหมด เสียแค่ nonce ที่ถูกปลอม</li>
+    <li>ตรวจจับด้วย payload hash ไม่ใช่การนับ nonce และแจ้ง POISONED แทน "already delivered"</li>
+    <li>BlockedMessageLib หยุด path ได้ภายในวินาทีโดยไม่ต้องมี pause</li>
+    <li>กู้คืนด้วย v2 + snapshot ที่ไม่นับเหรียญปลอม แล้ว treasury ชดเชยด้วยของจริง</li>
+    <li>ย้าย DVN ตอนไม่มี message ค้าง, pin library, owner และ delegate เป็น Safe (ตั้ง delegate ก่อน)</li>
+    <li>ใช้ DevTools เป็นตัวตรวจ config ทั้งหมด</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ถ้าพบ message ปลอมที่ commit แล้วแต่ยังไม่มีใครเรียก lzReceive ควรทำอะไร</summary><p>owner ของ OApp เรียก <code>endpoint.burn(oapp, srcEid, sender, nonce, payloadHash)</code> ทิ้ง payload นั้นทันที ก่อนที่ executor หรือผู้โจมตีจะเรียก lzReceive และควร pause หรือตั้ง BlockedMessageLib ไปพร้อมกัน</p></details>
+    <details><summary>ทำไมต้องตั้ง delegate ไปที่ Safe ก่อนโอน owner</summary><p>เพราะ <code>setDelegate</code> เรียกได้โดย owner เท่านั้น ถ้าโอน owner ไปก่อน EOA เดิมจะเรียกไม่ได้ ต้องทำผ่าน Safe อีกรอบ</p></details>
+  </div>
+</section>
+
+<!-- ===================== ภาค 2 ===================== -->
+<section class="chapter tabpanel" id="ch9">
+  <div class="ch-num">บทที่ 9 · TOPIC 9 · ภาค 2</div>
+  <h2>ประเมินความพร้อมของ potato-chain</h2>
+  <p class="lead">ก่อนจะ bridge อะไร ต้องตอบให้ได้ก่อนว่า LayerZero V2 ทำงานบนเชนของเราได้จริงไหม และต้องเลี่ยงอะไรบ้าง บทนี้ตั้งเกณฑ์ไว้ 4 ข้อแล้วพิสูจน์ทีละข้อ</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ยืนยันว่า LayerZero V2 deploy และทำงานบน potato ได้</div>
+    <div><b>ต้องเตรียม</b>potato localnet, อ่าน known-issues.md, เข้าใจบท 2</div>
+    <div><b>ผลลัพธ์</b>ผ่านทั้ง 4 เกณฑ์ พร้อมรายการ bug ที่ต้องเลี่ยง</div>
+  </div>
+
+  <h3>9.1 เกณฑ์ 4 ข้อ</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>#</th><th>เกณฑ์</th><th>วิธีพิสูจน์</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>bytecode ของ protocol เข้ากับ EVM ของ potato</td><td>compile EndpointV2/ULN302 ด้วย EVM Prague</td><td><span class="tag ok">ผ่าน</span></td></tr>
+      <tr><td>2</td><td>message วิ่งครบ lifecycle บน potato</td><td>loopback (ส่งหาตัวเองบนเชนเดียวกัน)</td><td><span class="tag ok">ผ่าน</span> received = 1</td></tr>
+      <tr><td>3</td><td>รู้ block time และ finality เพื่อตั้ง confirmations</td><td>นับ block ใน 10 วินาที</td><td><span class="tag ok">ผ่าน</span> ~1.25 วินาที/block, finality ทันที</td></tr>
+      <tr><td>4</td><td>รู้ว่า RPC มี bug อะไรที่ worker ต้องเลี่ยง</td><td>อ่าน known-issues แล้วพิสูจน์ในบท 12</td><td><span class="tag warn">2 bug</span> แก้แล้วในบท 12</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>9.2 เตรียมเครื่อง: อย่าปิดของคนอื่น</h3>
+  <p>README ของ potato บอกว่า JSON-RPC อยู่ที่ port 8545 แต่เมื่อเช็คจริง port นั้นเป็น <b>anvil ที่ fork mainnet</b> ของอีกโปรเจกต์ (chainId 0x7a69) ไม่ใช่ potato เราจึงไม่ปิดของเดิม แต่ remap potato ไป port อื่นด้วยไฟล์ override โดยไม่แก้ไฟล์ใน repo ของ potato เลย</p>
+  <pre><code><span class="c"># potato-localnet/ports-override.yml: node0 → 18545 (EVM), 36657 (CometBFT), 19090 (gRPC)</span>
+docker-compose -f ../potato-chain/docker-compose.yml -f potato-localnet/ports-override.yml up -d --build
+cast chain-id --rpc-url http://localhost:18545     <span class="c"># 707070</span></code></pre>
+  <div class="callout lesson"><b>บทเรียน</b><p>ก่อน deploy ให้ยืนยันเสมอว่ากำลังคุยกับเชนที่ถูกตัว (<code>web3_clientVersion</code> และ <code>eth_chainId</code>) เพราะ port มาตรฐานอาจเป็นของอย่างอื่น</p></div>
+
+  <h3>9.3 license: อ่านก่อนใช้</h3>
+  <pre><code>grep '"license"' node_modules/@layerzerolabs/*/package.json
+<span class="c"># lz-evm-protocol-v2, lz-evm-messagelib-v2 → LZBL-1.2</span>
+<span class="c"># oapp-evm, oft-evm                         → MIT</span></code></pre>
+  <p>protocol (EndpointV2, ULN302) <b>ไม่ใช่ MIT</b> แต่เป็น LZBL-1.2 ซึ่งในบท 16 เราอ่านตัวเต็มแล้วพบว่าใช้ใน production ไม่ได้ถ้าไม่ซื้อ license ส่วน OApp และ OFT ที่เราเขียนต่อยอดเป็น MIT</p>
+
+  <h3>9.4 compile: OpenZeppelin สองเวอร์ชันชนกัน</h3>
+  <p>package ของ protocol ใช้ OpenZeppelin v4 ส่วน OApp/OFT ใช้ v5 ถ้า compile รวมกันตรงๆ จะชนกัน แก้ด้วย <b>context remapping</b> ใน <code>remappings.txt</code> คือให้ v4 ใช้เฉพาะเมื่อ import จากใน package ของ protocol และ messagelib ที่เหลือใช้ v5 ระหว่างทางยังเจอ <code>Stack too deep</code> ใน script แก้ด้วยการแตกเป็น helper function</p>
+
+  <h3>9.5 loopback และเทียบ gas</h3>
+  <p>ทดสอบบน anvil ก่อนเพื่อให้แยกได้ว่าถ้าพังเป็นเพราะ script หรือเพราะเชน จากนั้นรันบน potato</p>
+  <pre><code>./lab-loopback.sh http://localhost:18545 $DEV0_PRIVKEY 40707
+<span class="c"># == B.lastMessage: "hello from eid 40707 @ 1792019333"</span>
+<span class="c"># == B.received: 1</span></code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ขั้น</th><th>potato</th><th>anvil</th></tr></thead>
+    <tbody>
+      <tr><td>verify</td><td class="num">55,615</td><td class="num">55,627</td></tr>
+      <tr><td>commitVerification</td><td class="num">79,357</td><td class="num">79,369</td></tr>
+      <tr><td>lzReceive</td><td class="num">173,989</td><td class="num">174,001</td></tr>
+    </tbody>
+  </table></div>
+  <p>ต่างกันแค่ 12 gas ทุกขั้น ยืนยันว่า EVM ของ cosmos/evm ทำงานเหมือน Ethereum ในส่วนที่ LayerZero ใช้</p>
+
+  <h3>9.6 finality และ confirmations</h3>
+  <p>potato ผลิต 8 block ใน 10 วินาที (~1.25 วินาที/block) และใช้ CometBFT ซึ่ง<b>final ทันทีที่ block ถูก commit</b> ไม่มี reorg จึงตั้ง <code>confirmations = 1</code> ได้ ถ้าเชนคู่เป็น Ethereum จริงต้องใช้ค่าที่สูงกว่านี้มาก หรือรอ finalized block</p>
+
+  <div class="summary"><h4>สรุปบทที่ 9</h4><ul>
+    <li>potato รัน LayerZero V2 ได้: bytecode เข้ากัน, gas ตรงกับ Ethereum, finality ทันที</li>
+    <li>ยืนยันเชนก่อน deploy ทุกครั้ง และไม่ปิด process ของคนอื่น</li>
+    <li>protocol เป็น LZBL-1.2 ส่วน OApp/OFT เป็น MIT</li>
+    <li>RPC ของ cosmos/evm มี bug 2 ตัวที่ worker ต้องรู้ (บท 12)</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch10">
+  <div class="ch-num">บทที่ 10 · TOPIC 10</div>
+  <h2>เลือกเชนคู่และวาง topology</h2>
+  <p class="lead">การตัดสินใจที่ดูเหมือนเรื่องเทคนิค เช่น "USDC ตัวจริงอยู่เชนไหน" แท้จริงเป็นการตัดสินใจทางธุรกิจ บทนี้แยกสองเรื่องนี้ออกจากกัน และทำให้ทุก script อ่านค่าจากที่เดียว</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>เลือกเชนคู่, EID และ home chain ของแต่ละ asset</div>
+    <div><b>ต้องเตรียม</b>RPC/gas ของเชนคู่, คุยกับฝั่งธุรกิจเรื่อง home chain</div>
+    <div><b>ผลลัพธ์</b>ADR 0001, topology.json, check-topology.sh</div>
+  </div>
+
+  <h3>10.1 การตัดสินใจ (ADR 0001)</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>เรื่อง</th><th>ค่า</th><th>เหตุผล</th></tr></thead>
+    <tbody>
+      <tr><td>เชนคู่</td><td>anvil local, chainId 31338</td><td>เร็ว ฟรี ใช้ script จากบท 9 ได้เลย</td></tr>
+      <tr><td>EID</td><td>potato 40707, anvil 40338</td><td>ตั้งเอง ไม่อยู่ใน registry ของ LayerZero</td></tr>
+      <tr><td>POTATO home</td><td>potato (native coin)</td><td>เป็นเหรียญของเชนเรา</td></tr>
+      <tr><td>USDC home</td><td><b>anvil</b> + OFTAdapter</td><td>จำลองโลกจริงที่ USDC ออกโดย issuer บนเชนอื่น และเราแก้ contract ของ issuer ไม่ได้</td></tr>
+      <tr><td>confirmations</td><td>1 ทั้งสองทาง</td><td>potato final ทันที, anvil ไม่มี reorg</td></tr>
+    </tbody>
+  </table></div>
+  <p>ผู้ตัดสินใจคือเจ้าของโปรเจกต์ ไม่ใช่ dev ทุกการตัดสินใจลักษณะนี้ในเล่มถูกบันทึกเป็น ADR ที่มีบริบท, การตัดสินใจ, เหตุผล และผลที่ตามมา เพื่อให้คนที่มาทีหลังเข้าใจว่าทำไม</p>
+
+  <h3>10.2 anvil ที่เก็บ state ได้</h3>
+  <p>เมื่อ anvil กลายเป็น home ของ USDC ถ้า state หาย supply ของ USDC ก็หายทั้งระบบ เราจึงเปิดด้วย <code>--state</code> และพิสูจน์ด้วยตาว่ารอด restart (ก่อน: block 10, balance 1.0 → หลัง restart: block 12, balance 1.0)</p>
+  <div class="callout bad"><b>อันตราย</b><p>ไฟล์ state ของ anvil-home คือ single point of failure ของ USDC ใน lab ห้ามลบระหว่าง workshop</p></div>
+  <div class="callout warn"><b>incident ที่ยังไม่รู้สาเหตุ (step 11.9)</b><p>anvil-home ค้างหนึ่งครั้ง: process ยังอยู่ แต่ RPC ไม่ตอบ, CPU 0% และ SIGTERM ไม่ได้ผล กู้ด้วยการ backup state, kill -9 แล้วเปิดใหม่ (state ย้อนไม่เกิน 10 วินาทีตาม <code>--state-interval</code>) nonce ตรงทั้งสองทาง ไม่มีข้อมูลหาย ทดสอบ stress 3 แบบราว 7 นาทีแล้วไม่เกิดซ้ำ</p></div>
+
+  <h3>10.3 topology เป็นไฟล์เดียว</h3>
+  <p>ทุก script ใน workshop อ่าน chainId, EID, RPC และ home ของแต่ละ asset จาก <code>config/topology.json</code> ผิดตรงนี้หมายถึง deploy ผิดเชน จึงมี checker ที่ตรวจกับเชนจริง</p>
+  <pre><code>./check-topology.sh
+<span class="c"># ✅ potato: rpc http://localhost:18545 is chainId 707070</span>
+<span class="c"># ✅ USDC: adapter on [anvil] (home), OFT on [potato]</span>
+<span class="c"># ... ✅ 16/16</span>
+<span class="c"># == topology OK</span></code></pre>
+  <h4>negative test: checker ต้องเคย fail</h4>
+  <p>checker ที่ไม่เคยเห็นมัน fail ยังพิสูจน์ไม่ได้ว่ามันทำงาน เราจึงใส่ค่าผิดสองจุดแล้วดูว่าจับได้ไหม</p>
+  <pre><code>jq '.chains.potato.rpc="http://localhost:8545" | .assets.USDC.legs.potato.kind="adapter"' \
+  config/topology.json &gt; /tmp/bad.json &amp;&amp; ./check-topology.sh /tmp/bad.json
+<span class="c"># ❌ potato: ... is chainId 31337, expected 707070</span>
+<span class="c"># ❌ USDC: adapters on [anvil,potato], expected exactly [anvil]</span>
+<span class="c"># exit=1</span></code></pre>
+  <div class="callout lesson"><b>บทเรียน</b><p>ทุก checker ในเล่ม (topology, wiring, security, supply) ผ่าน negative test ก่อนนำมาใช้จริง</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 10</h4><ul>
+    <li>home chain ของ asset เป็นการตัดสินใจทางธุรกิจ บันทึกเป็น ADR</li>
+    <li>ค่าของ topology อยู่ไฟล์เดียว และตรวจกับเชนจริงทุกครั้ง</li>
+    <li>checker ต้องเคยเห็นมัน fail ก่อนจะเชื่อตอนมันผ่าน</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch11">
+  <div class="ch-num">บทที่ 11 · TOPIC 11</div>
+  <h2>Deploy LayerZero V2 protocol เองบนสองเชน</h2>
+  <p class="lead">เมื่อเชนของเรายังไม่อยู่ในเครือข่ายของ LayerZero ทางเดียวที่จะทดลองได้คือ deploy protocol เองทั้ง stack แล้วตั้งค่า default ให้สองเชนคุยกัน</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>EndpointV2 และ ULN302 บนสองเชน พร้อม default config ข้ามเชน</div>
+    <div><b>ต้องเตรียม</b>source ของ LayerZero-v2, deployer key, ที่เก็บ address</div>
+    <div><b>ผลลัพธ์</b>ping ข้ามเชนได้ทั้งสองทาง ด้วยการ relay ด้วยมือ</div>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 720 250" role="img" aria-label="topology ของ lab: potato และ anvil พร้อม workers">
+      <rect x="20" y="30" width="250" height="170" rx="12" class="box-a"/>
+      <text x="145" y="55" text-anchor="middle" class="t-b">potato · EID 40707</text>
+      <text x="145" y="80" text-anchor="middle" class="t-s">EndpointV2 · SendUln302 · ReceiveUln302</text>
+      <text x="145" y="100" text-anchor="middle" class="t-s">LabDVN (A, B, C) · LabExecutor</text>
+      <text x="145" y="130" text-anchor="middle">PotatoNativeAdapter (home)</text>
+      <text x="145" y="152" text-anchor="middle">UsdcOFT (USDC.lz)</text>
+      <text x="145" y="174" text-anchor="middle">Ping · Vault · Composer</text>
+      <rect x="450" y="30" width="250" height="170" rx="12" class="box-info"/>
+      <text x="575" y="55" text-anchor="middle" class="t-b">anvil-home · EID 40338</text>
+      <text x="575" y="80" text-anchor="middle" class="t-s">EndpointV2 · SendUln302 · ReceiveUln302</text>
+      <text x="575" y="100" text-anchor="middle" class="t-s">LabDVN (A, B, C) · LabExecutor</text>
+      <text x="575" y="130" text-anchor="middle">IssuerUSDC + UsdcAdapter (home)</text>
+      <text x="575" y="152" text-anchor="middle">PotatoOFT</text>
+      <text x="575" y="174" text-anchor="middle">Ping</text>
+      <rect x="295" y="70" width="130" height="90" rx="10" class="box"/>
+      <text x="360" y="96" text-anchor="middle" class="t-b">workers/</text>
+      <text x="360" y="118" text-anchor="middle" class="t-s">dvn.ts × 3</text>
+      <text x="360" y="136" text-anchor="middle" class="t-s">executor.ts</text>
+      <line x1="270" y1="115" x2="293" y2="115" class="ln"/><line x1="427" y1="115" x2="448" y2="115" class="ln"/>
+      <text x="360" y="232" text-anchor="middle" class="t-s">Ponder indexer อ่านทั้งสองเชน · web/ (wagmi) ให้ผู้ใช้กด bridge</text>
+    </svg>
+    <figcaption>รูป 11.1 · topology ของ lab ตลอดภาค 2</figcaption>
+  </figure>
+
+  <h3>11.1 deploy: idempotent ตั้งแต่บรรทัดแรก</h3>
+  <p><code>DeployProtocol.s.sol</code> deploy ห้าตัว (EndpointV2, SendUln302, ReceiveUln302, LabDVN, LabExecutor) แล้วบันทึกลง <code>deployments/&lt;chainId&gt;.json</code> ถ้ามีอยู่แล้วจะ reuse บน anvil ได้ "deployed" ครบ 5 ตัว ส่วนบน potato ซึ่งมี stack จากบท 9 อยู่แล้วได้ "reused" ครบ 5 และไม่มี tx</p>
+
+  <h3>11.2 wire path: 5 ค่าต่อเชน</h3>
+  <p>endpoint ต้องรู้ว่าส่งและรับกับ EID อีกฝั่งด้วยอะไร <code>WireProtocol.s.sol</code> ตั้งค่า default ห้าอย่างต่อเชน คือ send ULN config, receive ULN config, executor config, default send library และ default receive library รอบแรกได้ "set" 5/5 ต่อเชน รอบสองได้ "ok" ทั้งหมด</p>
+
+  <h3>11.3 อ่านกลับจากเชน ไม่เชื่อ log</h3>
+  <p><code>check-wiring.sh</code> อ่านค่าทั้งหมดกลับจาก state จริงด้วย <code>cast</code> แล้วเทียบกับที่ควรเป็น ได้ ✅ 12/12 และผ่าน negative test (เปลี่ยน address ของ DVN ใน deployments แล้วถูกจับได้ 2 จุด)</p>
+  <div class="callout warn"><b>กับดักเล็กๆ ของ cast</b><p><code>cast call</code> พิมพ์ตัวเลขพร้อมคำอธิบาย เช่น <code>40338 [4.033e4]</code> ทำให้การเทียบค่าใน shell พัง ต้องตัดด้วย awk ก่อน (และ <code>head -1</code> ใน pipeline ที่ใช้ <code>pipefail</code> ทำให้เจอ broken pipe จึงเปลี่ยนเป็น <code>sed -n 1p</code>)</p></div>
+
+  <h3>11.4 ping ข้ามเชนครั้งแรก</h3>
+  <pre><code>./lab-crosschain.sh potato anvil
+<span class="c"># == sent on potato in block N</span>
+<span class="c"># == PacketSent on potato after 1 confirmation(s)</span>
+<span class="c"># == anvil Ping.received: 0 -&gt; 1</span>
+<span class="c"># == anvil Ping.lastSrcEid: 40707</span>
+./lab-crosschain.sh anvil potato        <span class="c"># ทางกลับใช้ config คนละชุด ต้องทดสอบแยก</span></code></pre>
+  <p>ปิดท้ายด้วยการเทียบ nonce ทั้งสองทาง (out = in) เพื่อยืนยันว่าไม่มีอะไรค้าง</p>
+
+  <div class="summary"><h4>สรุปบทที่ 11</h4><ul>
+    <li>deploy protocol เอง: 5 contract ต่อเชน และ 5 ค่า default ต่อ path</li>
+    <li>script ต้อง idempotent และต้องอ่านค่ากลับจากเชนมาตรวจ</li>
+    <li>ทดสอบทั้งสองทิศแยกกัน เพราะใช้ config คนละชุด</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch12">
+  <div class="ch-num">บทที่ 12 · TOPIC 12</div>
+  <h2>เขียน DVN และ Executor ของเราเอง</h2>
+  <p class="lead">การ relay ด้วยมือช่วยให้เข้าใจ แต่ใช้งานจริงไม่ได้ บทนี้เขียน worker ด้วย TypeScript + viem ให้ทำงานอัตโนมัติ แล้วพบว่า RPC ของ potato มี bug จริงสองตัว จึงแก้ที่ต้นทางด้วย patch</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>worker ส่ง message ถึงปลายทางโดยไม่ต้อง relay ด้วยมือ</div>
+    <div><b>ต้องเตรียม</b>Node 24, viem 2.56.9, key แยกสำหรับ DVN และ executor</div>
+    <div><b>ผลลัพธ์</b>end-to-end 6–11 วินาที, patch cosmos/evm 2 ตัว</div>
+  </div>
+
+  <h3>12.1 แยก key ตามหน้าที่</h3>
+  <p>DVN key ทำได้อย่างเดียวคือยืนยัน packet ส่วน executor key แค่จ่าย gas ส่งของ ทั้งสองไม่ใช้ key ของ deployer <code>setup-worker-keys.sh</code> โอน owner ของ LabDVN ให้ DVN key และเติม gas ให้ทั้งสอง key บน potato (รันซ้ำได้: "already DVN key", "has 10.0")</p>
+
+  <h3>12.2 DVN worker</h3>
+  <p>หลักการทำงานของ <code>dvn.ts</code></p>
+  <ol>
+    <li>อ่าน <code>PacketSent</code> บนทุกเชนทีละ window ไม่เกิน 1,000 block (cosmos/evm จำกัดช่วงของ getLogs) โดยรอให้ block ผ่าน confirmations ก่อน</li>
+    <li>ยืนยัน<b>เฉพาะ packet ที่ถูก assign</b> ให้ตัวเอง (ดูจาก event <code>JobAssigned</code> ที่ contract ของ DVN บนต้นทาง) เหมือน DVN จริงที่ได้รับค่าจ้างเฉพาะงานของตัวเอง</li>
+    <li>idempotent: ถ้า packet ถูก verify, commit หรือ deliver ไปแล้วจะไม่ส่ง tx ซ้ำ และถ้าช่อง nonce ถูกใช้กับ payload อื่นจะแจ้ง <code>ALERT POISONED</code> (เพิ่มในบท 8)</li>
+    <li>เก็บ cursor ลงไฟล์ ปิดแล้วเปิดใหม่จะทำต่อจากเดิม</li>
+  </ol>
+  <pre><code>async function tick(src) {
+  const latest = await src.pub.getBlockNumber();
+  const safe = latest - BigInt(src.confirmations);   <span class="c">// รอ finality ของต้นทาง</span>
+  for (let start = from; start &lt;= safe; start += 1_000n) {
+    const jobs = await src.pub.getLogs({ address: dvnOn(src), event: jobAssignedEvent, ... });
+    const assigned = new Set(jobs.map((j) =&gt; keccak256(j.args.packetHeader)));
+    for (const ev of await scanPacketSent(src, start, end)) {
+      if (assigned.has(ev.packet.headerHash)) await attest(src, ev.packet);
+      else log(ROLE, `nonce ${ev.packet.nonce}: not assigned to ${DVN_ID}, skip`);
+    }
+  }
+}</code></pre>
+  <p>รัน operator เพิ่มได้ด้วย environment ไม่ต้องแก้โค้ด เช่น <code>DVN_ID=LabDVN_B DVN_KEY_VAR=DVN_B_KEY npm run dvn</code> ซึ่งเป็นพื้นฐานของการทดลองในบท 3</p>
+
+  <h3>12.3 Executor worker</h3>
+  <p><code>executor.ts</code> รอจน DVN ครบ quorum (อ่านจาก ReceiveUln302 ว่า verifiable หรือยัง) แล้วเรียก <code>commitVerification</code> ตามด้วย <code>lzReceive</code> และในบท 7 เพิ่มการทำ <code>lzCompose</code> พร้อม allowlist</p>
+
+  <h3>12.4 ผลการทดสอบ</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>ทดสอบ</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">12.5</td><td>end-to-end อัตโนมัติทั้งสองทาง 4 รอบ</td><td>11, 6, 10, 11 วินาที</td></tr>
+      <tr><td class="num">12.6</td><td>ส่ง 3 message ตอน worker ปิด แล้วเปิดใหม่</td><td>delivered ครบ เรียงตาม nonce (7 ก่อน 8) ไม่หาย ไม่ซ้ำ</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>12.5 bug ตัวที่ 1: <code>eth_fillTransaction</code> ประเมิน gas ที่ block 0</h3>
+  <p><b>อาการ</b>: tx ที่ส่งด้วย viem พร้อม local account ได้ gas limit แค่ 22,490 แล้ว out of gas ส่วน MetaMask และ cast ไม่เป็น</p>
+  <p><b>ต้นเหตุ</b>: viem รุ่นใหม่เตรียม tx ผ่าน <code>eth_fillTransaction</code> ซึ่งใน cosmos/evm v0.7.3 ประเมิน gas กับ <b>block 0</b> (genesis) ที่ contract ปลายทางยังไม่มีโค้ด จึงนับแค่ intrinsic gas</p>
+  <p><b>พิสูจน์</b> (step 12.7): ปิด workaround แล้ว worker ของ DVN ส่ง verify บน potato ได้ <code>out of gas 26,750/26,750</code> ส่วนฝั่ง anvil ผ่านปกติ</p>
+
+  <h3>12.6 bug ตัวที่ 2: <code>eth_getLogs</code> จาก block 0 ได้ log ซ้ำ</h3>
+  <p><b>อาการ</b>: query log ด้วย <code>fromBlock: 0</code> ได้จำนวนมากกว่าเริ่มที่ block 1 (43 กับ 42) ในจังหวะที่มี block ใหม่</p>
+  <p><b>ต้นเหตุ</b>: <code>Filter.Logs</code> ไม่ clamp ค่า from หลังแปลง ทำให้ช่วง block ผิด</p>
+
+  <h3>12.7 แก้ที่ต้นทาง ไม่ใช่ใส่ workaround ทุกที่</h3>
+  <p>workaround ต้องใส่ในทุก client ทั้ง worker, web และ script แต่ถ้าแก้ที่ node ครั้งเดียว ทุก client หายพร้อมกัน เราจึงเพิ่มระบบ patch ใน potato-chain</p>
+  <ul>
+    <li><code>go.mod</code> replace <code>github.com/cosmos/evm</code> เป็น <code>third_party/cosmos-evm</code></li>
+    <li><code>scripts/patch_deps.sh</code> สร้างโฟลเดอร์นั้นจาก upstream v0.7.3 + <code>patches/cosmos-evm/*.patch</code> ทุกครั้งที่ build (รวมใน Dockerfile)</li>
+    <li>patch 0001: clamp fromBlock ของ getLogs, patch 0002: ประเมิน gas ที่ latest block</li>
+    <li>regression test ที่ <b>fail บนโค้ดเดิม</b> (heights <code>[0 1 2 3]</code>) และผ่านบนโค้ดที่ patch</li>
+  </ul>
+  <p>หลัง rebuild image แล้ว restart บน state เดิม (เปลี่ยนแค่ RPC ไม่แตะ consensus) block เดินต่อ และ <code>Ping.received</code> ยังเท่าเดิม จากนั้นยืนยันด้วย repro เดิม</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>repro</th><th>ก่อน patch</th><th>หลัง patch</th></tr></thead>
+    <tbody>
+      <tr><td>estimateGas vs fillTransaction (USDC approve)</td><td class="num">46,330 vs 22,490</td><td class="num">46,330 vs 46,330</td></tr>
+      <tr><td>getLogs from 0 vs from 1 ที่ t+1</td><td class="num">43 vs 42</td><td class="num">same × 4 รอบ</td></tr>
+      <tr><td>worker แบบไม่มี workaround</td><td>out of gas</td><td>delivered ทั้งสองทาง ไม่มี ERROR</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout lesson"><b>บทเรียน</b><p>เมื่อเจอ bug ใน dependency: เขียน repro ให้เห็นผลก่อน, ใส่ workaround ชั่วคราว, แก้ที่ต้นทางพร้อม regression test ที่ fail บนโค้ดเดิม แล้วใช้ repro เดิมยืนยันว่าหาย บันทึกทั้งหมดใน <code>docs/known-issues.md</code> และเก็บ workaround ไว้ใน client ที่อาจคุยกับ node ที่ยังไม่ได้ patch</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 12</h4><ul>
+    <li>DVN ยืนยันเฉพาะงานที่ถูก assign, idempotent และมี cursor ที่รอด restart</li>
+    <li>executor รอ quorum แล้ว commit และ deliver ตามลำดับ</li>
+    <li>RPC ของ cosmos/evm v0.7.3 มี bug 2 ตัว แก้ด้วย patch ที่ build ทุกครั้ง พร้อม regression test</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch13">
+  <div class="ch-num">บทที่ 13 · TOPIC 13</div>
+  <h2>Bridge native coin: POTATO</h2>
+  <p class="lead">POTATO ไม่ใช่ ERC-20 แต่เป็น native coin ของเชน คำถามแรกจึงไม่ใช่ "จะ bridge อย่างไร" แต่เป็น "จะ lock อะไร" ซึ่งต้องตอบด้วยการตรวจของจริงบนเชน ไม่ใช่เดาจากชื่อ</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>โอน POTATO ไป-กลับ โดย supply รวมถูกต้อง</div>
+    <div><b>ต้องเตรียม</b>รู้พฤติกรรมของ WPOTATO precompile, บท 5</div>
+    <div><b>ผลลัพธ์</b>ADR 0002, PotatoNativeAdapter + PotatoOFT, invariant ✅</div>
+  </div>
+
+  <h3>13.1 WPOTATO ไม่ใช่ WETH</h3>
+  <p>potato มี WPOTATO ที่ <code>0xEeee…EEeE</code> ซึ่งชื่อเหมือน wrapped token แต่เมื่อตรวจจริงพบว่าเป็น <b>ERC-20 precompile</b> (<code>werc20</code> ของ cosmos/evm) ที่มองเห็น native balance ตรงๆ</p>
+  <ul>
+    <li><code>balanceOf(x)</code> = native balance ของ x (10 POTATO = 10 WPOTATO)</li>
+    <li><code>deposit()</code> คืนเหรียญกลับ ส่วน <code>withdraw()</code> แค่ emit event</li>
+    <li><code>totalSupply</code> = supply ทั้งเชน ซึ่ง<b>เพิ่มทุก block</b> จาก staking rewards (ตอนวัดได้ 401,069 POTATO)</li>
+  </ul>
+  <p>ไม่ว่าจะเลือก OFTAdapter ครอบ WPOTATO หรือ NativeOFTAdapter สิ่งที่ถูก lock คือ native POTATO ตัวเดียวกัน</p>
+
+  <h3>13.2 เลือก NativeOFTAdapter (ADR 0002)</h3>
+  <ul>
+    <li><b>ใช้ง่ายกว่า</b>: tx เดียว ส่ง POTATO เป็น <code>msg.value</code> ไม่ต้อง approve</li>
+    <li><b>ไม่พึ่ง precompile</b>: พฤติกรรมของ precompile เปลี่ยนได้เมื่อ upgrade cosmos/evm ส่วน <code>msg.value</code> เป็น EVM มาตรฐาน</li>
+  </ul>
+  <div class="callout note"><b>WPOTATO เป็นข้อบังคับไหม</b><p>ไม่ใช่ NativeOFTAdapter รับ native coin ได้โดยตรง Uniswap pair และ Morpho market บน potato ยังใช้ WPOTATO ได้ตามเดิมเพราะเป็นเหรียญเดียวกัน</p></div>
+
+  <h3>13.3 invariant ของ native coin</h3>
+  <p>ใช้ totalSupply ของเชนไม่ได้เพราะมันเพิ่มทุก block invariant จึงเป็น</p>
+  <pre><code>native balance ของ PotatoNativeAdapter บน potato  ≥  PotatoOFT.totalSupply() บน anvil</code></pre>
+
+  <h3>13.4 ทดสอบ</h3>
+  <ol class="steps">
+    <li><b>baseline</b> <span class="result">locked 0 = minted 0 ✅</span></li>
+    <li><b>โอน 100 POTATO ไป anvil</b> <span class="result">delivered 11 วินาที, locked 100 = minted 100</span></li>
+    <li><b>โอนกลับพร้อมเศษ 40.123456789123456789</b> <span class="result">ได้ +40.123456 บน potato, dust 789,123,456,789 wei อยู่ใน wallet ผู้ส่ง, invariant ✅</span></li>
+    <li><b>ตรวจระหว่าง message ยังไม่ถึง</b> <span class="result">⏳ locked − minted = 5 with 1 message in flight → ✅ 64.876544 = 64.876544 เมื่อถึง</span></li>
+    <li><b>msg.value ต้องพอดี</b> <span class="result">1e18 ผ่าน, 1e18 + 1 wei ได้ <code>IncorrectMessageValue</code></span></li>
+    <li><b>ผู้รับที่รับ native ไม่ได้</b> (unit test) <span class="result">contract ที่ไม่มี <code>receive()</code> ได้ <code>CreditFailed</code> และไม่มีเหรียญขยับ</span></li>
+  </ol>
+  <div class="callout warn"><b>ทำไมข้อสุดท้ายทดสอบใน unit test</b><p>ถ้าทดสอบบนเชนจริง message จะค้างที่ executor ถาวร (retry กี่ครั้งก็ revert) และทิ้งของค้างไว้ใน lab การทดสอบบางอย่างควรทำใน unit test เพื่อไม่ให้ทิ้งผลข้างเคียงถาวร</p></div>
+  <div class="callout warn"><b>ช่องว่างที่ยังเปิดอยู่</b><p>PotatoNativeAdapter ยังไม่มี pause และ rate limit ต่างจาก leg ของ USDC ใน drill จึงต้องใช้ BlockedMessageLib หยุดแทน และตอนย้าย DVN ต้องทำแบบไม่มี pause (บท 8)</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 13</h4><ul>
+    <li>ตรวจพฤติกรรมของ token บนเชนก่อนออกแบบ อย่าเชื่อชื่อ</li>
+    <li>native coin ใช้ NativeOFTAdapter รับเป็น msg.value ที่ต้องพอดีกับ fee + amount (ตัด dust แล้ว)</li>
+    <li>invariant ใช้ balance ของ adapter ไม่ใช่ totalSupply ของเชน</li>
+    <li>ผู้รับฝั่ง native ต้องรับเหรียญได้ ไม่งั้น CreditFailed และ message ค้าง</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch14">
+  <div class="ch-num">บทที่ 14 · TOPIC 14</div>
+  <h2>Bridge stablecoin: USDC</h2>
+  <p class="lead">USDC มี issuer และ issuer คือผู้ที่ทำให้มันมีค่า บทนี้จำลองโลกจริงที่ USDC อยู่บนเชนของ issuer แล้ว potato เป็นเชนปลายทาง พร้อม control ชุดแรกของ stablecoin</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>bridge USDC ด้วย model ที่ถูก + supply invariant + controls</div>
+    <div><b>ต้องเตรียม</b>home chain, รายการ contract ที่ผูกกับ USDC เดิม, บท 6</div>
+    <div><b>ผลลัพธ์</b>ADR 0003, IssuerUSDC + UsdcAdapter + UsdcOFT (USDC.lz)</div>
+  </div>
+
+  <h3>14.1 MockUSDC เดิมใช้เป็นตัว bridge ไม่ได้</h3>
+  <p>potato มี <code>MockUSDC</code> อยู่แล้ว ใช้กับ faucet, Uniswap pair และ Morpho market แต่มันมีแค่ <code>mint</code> ของ owner ไม่มี <code>burn</code> จึงใช้ MintBurnOFTAdapter ไม่ได้ และถ้าใช้ faucet จะ mint เหรียญที่ไม่มีหลักประกันมาปนกับเหรียญที่ bridge มา</p>
+  <p>การตัดสินใจ (ADR 0003): <b>เก็บทั้งคู่</b> MockUSDC เป็นของทดสอบเท่านั้น ส่วน USDC ที่ bridge มามีชื่อ <b>"USD Coin (LayerZero)" / USDC.lz</b> เพื่อให้แยกออกใน wallet และ explorer ได้ทันที</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>contract</th><th>เชน</th><th>หน้าที่</th></tr></thead>
+    <tbody>
+      <tr><td><code>IssuerUSDC</code></td><td>anvil</td><td>USDC ตัวจริง 6 decimals, issuer mint/burn</td></tr>
+      <tr><td><code>UsdcAdapter</code></td><td>anvil</td><td>OFTAdapter + rate limit + pause (lockbox)</td></tr>
+      <tr><td><code>UsdcOFT</code> (USDC.lz)</td><td>potato</td><td>OFT 6 decimals + rate limit + pause (+ blacklist ใน v2)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>14.2 ทดสอบ</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>ทำอะไร</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">14.2</td><td>unit test ของ control และ adapter</td><td>9/9</td></tr>
+      <tr><td class="num">14.4</td><td>issuer mint 1,000,000 USDC บน anvil</td><td>USDC ตัวจริงมาจาก issuer เท่านั้น bridge ไม่ mint บน home</td></tr>
+      <tr><td class="num">14.5</td><td>bridge 1,000 anvil → potato</td><td>delivered 7 วินาที</td></tr>
+      <tr><td class="num">14.6</td><td>bridge กลับ 400.5</td><td>locked 599.5 = minted 599.5 ✅</td></tr>
+      <tr><td class="num">14.7</td><td>ส่ง 15,000 ครั้งเดียว (limit 10,000/60s)</td><td><code>RateLimitExceeded</code>, supply ไม่เปลี่ยน</td></tr>
+      <tr><td class="num">14.8</td><td>pause ขารับระหว่างมี message มา</td><td>⏳ 50 ระหว่าง pause, executor เห็น <code>EnforcedPause</code> → delivered 23 วินาทีหลัง unpause</td></tr>
+      <tr><td class="num">14.9</td><td>pause ขาส่ง</td><td><code>EnforcedPause</code> ไม่มี tx ถูกส่ง</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>14.3 สิ่งที่บทนี้ยังไม่มี และถูกเติมในบทอื่น</h3>
+  <ul>
+    <li><b>blacklist + quarantine</b>: เพิ่มใน v2 (บท 6)</li>
+    <li><b>DVN 2 ตัวที่อิสระ</b>: ย้ายไป B + C (บท 8)</li>
+    <li><b>bridge + deposit</b>: lzCompose (บท 7)</li>
+  </ul>
+  <div class="callout lesson"><b>บทเรียนที่สำคัญที่สุดของบทนี้มาทีหลัง</b><p>ในบท 16 เราสรุปว่า USDC.lz ไม่ควรไป production เพราะเป็น "bridged USDC" ที่ความเสี่ยงของ bridge ตกอยู่กับผู้ถือ และแยก liquidity จาก USDC ตัวจริง ทางที่ถูกคือใช้ USDC ที่ issuer ออกเองผ่านเส้นทางที่ issuer รองรับ แต่การสร้าง USDC.lz ใน lab ทำให้เราเข้าใจ control ที่ stablecoin ทุกตัวต้องมี</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 14</h4><ul>
+    <li>stablecoin ตัวจริงอยู่บน home ของ issuer และ lock ด้วย adapter</li>
+    <li>ใช้ชื่อและ symbol ที่แยกจาก token อื่นชัดเจน</li>
+    <li>rate limit และ pause ทำงานได้โดยไม่ทำให้ message หรือเงินหาย</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch15">
+  <div class="ch-num">บทที่ 15 · TOPIC 15</div>
+  <h2>Frontend, indexer และ explorer</h2>
+  <p class="lead">bridge ที่ใช้ได้จาก command line อย่างเดียวยังไม่ใช่ผลิตภัณฑ์ บทนี้ให้ผู้ใช้กด bridge จากเว็บของ potato และเห็นสถานะของ message ตั้งแต่ส่งจนถึง โดยข้อมูลมาจาก indexer ที่อ่านสองเชนพร้อมกัน</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ผู้ใช้กด bridge จาก web และเห็นสถานะของ message</div>
+    <div><b>ต้องเตรียม</b>web/ (wagmi/viem), indexer/ (Ponder), address จากบท 11–14</div>
+    <div><b>ผลลัพธ์</b>UI: sent → verified 1 วินาที → delivered 3 วินาที</div>
+  </div>
+
+  <h3>15.1 address มีแหล่งความจริงเดียว</h3>
+  <p>web และ indexer อยู่ใน repo ของ potato-chain แต่ address อยู่ใน <code>lz-potato/deployments</code> จึงมีสคริปต์ <code>export-to-potato.sh</code> ส่งออกไปที่ <code>potato-chain/deployments/layerzero.json</code> พร้อม block เริ่มต้นของแต่ละเชนให้ indexer</p>
+  <div class="callout warn"><b>เจอระหว่างทาง</b><ul>
+    <li>anvil ไม่มี historical state จึงหา block ที่ deploy จาก log แรกแทน</li>
+    <li>potato query getLogs ทั้งเชนในครั้งเดียวไม่ได้ ต้องสแกนทีละ 5,000 block</li>
+  </ul></div>
+
+  <h3>15.2 indexer สองเชนและปัญหานาฬิกา</h3>
+  <p>Ponder อ่าน event ของ endpoint และ OFT บนทั้งสองเชน แล้วรวมเป็นตาราง <code>lzMessages</code> (สถานะ sent / verified / delivered) และ <code>oftTransfers</code></p>
+  <p>ปัญหาที่เจอคือ <b>นาฬิกาของ anvil ช้ากว่า potato 157 วินาที</b> ทำให้ event "delivered" บนเชนหนึ่งดูเหมือนเกิดก่อน "sent" บนอีกเชน ถ้า handler คิดว่าต้องเห็น sent ก่อนเสมอ ข้อมูลจะผิด ทางแก้คือ<b>ทุก handler ใช้ upsert</b> ไม่ว่า event ไหนมาก่อนก็เติมข้อมูลลงแถวเดียวกันได้ และใช้ ordering แบบ multichain</p>
+  <div class="callout lesson"><b>บทเรียน</b><p>ห้ามพึ่งลำดับเวลาข้ามเชน timestamp ของแต่ละเชนมาจากนาฬิกาคนละเครื่อง ให้ใช้ GUID หรือ (path, nonce) เป็น key แล้วรวมข้อมูลแบบ upsert</p></div>
+
+  <h3>15.3 เทียบ indexer กับเชน</h3>
+  <p>ก่อนเชื่อตัวเลขใน UI ต้องเทียบกับ <code>check-supply</code> ก่อน</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>asset</th><th>จาก indexer</th><th>check-supply</th></tr></thead>
+    <tbody>
+      <tr><td>POTATO</td><td class="num">106.5 − 40.123456 = 66.376544</td><td>ตรงกัน</td></tr>
+      <tr><td>USDC</td><td class="num">1202 − 400.5 = 801.5</td><td>ตรงกัน</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>15.4 ใช้งานจาก UI</h3>
+  <ol class="steps">
+    <li><b>เปิดเว็บ</b> ที่ port 5173 ด้วย burner wallet และ faucet (dev only) <span class="result">การ์ด "Bridge → anvil (LayerZero lab)" ขึ้น, burner ต่ออัตโนมัติ</span></li>
+    <li><b>ขอ 10 POTATO แล้วส่ง 2 ไป anvil</b> <span class="result">sent → verified 1 วินาที → delivered 3 วินาที, balance 10 → 8</span></li>
+    <li><b>รับ USDC.lz 25 แล้วส่งออก 5</b> <span class="result">ตารางแสดงทั้งขาเข้าและขาออก, rate limit แสดง 10,000</span></li>
+    <li><b>ตรวจ invariant หลังใช้ UI</b> <span class="result">✅ ทั้งสอง asset</span></li>
+  </ol>
+  <div class="callout note"><b>incident เล็ก</b><p>Ponder dev reload ซ้อน 3 ครั้งตอนแก้หลายไฟล์พร้อมกัน ทำให้ DB (PGlite) ถูกปิดกลางคัน (exit 75) restart แล้วกลับมาปกติ ไม่ใช่ bug ในโค้ดของ indexer</p></div>
+  <div class="callout warn"><b>ยังค้าง</b><p>indexer ยังไม่ index event <code>Quarantined</code> (บท 6) และยังไม่มี alert เมื่อ message ค้างนานเกินกำหนด</p></div>
+
+  <div class="summary"><h4>สรุปบทที่ 15</h4><ul>
+    <li>address มีแหล่งความจริงเดียวแล้ว export ไปให้ส่วนอื่น</li>
+    <li>indexer ข้ามเชนต้อง upsert และไม่พึ่งลำดับเวลา</li>
+    <li>เทียบยอดของ indexer กับเชนก่อนเชื่อ UI</li>
+  </ul></div>
+</section>
+
+<section class="chapter tabpanel" id="ch16">
+  <div class="ch-num">บทที่ 16 · TOPIC 16</div>
+  <h2>IBC กับ LayerZero และทางไป production</h2>
+  <p class="lead">potato มีเส้นทางข้ามเชนอยู่แล้วหนึ่งทางคือ IBC บทสุดท้ายเทียบสองเทคโนโลยีจากประสบการณ์จริงของทั้งสองทาง ตัดสินใจว่า asset ไหนควรใช้ทางไหน และกู้ IBC ที่ตายไปแล้วระหว่าง workshop</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ตัดสินใจว่า asset ไหนใช้ IBC หรือ LayerZero และรู้ขั้นตอน integration ทางการ</div>
+    <div><b>ต้องเตรียม</b>ประสบการณ์ IBC bridge, แผนเปิด public network</div>
+    <div><b>ผลลัพธ์</b>ADR 0004, production-path.md, IBC กลับมาใช้ได้</div>
+  </div>
+
+  <h3>16.1 เทียบทีละประเด็น</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ประเด็น</th><th>IBC</th><th>LayerZero</th></tr></thead>
+    <tbody>
+      <tr><td>ใครยืนยัน</td><td>light client ของอีกเชนบน chain เอง ตรวจ consensus ของอีกฝั่ง เชื่อแค่ validator ของสองเชน</td><td>DVN ที่ app เลือก ปลอดภัยเท่ากับชุด DVN</td></tr>
+      <tr><td>ถ้า off-chain หยุด</td><td><b>อันตรายกว่า</b>: relayer หยุดเกิน trusting period client หมดอายุ ต้องกู้ผ่าน gov ทั้งสองเชน</td><td>message แค่รอ worker กลับมาก็ส่งต่อเอง</td></tr>
+      <tr><td>เชนที่ใช้ได้</td><td>Cosmos ↔ Cosmos เต็มที่, ฝั่ง EVM ผ่าน IBC Eureka</td><td>EVM และ non-EVM จำนวนมาก แต่ต้องมี endpoint ทางการ</td></tr>
+      <tr><td>token ปลายทาง</td><td>voucher <code>ibc/&lt;hash&gt;</code> ต่างกันตามเส้นทาง</td><td>address เดียวต่อเชน (OFT)</td></tr>
+      <tr><td>control ของ issuer</td><td>ICS-20 ไม่มี rate limit หรือ pause ในตัว ต้องเพิ่ม middleware</td><td>ทำใน OFT ได้เอง</td></tr>
+      <tr><td>การเข้าร่วม</td><td>permissionless เปิด channel เองได้</td><td>ต้องให้ LayerZero Labs deploy endpoint และ DVN/executor ต้องรองรับ</td></tr>
+      <tr><td>license</td><td>Apache-2.0</td><td>protocol เป็น LZBL-1.2 (ดูข้อ 16.2)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>16.2 license: self-host ไป production ไม่ได้</h3>
+  <p>เราอ่าน <code>LICENSE-LZBL-1.2</code> จากต้นทางเองเพราะ search ยืนยันไม่ได้ ข้อสรุปคือ protocol อนุญาตเฉพาะ <b>non-production use</b> การใช้ใน production ต้องซื้อ commercial license และจะเปลี่ยนเป็น GPL-2.0+ ในวันที่ 2027-12-14 สำหรับ permissionless app</p>
+  <p>นอกจากเรื่อง license แล้ว ถ้าเรา self-host endpoint ก็ไม่มีเชนอื่นรู้จัก endpoint ของเรา ทางจริงจึงเป็น <b>integration ทางการ</b> ที่ LayerZero Labs deploy endpoint บน potato และ OApp/OFT ของเรา (MIT) ชี้ไปที่ endpoint นั้น</p>
+
+  <h3>16.3 การตัดสินใจ (ADR 0004)</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>asset</th><th>ไปเชน Cosmos</th><th>ไปเชน EVM</th></tr></thead>
+    <tbody>
+      <tr><td>POTATO</td><td><b>IBC</b> (ICS-20 ที่มีอยู่)</td><td><b>LayerZero ทางการ</b> + PotatoNativeAdapter</td></tr>
+      <tr><td>USDC</td><td colspan="2"><b>USDC ของ issuer ผ่าน IBC</b> ไม่ bridge เอง (ปัจจุบันคือ native USDC บน Injective ผ่าน CCTP V2 เพราะ Circle กำลังปิด USDC บน Noble: หยุด mint ใหม่ 2026-10-13, pause เต็มรูปแบบ 2027-01-12)</td></tr>
+    </tbody>
+  </table></div>
+  <p>ผลที่ตามมา: <code>UsdcAdapter</code>, <code>UsdcOFT</code> และ <code>MockUSDC</code> ใช้แค่ใน lab และ stack ของ LayerZero ที่ self-host (บท 9–12) ไม่ไป production</p>
+  <div class="callout lesson"><b>บทเรียน</b><p>การเลือกเส้นทางของ stablecoin ขึ้นกับว่า issuer รองรับทางไหน ไม่ใช่เทคโนโลยีอย่างเดียว stablecoin มีค่าเพราะ issuer รับรอง ถ้าเรา bridge เอง ผู้ถือต้องรับความเสี่ยงของ bridge เราเพิ่ม</p></div>
+
+  <h3>16.4 IBC client หมดอายุ: เกิดขึ้นจริงระหว่าง workshop</h3>
+  <p>ตอนเริ่มบทนี้เราตรวจ IBC ของ potato แล้วพบว่า <b>light client <code>07-tendermint-0</code> เป็น Expired</b> ส่วน channel-0 ยังเป็น STATE_OPEN แต่โอนไม่ได้จริง สาเหตุคือ gaia-local และ Hermes relayer หยุดตั้งแต่ 27 ก.ย. นานกว่า <b>trusting period 14 วัน</b> เมื่อเปิด gaia ขึ้นมาก็พบว่า client ฝั่ง gaia ที่ติดตาม potato หมดอายุเหมือนกัน</p>
+  <p>ทำไมหมดอายุแล้วอัปเดตต่อไม่ได้: light client เชื่อ validator set ล่าสุดที่รู้จักได้แค่ช่วง trusting period (ต้องน้อยกว่า unbonding period 21 วัน) หลังจากนั้น validator ชุดเก่าอาจถอนเงินที่ stake ไปแล้ว การลงโทษจึงทำไม่ได้ client จึงต้องหยุดเชื่อด้วยตัวเอง</p>
+
+  <figure>
+    <svg viewBox="0 0 720 180" role="img" aria-label="ขั้นตอนกู้ IBC client ที่หมดอายุ">
+      <defs><marker id="m16" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect x="10" y="40" width="150" height="64" rx="8" class="box-bad"/><text x="85" y="66" text-anchor="middle" class="t-bad">07-tendermint-0</text><text x="85" y="86" text-anchor="middle" class="t-s">Expired</text>
+      <rect x="190" y="40" width="150" height="64" rx="8" class="box"/><text x="265" y="66" text-anchor="middle" class="t-b">substitute client</text><text x="265" y="86" text-anchor="middle" class="t-s">Hermes create client</text>
+      <rect x="370" y="40" width="150" height="64" rx="8" class="box-info"/><text x="445" y="66" text-anchor="middle" class="t-b">gov proposal</text><text x="445" y="86" text-anchor="middle" class="t-s">recover-client + vote</text>
+      <rect x="550" y="40" width="160" height="64" rx="8" class="box-ok"/><text x="630" y="66" text-anchor="middle" class="t-ok">07-tendermint-0</text><text x="630" y="86" text-anchor="middle" class="t-s">Active · id เดิม</text>
+      <line x1="160" y1="72" x2="188" y2="72" class="ln" marker-end="url(#m16)"/>
+      <line x1="340" y1="72" x2="368" y2="72" class="ln" marker-end="url(#m16)"/>
+      <line x1="520" y1="72" x2="548" y2="72" class="ln" marker-end="url(#m16)"/>
+      <text x="360" y="140" text-anchor="middle" class="t-s">ทำบนทั้งสองเชน · connection-0, channel-0 และ voucher denom ไม่เปลี่ยน</text>
+    </svg>
+    <figcaption>รูป 16.1 · กู้ client ที่หมดอายุด้วย MsgRecoverClient ผ่าน governance</figcaption>
+  </figure>
+
+  <h3>16.5 กู้ด้วย governance</h3>
+  <ol class="steps">
+    <li><b>สร้าง substitute client</b> ใหม่ของ counterparty เดิมด้วย Hermes</li>
+    <li><b>ยื่น proposal <code>recover-client &lt;subject&gt; &lt;substitute&gt;</code></b> ซึ่งคัด state ของ substitute ไปใส่ subject client</li>
+    <li><b>validator โหวต yes</b> (potato 4 ตัว, gaia 1 ตัว, voting period 30 วินาทีใน localnet)</li>
+    <li><b>subject client กลับมา Active ด้วย id เดิม</b> connection, channel และ voucher denom ทุกตัวจึงไม่ต้องเปลี่ยน</li>
+  </ol>
+  <pre><code>make ibc-up
+POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
+<span class="c"># == potato-1: 07-tendermint-0 (tracks gaia-local) is Expired</span>
+<span class="c"># substitute client 07-tendermint-2 (Active)</span>
+<span class="c"># proposal #3: 4 validators voted yes, waiting for the 30s voting period</span>
+<span class="c"># proposal #3 passed; 07-tendermint-0 is now Active</span>
+<span class="c"># == gaia-local: 07-tendermint-0 (tracks potato-1) is Expired</span>
+<span class="c"># proposal #1 passed; 07-tendermint-0 is now Active</span></code></pre>
+  <div class="callout bad"><b>bug ในสคริปต์ที่รายงานว่า "ผ่าน" ทั้งที่ไม่ได้ทำ</b><p>รอบแรกสคริปต์ยื่น proposal แล้วอ่าน "proposal ล่าสุด" ทันที แต่ tx ยังไม่ถูก include ในบล็อก จึงได้ proposal #1 ซึ่งเป็น upgrade เก่าที่ผ่านไปแล้ว validator ไปโหวต #1 (ไม่มีผล) แล้วสคริปต์เห็น status PASSED จึงรายงานว่าผ่าน แต่ client ยัง Expired อยู่ แก้ด้วยการจำ id สูงสุดก่อนยื่น แล้วรอจนเจอ id ที่ใหม่กว่า เราจับได้เพราะสคริปต์ตรวจผลลัพธ์จริง (client status) ไม่ได้เชื่อแค่สถานะของ proposal</p></div>
+  <p>พิสูจน์ว่าใช้ได้จริงด้วย <code>smoke_ibc.sh</code> ผ่าน relayer: ผ่านทั้ง 7 ข้อ ได้แก่ potato → gaia, gaia → potato, ICS-20 precompile จาก EVM และ PotatoBridge</p>
+  <div class="callout lesson"><b>บทเรียน</b><p>IBC ไม่ใช่ "ตั้งครั้งเดียวจบ" relayer ต้องเดินตลอด (Hermes ที่ตั้ง <code>refresh = true</code> อัปเดต client ทุก 1/3 ของ trusting period) และต้องมี alert เมื่อ client ใกล้หมดอายุ ใน production ควรมี relayer อย่างน้อย 2 operator</p></div>
+
+  <h3>16.6 ทางไป production</h3>
+  <p>รายการเต็มอยู่ในภาคผนวก C สิ่งที่ต้องทำก่อนสุดคือ<b>ติดต่อ LayerZero Labs</b> เรื่อง chain integration ทางการ เพราะขั้นตอนนี้ไม่มีเอกสารสาธารณะ และเป็นเงื่อนไขของทุกอย่างฝั่ง EVM</p>
+
+  <div class="summary"><h4>สรุปบทที่ 16</h4><ul>
+    <li>IBC ปลอดภัยด้วย light client แต่ตายได้ถ้า relayer หยุดนานเกิน trusting period</li>
+    <li>LayerZero ที่ self-host ไป production ไม่ได้ ทั้งเพราะ license และเพราะเชนอื่นไม่รู้จัก endpoint</li>
+    <li>POTATO ใช้ IBC ไป Cosmos + LayerZero ทางการไป EVM ส่วน USDC ใช้ของ issuer</li>
+    <li>กู้ client ที่หมดอายุด้วย substitute + recover-client โดย id เดิมไม่เปลี่ยน</li>
+    <li>สคริปต์ต้องตรวจผลลัพธ์จริง ไม่ใช่สถานะของขั้นตอน</li>
+  </ul></div>
+</section>
+
+<!-- ===================== ภาคผนวก ===================== -->
+<section class="appendix tabpanel" id="apx-a">
+  <div class="ch-num">ภาคผนวก A</div>
+  <h2>บทเรียนรวม 20 ข้อ</h2>
+  <p class="lead">ถ้าจำได้แค่หน้าเดียว ให้จำหน้านี้</p>
+  <h3>สถาปัตยกรรมและความปลอดภัย</h3>
+  <ol>
+    <li><b>LayerZero ส่งข้อความ ไม่ได้ถือเงิน</b> เงินอยู่ใน OApp ของเรา ความปลอดภัยจึงเป็นของเรา (บท 1)</li>
+    <li><b>DVN ตัวเดียว = key ดอกเดียวก็ mint ได้ไม่จำกัด</b> ต้องผ่าน ≥ 2 DVN ที่อิสระจริงทั้งองค์กร, key และ codebase (บท 3)</li>
+    <li><b>default ของ endpoint ปลอดภัยไม่พอ</b> ทั้ง messaging และ lzRead ใช้ DVN ตัวเดียว ต้องตั้งเองทุกชั้น: DVN, library, executor (บท 3, 4, 7)</li>
+    <li><b><code>optionalDVNCount = 0</code> แปลว่า "ใช้ default"</b> ค่า "ไม่มี" คือ 255 (บท 8)</li>
+    <li><b>config ฝั่งส่งกับฝั่งรับต้องตรงกัน</b> และแก้ config ทีหลังไม่ช่วย message ที่ค้างไปแล้ว (บท 3)</li>
+    <li><b>หลัง DVN ยืนยันครบ ใครก็ส่งของต่อได้</b> message ที่ FAILED หรือค้างจึงกู้ได้เสมอ (บท 2, 4)</li>
+  </ol>
+  <h3>Token และ stablecoin</h3>
+  <ol start="7">
+    <li><b>adapter อยู่บน home chain ที่เดียว</b> invariant: locked ≥ minted และแยก "ระหว่างทาง" ออกจาก "mint เกิน" (บท 5)</li>
+    <li><b>ห้าม revert ใน lzReceive</b> ปฏิเสธเงินด้วย quarantine หรือ refund แทน ไม่งั้น message ค้างถาวร (บท 6, 7, 13)</li>
+    <li><b>stablecoin ต้องมี control ตั้งแต่วันแรก</b>: rate limit, pause, blacklist (แยก role จาก owner) (บท 6)</li>
+    <li><b>ตรวจพฤติกรรม token บนเชนก่อนออกแบบ</b> WPOTATO ไม่ใช่ WETH (บท 13)</li>
+    <li><b>stablecoin ควรใช้ของ issuer</b> bridge เองทำให้ผู้ถือรับความเสี่ยงเพิ่ม (บท 16)</li>
+  </ol>
+  <h3>Operations</h3>
+  <ol start="12">
+    <li><b>ตรวจจับด้วย payload hash ไม่ใช่การนับ nonce</b> การนับถูกหลอกได้เมื่อ nonce จริงตามทัน (บท 8)</li>
+    <li><b>หยุดก่อน สอบสวนทีหลัง</b> pause และ BlockedMessageLib ยกเลิกได้ ใช้ได้ทันทีที่สงสัย (บท 8)</li>
+    <li><b>owner และ delegate เป็น multisig</b> ตั้ง delegate ก่อนโอน owner (บท 8)</li>
+    <li><b>config as code</b> ให้เครื่องมือเทียบ "ที่ควรเป็น" กับ "ที่เป็นอยู่" ทั้งหมดในครั้งเดียว (บท 8)</li>
+    <li><b>off-chain infra ที่ไม่มีใครเฝ้าจะพังเงียบๆ</b> IBC client หมดอายุหลัง 14 วันที่ไม่มี relayer (บท 16)</li>
+  </ol>
+  <h3>วิธีทำงาน</h3>
+  <ol start="17">
+    <li><b>gas ต้องวัดจากเชนจริง</b> การจำลองผิดได้ 7.7 เท่าเมื่อเชนเปลี่ยนกฎ gas (บท 4)</li>
+    <li><b>สคริปต์ต้อง idempotent และอ่านกลับจากเชน</b> ไม่เชื่อ log ของตัวเอง (บท 5, 11)</li>
+    <li><b>checker ต้องเคย fail</b> negative test ก่อนเชื่อผลที่ผ่าน (บท 10)</li>
+    <li><b>ตรวจผลลัพธ์จริง ไม่ใช่สถานะของขั้นตอน</b> proposal PASSED ไม่ได้แปลว่า client Active (บท 16)</li>
   </ol>
 </section>
 
-<section id="topics">
-  <h2>บทเรียนราย topic</h2>
-  <p class="sub">goal ของแต่ละ topic สิ่งที่ได้เรียนรู้ และหลักฐานที่วัดได้จาก lab หรือ testnet</p>
-
-  <div class="group-title">ส่วนที่ 1 · พื้นฐาน LayerZero (topic 1–8)</div>
-  <div class="cards">
-    <article class="card">
-      <div class="num">TOPIC 1</div><h3>ปัญหา cross-chain และภาพรวม</h3>
-      <p class="goal">อธิบายได้ว่า LayerZero เป็น messaging layer ไม่ใช่ bridge</p>
-      <ul>
-        <li>"bridge" ที่แท้จริงคือ OApp ที่เราเขียนเอง (OFT/Adapter ทำหน้าที่ lock, mint และ burn)</li>
-        <li>Ronin, Wormhole และ Nomad จบเหมือนกันหมด: mint หรือถอนได้โดยไม่มีของจริงรองรับ</li>
-        <li>สิ่งที่ช่วยได้ทุกเคส: ผู้ยืนยันหลายรายที่อิสระต่อกัน, rate limit, invariant แบบ real-time และสวิตช์หยุดฉุกเฉิน</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> Endpoint ถือ 0 POTATO / 0 USDC ส่วน adapter ถือ 68.88 POTATO และ 852.5 USDC</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 2</div><h3>Architecture V2</h3>
-      <p class="goal">ไล่ lifecycle ได้: send → verify → commit → lzReceive</p>
-      <ul>
-        <li>PacketSent → DVN <code>verify</code> → <code>commitVerification</code> → executor เรียก <code>lzReceive</code></li>
-        <li>Executor ปลอม message ไม่ได้ ทำได้แค่ส่งช้าหรือไม่ส่ง (เป็นเรื่อง liveness)</li>
-        <li>relay ด้วยมือทุกขั้นช่วยให้เห็นว่าแต่ละ role ทำอะไร</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> event ครบ lifecycle 1/1/1 ทั้งบน anvil และ potato</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 3</div><h3>Security model และ config</h3>
-      <p class="goal">ออกแบบ DVN set, threshold และ confirmations สำหรับ stablecoin</p>
-      <ul>
-        <li>DEMOWEAK (1 DVN) โดนปลอม mint ส่วน DEMOSAFE (2 DVN) ถูกบล็อก</li>
-        <li>DVN ต้องอิสระจริง คือคนละ key และคนละองค์กร ไม่ใช่แค่หลาย key ในองค์กรเดียว</li>
-        <li>config ไม่ตรงกัน → message ค้าง → ให้ DVN ที่ขาด attest เองแล้ว delivered ภายใน 3 วินาที</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> attacker ได้ 1,000,000 บน path 1 DVN และได้ 0 บน path 2 DVN</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 4</div><h3>OApp บน testnet ทางการ</h3>
-      <p class="goal">deploy OApp บน 2 testnet แล้วส่งข้อความข้ามเชน</p>
-      <ul>
-        <li>forge จำลอง deploy ได้ 1.47M แต่ของจริงใช้ 11.39M (Glamsterdam/EIP-8037) จึงต้องใช้ <code>--skip-simulation</code></li>
-        <li>ping แรก FAILED เพราะ gas ไม่พอ กู้ได้ด้วยการส่งเองด้วย gas ที่พอ แล้วแก้ต้นเหตุด้วยการกำหนด gas ต่อเชนปลายทาง</li>
-        <li>faucet ส่วนใหญ่บังคับว่าต้องมียอดบน mainnet เลยใช้ Google faucet แล้ว bridge ผ่าน Inbox ของ Arbitrum</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> ping ไปและกลับอัตโนมัติ 94 วินาทีและ 142 วินาที</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 5</div><h3>OFT: token ข้ามเชน</h3>
-      <p class="goal">เลือก OFT, OFTAdapter หรือ NativeOFTAdapter ได้</p>
-      <ul>
-        <li>token ใหม่ใช้ OFT, token ที่มีอยู่แล้วใช้ OFTAdapter (lock/unlock) และเหรียญ native ใช้ NativeOFTAdapter</li>
-        <li>shared decimals ทำให้มีเศษ (dust) ค้างใน wallet ผู้ส่ง ไม่หายไปไหน</li>
-        <li>invariant: locked บน home = minted บนเชนอื่น (นับรวม message ที่ยังอยู่ระหว่างทาง)</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> ใช้ครบทั้งสามแบบใน topic 13/14 (ADR 0002/0003)</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 6</div><h3>Stablecoin controls</h3>
-      <p class="goal">rate limit, pause, blacklist และ supply invariant</p>
-      <ul>
-        <li>blacklister เป็น role แยกจาก owner ตัว owner จึง blacklist เองไม่ได้</li>
-        <li>เงินที่ส่งมาให้ address ที่ถูก blacklist จะถูก quarantine แทนการ revert (revert = message ค้างตลอดไป)</li>
-        <li>contract upgrade ไม่ได้ จึงต้อง deploy v2: ปิดขาเข้าของ v1 แต่เปิดขาออกไว้ให้ผู้ใช้ถอนกลับมาเอง</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> unit test 15/15, release ให้ address ที่ยังถูก blacklist ไม่ได้</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 7</div><h3>lzCompose และ lzRead</h3>
-      <p class="goal">ออกแบบ compose และ read ให้ใช้กับงานจริงได้</p>
-      <ul>
-        <li>composer ต้องรับเฉพาะ endpoint และ OFT ที่ไว้ใจ และถ้าล้มเหลวต้อง refund ไม่ใช่ revert</li>
-        <li>executor ต้องมี allowlist ไม่งั้น compose ปลอมจะถูก retry ไปเรื่อยๆ</li>
-        <li>default ของ lzRead ก็ใช้ read DVN ตัวเดียวเหมือนกัน จึงตั้ง LayerZero Labs + Horizen เอง</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> unit test จับ bug offset 108 → 76 ได้ก่อน deploy; lzRead ได้ผล 1 == 1 ใน 289 วินาที</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 8</div><h3>Deploy, ops และ debugging</h3>
-      <p class="goal">มี runbook สำหรับ deploy และรับมือเหตุการณ์</p>
-      <ul>
-        <li>BlockedMessageLib หยุด path ได้ภายใน 14 วินาที โดยไม่ต้องมี pause ใน contract</li>
-        <li>ย้าย DVN แบบไม่ให้ message ค้าง: pause → setConfig ทั้งสองเชน → unpause (maintenance window 16 วินาที)</li>
-        <li>pin library, ย้าย owner และ delegate ไปที่ Safe 2-of-3 แล้ว wire ผ่าน DevTools</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> EOA ทำอะไรไม่ได้แล้ว, Safe ที่มีลายเซ็นเดียวได้ GS020, DevTools ตอบ "The OApp is wired"</div>
-    </article>
-  </div>
-
-  <div class="group-title">ส่วนที่ 2 · เชื่อม potato-chain (topic 9–16)</div>
-  <div class="cards">
-    <article class="card">
-      <div class="num">TOPIC 9</div><h3>ความพร้อมของ potato-chain</h3>
-      <p class="goal">ยืนยันว่า LayerZero V2 ทำงานบน potato ได้</p>
-      <ul>
-        <li>potato เป็น EVM ระดับ Prague และใช้ gas ใกล้เคียง anvil มาก (ต่างกันแค่ 12 gas)</li>
-        <li>block ละประมาณ 1.25 วินาที และ finality ทันที จึงตั้ง <code>confirmations = 1</code> ได้</li>
-        <li>เช็คก่อนว่ามีอะไรใช้ port อยู่ แล้วค่อยย้ายของเรา อย่าปิดของคนอื่น</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> loopback ผ่านบน potato, gas 173,989 เทียบกับ 174,001 บน anvil</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 10</div><h3>เชนคู่และ topology</h3>
-      <p class="goal">เลือกเชนคู่, EID และ home chain ของแต่ละ asset</p>
-      <ul>
-        <li>topology เก็บเป็น JSON ที่เดียว ทุก script อ่านจากไฟล์นี้</li>
-        <li>checker ต้องผ่าน negative test ด้วย: ใส่ค่าผิดแล้วต้องจับได้</li>
-        <li>anvil ที่ใช้ <code>--state</code> ยังมี state อยู่หลัง restart</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> topology ✅ 16/16 และจับค่าผิดได้ 2/2 จุด</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 11</div><h3>Deploy protocol เอง</h3>
-      <p class="goal">EndpointV2 และ ULN302 บนสองเชน พร้อม default config</p>
-      <ul>
-        <li>script ต้อง idempotent: รันรอบสองต้องไม่มี tx (reused/ok)</li>
-        <li>อ่าน config กลับจากเชนเพื่อตรวจทุกครั้ง อย่าเชื่อแค่ log ของ script</li>
-        <li>OpenZeppelin v4 กับ v5 ชนกัน แก้ด้วย remapping ตาม context</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> wiring ✅ 12/12, nonce ตรงกันทั้งสองทาง</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 12</div><h3>DVN และ Executor ของเราเอง</h3>
-      <p class="goal">worker ส่ง message ให้อัตโนมัติ</p>
-      <ul>
-        <li>แยก key ให้แต่ละ role และให้ DVN attest เฉพาะงานที่ถูก assign ให้ตัวเอง</li>
-        <li>worker ต้องตามงานที่ค้างระหว่างที่ปิดอยู่ได้ (restart test)</li>
-        <li>พิสูจน์ bug ด้วย repro ก่อน แล้วแก้ที่ต้นทางด้วย patch พร้อม regression test</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> end-to-end 6–11 วินาที, fillTransaction 22,490 → 46,330 หลัง patch</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 13</div><h3>Bridge POTATO (native)</h3>
-      <p class="goal">โอนไป-กลับโดย supply ยังถูกต้อง</p>
-      <ul>
-        <li>WPOTATO precompile ไม่ใช่ WETH จริง (withdraw แค่ emit event) จึงเลือก NativeOFTAdapter</li>
-        <li><code>msg.value</code> ต้องพอดีกับยอด ถ้าเกินแม้ 1 wei ได้ <code>IncorrectMessageValue</code></li>
-        <li>ผู้รับที่รับ native ไม่ได้ทำให้เกิด CreditFailed ทดสอบใน unit test เพื่อไม่ให้ message ค้างบนเชน</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> locked 100 = minted 100 และ invariant ยังถูกต้องระหว่างที่มี message in-flight</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 14</div><h3>Bridge USDC</h3>
-      <p class="goal">bridge USDC ด้วย model ที่ถูก พร้อม controls</p>
-      <ul>
-        <li>home ของ USDC คือเชนของ issuer ส่วนเชนอื่นเป็น OFT ที่ mint/burn</li>
-        <li>rate limit บล็อก 15,000 ได้โดย supply ไม่เปลี่ยน</li>
-        <li>message ที่มาถึงตอน pause จะรออยู่ แล้ว delivered หลัง unpause โดยไม่หาย</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> locked 599.5 = minted 599.5 และ delivered 23 วินาทีหลัง unpause</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 15</div><h3>Frontend, indexer และ explorer</h3>
-      <p class="goal">ผู้ใช้กด bridge และเห็นสถานะของ message</p>
-      <ul>
-        <li>นาฬิกาของแต่ละเชนไม่ตรงกัน (anvil ช้า 157 วินาที) indexer จึงต้อง upsert แทนการพึ่งลำดับเวลา</li>
-        <li>เทียบยอดของ indexer กับ check-supply ให้ตรงกันก่อนจะเชื่อ UI</li>
-        <li>indexer ยังไม่รู้จัก event Quarantined จึงแสดงว่า "delivered" (ยังค้างเป็นงาน)</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> UI: sent → verified 1 วินาที → delivered 3 วินาที</div>
-    </article>
-    <article class="card">
-      <div class="num">TOPIC 16</div><h3>IBC vs LayerZero และทางไป production</h3>
-      <p class="goal">ตัดสินใจว่า asset ไหนใช้ IBC หรือ LayerZero</p>
-      <ul>
-        <li>LayerZero ที่ self-host ไป production ไม่ได้ เพราะติด license LZBL-1.2 และเชนอื่นไม่รู้จัก endpoint ของเรา</li>
-        <li>IBC client หมดอายุทั้งสองฝั่ง กู้ด้วย <code>recover-client</code> ผ่าน gov แล้ว channel-0 ยังเป็นตัวเดิม</li>
-        <li>สคริปต์ gov ต้องรอ proposal id ใหม่ ไม่งั้นจะไปจับ proposal เก่าที่ผ่านไปแล้วและรายงานว่า "ผ่าน" ผิดๆ</li>
-      </ul>
-      <div class="proof"><b>หลักฐาน:</b> potato proposal #3 และ gaia #1 ผ่าน, ibc smoke test ✅ 7/7</div>
-    </article>
-  </div>
+<section class="appendix tabpanel" id="apx-b">
+  <div class="ch-num">ภาคผนวก B</div>
+  <h2>แคตตาล็อก bug และปัญหาที่เจอ</h2>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ปัญหา</th><th>ต้นเหตุ</th><th>แก้อย่างไร</th><th>บท</th><th>สถานะ</th></tr></thead>
+    <tbody>
+      <tr><td><code>eth_getLogs</code> จาก block 0 ได้ log ซ้ำ</td><td>cosmos/evm v0.7.3 ไม่ clamp fromBlock</td><td>patch 0001 + regression test</td><td>12</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>viem ส่ง tx แล้ว out of gas</td><td><code>eth_fillTransaction</code> ประเมินที่ block 0</td><td>patch 0002: ประเมินที่ latest</td><td>12</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>deploy บน Sepolia out of gas</td><td>Glamsterdam (EIP-8037) แต่ forge จำลองด้วย Prague</td><td><code>--skip-simulation</code></td><td>4</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>ping บน testnet FAILED</td><td>lzReceive gas 100k ไม่พอ (ต้องการ 174k / 697k)</td><td>execute เอง + gas ต่อเชนปลายทาง</td><td>4</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>check-supply ไม่เห็น forgery</td><td>นับ nonce แทนเทียบเนื้อหา</td><td>audit ด้วย payload hash</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>worker บอก "already delivered" ทั้งที่ค้าง</td><td>ตีความ slot ว่างว่าส่งถึงแล้ว</td><td>ALERT POISONED</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>executor retry compose ปลอมไม่สิ้นสุด</td><td>ไม่มี allowlist</td><td>allowlist + skip</td><td>7</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>composer อ่าน payload ผิด</td><td>offset 108 แทน 76</td><td>unit test จับได้ก่อน deploy</td><td>7</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>indexer เรียงลำดับผิด</td><td>นาฬิกาของ anvil ช้ากว่า potato 157 วินาที</td><td>upsert ทุก handler</td><td>15</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>DEMOSAFE ยังเชื่อ DVN ที่หลุด</td><td>ย้าย DVN ไม่ครบทุก OApp</td><td>check-security แล้วย้ายตาม</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>optional DVN ยังตาม default</td><td><code>optionalDVNCount = 0</code></td><td>DevTools wire เป็น 255 ผ่าน Safe</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>IBC client หมดอายุทั้งสองฝั่ง</td><td>ไม่มี relayer เกิน 14 วัน</td><td>substitute + gov recover-client</td><td>16</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>สคริปต์ recover รายงานผ่านผิด</td><td>อ่าน proposal ล่าสุดก่อน tx เข้าบล็อก</td><td>รอ id ที่ใหม่กว่าเดิม</td><td>16</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>OpenZeppelin v4/v5 ชนกัน</td><td>protocol ใช้ v4, OApp ใช้ v5</td><td>context remapping</td><td>9</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>cast พิมพ์ <code>40338 [4.033e4]</code></td><td>รูปแบบ output ของ cast</td><td>ตัดด้วย awk</td><td>11</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>anvil-home ค้าง 1 ครั้ง</td><td>ยังไม่รู้</td><td>กู้จาก state dump</td><td>10</td><td><span class="tag warn">ไม่รู้สาเหตุ</span></td></tr>
+      <tr><td>Ponder ตายหลัง hot reload ซ้อน</td><td>PGlite ถูกปิดกลางคัน</td><td>restart</td><td>15</td><td><span class="tag info">dev only</span></td></tr>
+      <tr><td>UI แสดงเงินที่ถูกกักว่า delivered</td><td>ไม่ได้ index event Quarantined</td><td>ยังไม่แก้</td><td>6, 15</td><td><span class="tag bad">ค้าง</span></td></tr>
+      <tr><td>3 DEMOWEAK ค้างใน adapter v1</td><td>adapter ไม่มีทางกู้เหรียญ</td><td>ต้องออกแบบใน adapter รุ่นต่อไป</td><td>8</td><td><span class="tag bad">ค้าง</span></td></tr>
+    </tbody>
+  </table></div>
 </section>
 
-<section id="drill">
-  <h2>Drill: DEMOWEAK ถูกปลอม mint</h2>
-  <p class="sub">ซ้อมเหตุการณ์จริงตั้งแต่ถูกโจมตีจนกู้คืน (playbook <code>docs/runbooks/bridge-incident.md</code>)</p>
-  <div class="cols">
-    <div class="panel">
-      <ol class="drill">
-        <li class="bad"><b>key ของ DVN-A หลุด</b><span>path ที่มี DVN ตัวเดียว ปลอม message ได้ mint 1,000,000 DEMOWEAK.lz</span></li>
-        <li class="bad"><b>ดูด lockbox</b><span>bridge 100 กลับไป ทำให้ lockbox ของจริงบน anvil เหลือ 100 → 0</span></li>
-        <li class="bad"><b>การโอนจริงค้างถาวร</b><span>message ปลอมแย่ง nonce 2 ไป การโอนของผู้ใช้จึง POISONED</span></li>
-        <li><b>ตรวจจับ</b><span>check-supply ขึ้น ❌ minted &gt; locked และ audit ด้วย payload hash เจอ FORGED</span></li>
-        <li><b>หยุดความเสียหาย</b><span>ตั้ง BlockedMessageLib ทั้งสองเชนภายใน 14 วินาที</span></li>
-        <li><b>อุดรู</b><span>ถอด DVN-A ออก ให้ v2 ต้องผ่าน B + C แล้วลอง key A อีกรอบได้ <code>LZ_ULN_Verifying</code></span></li>
-        <li class="ok"><b>กู้คืน</b><span>snapshot สิทธิ์ของแต่ละคน treasury ชดเชย 103 แล้ว v2 ได้ locked 102 = minted 102</span></li>
-      </ol>
-    </div>
-    <div class="panel">
-      <h3>อะไรได้ผล</h3>
-      <ul>
-        <li>invariant minted ≤ locked จับได้ทันที</li>
-        <li>BlockedMessageLib ใช้ได้กับ OApp ที่ไม่มี pause</li>
-        <li>v2 แยก nonce space แต่ใช้ token เดิม ทำให้กู้คืนได้สะอาด</li>
-      </ul>
-      <h3 style="margin-top:16px">อะไรไม่ได้ผล (แก้แล้ว)</h3>
-      <ul>
-        <li>การนับ nonce ถูกหลอกเมื่อ nonce จริงตามทัน → เปลี่ยนเป็น audit ด้วย payload hash</li>
-        <li>worker บอกว่า "already delivered" ทั้งที่ message ค้าง → เปลี่ยนเป็น ALERT POISONED</li>
-        <li>3 DEMOWEAK ค้างใน adapter v1 ถาวร เพราะไม่มีทางกู้</li>
-      </ul>
-    </div>
-  </div>
+<section class="appendix tabpanel" id="apx-c">
+  <div class="ch-num">ภาคผนวก C</div>
+  <h2>Checklist ก่อนขึ้น production</h2>
+  <p>สถานะ ณ วันจบ workshop รายละเอียดเต็มอยู่ใน <code>docs/production-path.md</code></p>
+  <h3>เชน potato</h3>
+  <div class="table-wrap"><table class="wide"><tbody>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เปิด public testnet แล้วตามด้วย mainnet พร้อม RPC สาธารณะที่เสถียร, explorer และ faucet</td></tr>
+    <tr><td><span class="tag ok">พร้อม</span></td><td>patch RPC 2 ตัวของ cosmos/evm (ตรวจ upstream ก่อน mainnet แล้วถอด patch ที่ไม่จำเป็น)</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>แผน upgrade cosmos/evm ผ่าน x/gov โดยไม่ทำให้ IBC และ LayerZero สะดุด</td></tr>
+  </tbody></table></div>
+  <h3>LayerZero (POTATO ↔ EVM)</h3>
+  <div class="table-wrap"><table class="wide"><tbody>
+    <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>ติดต่อ LayerZero Labs เรื่อง chain integration: deploy EndpointV2, EID ทางการ, executor รองรับ potato</td></tr>
+    <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>DVN อย่างน้อย 2 รายที่อิสระต่อกันและรองรับ potato</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause และ rate limit ให้ PotatoNativeAdapter</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>audit PotatoNativeAdapter, StablecoinControls และ config ทุก path</td></tr>
+    <tr><td><span class="tag ok">พร้อม</span></td><td>ตั้ง security ราย OApp, pin library, ขั้นตอนเปลี่ยน DVN แบบไม่ให้ message ค้าง</td></tr>
+    <tr><td><span class="tag ok">พร้อม</span></td><td>owner/delegate เป็น Safe และจัดการ config ด้วย DevTools (พิสูจน์บน testnet)</td></tr>
+  </tbody></table></div>
+  <h3>IBC (POTATO ↔ Cosmos, USDC เข้า)</h3>
+  <div class="table-wrap"><table class="wide"><tbody>
+    <tr><td><span class="tag ok">พร้อม</span></td><td>ICS-20 + PotatoBridge ทำงานกับ gaia-local, runbook กู้ client (<code>make ibc-recover</code>)</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>relayer ≥ 2 operator และ alert ก่อน client หมดอายุ</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>channel ไป Injective เพื่อรับ native USDC (CCTP V2) และ allowlist ของ denom ที่ยอมรับ</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>IBC rate-limit middleware สำหรับ ICS-20</td></tr>
+  </tbody></table></div>
+  <h3>Operations</h3>
+  <div class="table-wrap"><table class="wide"><tbody>
+    <tr><td><span class="tag ok">พร้อม</span></td><td>indexer สองเชน, check-supply + audit ด้วย payload hash, playbook ที่ซ้อมแล้ว</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>alert real-time: FORGED/POISONED, invariant ผิด, message ค้างนาน, client ใกล้หมดอายุ, relayer/DVN หยุด</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>index event Quarantined และแสดงใน UI</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>ทางกู้เหรียญที่ค้างใน adapter ที่ปิดแล้ว (ออกแบบไม่ให้เป็นช่องโหว่ใหม่)</td></tr>
+  </tbody></table></div>
 </section>
 
-<section id="bugs">
-  <h2>Bug และปัญหาที่เจอระหว่างทาง</h2>
-  <p class="sub">เจอจริงทุกตัว บางตัวกลายเป็นบทเรียนสำคัญกว่าเนื้อหาของ topic เอง</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ปัญหา</th><th>ต้นเหตุ</th><th>แก้อย่างไร</th><th>สถานะ</th></tr></thead>
-      <tbody>
-        <tr><td><code>eth_getLogs</code> จาก block 0 ได้ log ซ้ำ</td><td>cosmos/evm v0.7.3 ไม่ clamp fromBlock</td><td>patch 0001 ใน potato + regression test</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>viem ส่ง tx แล้ว out of gas</td><td><code>eth_fillTransaction</code> ประเมิน gas ที่ block 0</td><td>patch 0002: ประเมินที่ latest</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>deploy บน Sepolia out of gas</td><td>Glamsterdam (EIP-8037) แต่ forge จำลองด้วย Prague</td><td><code>--skip-simulation</code> แล้วใช้ค่าประมาณจาก node</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>Ping FAILED บน testnet</td><td>lzReceive gas 100k ไม่พอ</td><td>ส่งเองด้วย gas ที่พอ แล้วตั้ง gas ต่อเชนปลายทาง</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>check-supply ไม่เห็น forgery</td><td>นับ nonce แทนการเทียบเนื้อหา</td><td>audit ด้วย payload hash</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>executor retry compose ปลอมตลอด</td><td>ไม่มี allowlist</td><td>allowlist + skip</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>composer อ่าน payload ผิด</td><td>offset 108 แทน 76</td><td>unit test จับได้ก่อน deploy</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>indexer เรียงลำดับผิด</td><td>นาฬิกาของ anvil ช้ากว่า potato 157 วินาที</td><td>upsert ทุก handler</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>optional DVN ยังตาม default</td><td><code>optionalDVNCount = 0</code></td><td>DevTools wire เป็น 255 ผ่าน Safe</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>IBC client หมดอายุทั้งสองฝั่ง</td><td>ไม่มี relayer เกิน 14 วัน</td><td>substitute client + gov <code>recover-client</code></td><td><span class="tag ok">แก้แล้ว</span></td></tr>
-        <tr><td>anvil-home ค้าง 1 ครั้ง</td><td>ยังไม่รู้ (stress test 3 แบบแล้วไม่เกิดซ้ำ)</td><td>กู้จาก state dump ข้อมูลไม่หาย</td><td><span class="tag warn">ไม่รู้สาเหตุ</span></td></tr>
-        <tr><td>UI แสดงเงินที่ถูกกักว่า delivered</td><td>indexer ไม่ได้ index event Quarantined</td><td>ยังไม่แก้</td><td><span class="tag bad">ค้าง</span></td></tr>
-      </tbody>
-    </table>
-  </div>
+<section class="appendix tabpanel" id="apx-d">
+  <div class="ch-num">ภาคผนวก D</div>
+  <h2>คำสั่งที่ใช้บ่อย</h2>
+  <p>รันจาก <code>lz-potato/</code> เว้นแต่ระบุไว้ และโหลด key ของ lab ก่อนด้วย <code>set -a; . config/dev-keys.env; set +a</code></p>
+  <h3>เปิด lab</h3>
+  <pre><code>docker-compose -f ../potato-chain/docker-compose.yml -f potato-localnet/ports-override.yml up -d   <span class="c"># จาก stable-coin-L0</span>
+potato-localnet/anvil-home.sh                                                                        <span class="c"># anvil ที่เก็บ state</span>
+cd workers &amp;&amp; npm run dvn &amp; DVN_ID=LabDVN_B DVN_KEY_VAR=DVN_B_KEY npm run dvn &amp; npm run executor &amp;</code></pre>
+  <h3>ตรวจสถานะ</h3>
+  <pre><code>./check-topology.sh          <span class="c"># chainId, EID, home ของแต่ละ asset</span>
+./check-wiring.sh            <span class="c"># default config ของ protocol</span>
+./check-security.sh          <span class="c"># DVN ของทุก OApp ทุก path</span>
+./check-supply.sh USDC       <span class="c"># locked vs minted + audit</span>
+npm run audit -- DEMOSAFE    <span class="c"># (workers/) payload hash ราย nonce</span></code></pre>
+  <h3>bridge</h3>
+  <pre><code>./bridge.sh USDC anvil potato 100
+./bridge-potato.sh potato anvil 5
+./bridge-and-deposit.sh 100</code></pre>
+  <h3>ฉุกเฉิน</h3>
+  <pre><code>cast send $LEG 'pause()' --rpc-url $RPC --private-key $OWNER_KEY
+ASSET=DEMOWEAK forge script script/ContainOApp.s.sol --rpc-url $RPC --broadcast
+npm run snapshot -- DEMOWEAK_V1 anvil potato     <span class="c"># (workers/)</span></code></pre>
+  <h3>testnet (จาก stable-coin-L0)</h3>
+  <pre><code>testnet/check-env.sh
+testnet/ping.sh sepolia arbitrum-sepolia
+testnet/execute.sh sepolia &lt;src tx&gt;
+testnet/read.sh
+testnet/safe-exec.sh sepolia &lt;to&gt; &lt;calldata&gt; AC --dry
+testnet/devtools/wire-via-safe.sh AC --dry</code></pre>
+  <h3>IBC (จาก potato-chain)</h3>
+  <pre><code>make ibc-up
+make relayer
+make ibc-recover
+make smoke-ibc</code></pre>
 </section>
 
-<section id="decisions">
-  <h2>การตัดสินใจหลัก (ADR)</h2>
-  <p class="sub">อยู่ใน <code>docs/adr/</code> ทุกข้อมีเหตุผลและผลที่ตามมาเขียนไว้</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ADR</th><th>ตัดสินใจ</th><th>เพราะ</th></tr></thead>
-      <tbody>
-        <tr><td>0001</td><td>เชนคู่ใน lab = anvil local, home ของ USDC = anvil</td><td>ควบคุมได้ทั้งหมด ไม่ต้องใช้ faucet</td></tr>
-        <tr><td>0002</td><td>POTATO ใช้ NativeOFTAdapter</td><td>WPOTATO precompile ไม่ใช่ WETH จริง</td></tr>
-        <tr><td>0003</td><td>USDC ใช้ OFTAdapter + controls และเก็บ MockUSDC ไว้คู่กัน</td><td>stablecoin ต้องมี rate limit และ pause</td></tr>
-        <tr><td>0004</td><td>production: POTATO ใช้ IBC + LayerZero ทางการ, USDC ใช้ของ issuer ผ่าน IBC</td><td>license LZBL-1.2 และไม่ต้องรับความเสี่ยงของ bridge ที่ทำเอง</td></tr>
-        <tr><td>0005</td><td>blacklist + quarantine แทน revert</td><td>revert ทำให้ message และ nonce ถัดไปค้าง</td></tr>
-      </tbody>
-    </table>
-  </div>
+<section class="appendix tabpanel" id="apx-e">
+  <div class="ch-num">ภาคผนวก E</div>
+  <h2>อภิธานศัพท์</h2>
+  <dl class="glossary">
+    <dt>OApp</dt><dd>Omnichain Application: contract ที่ส่งและรับ message ผ่าน endpoint ของ LayerZero</dd>
+    <dt>OFT / OFTAdapter / NativeOFTAdapter</dt><dd>OApp สำเร็จรูปสำหรับ token แบบ mint/burn, lock/unlock ERC-20 เดิม และ lock/unlock native coin (บท 5)</dd>
+    <dt>EndpointV2</dt><dd>contract หลักของ LayerZero บนแต่ละเชน immutable เก็บ nonce และเรียก lzReceive</dd>
+    <dt>EID</dt><dd>Endpoint ID: รหัสของเชนในเครือข่าย LayerZero (ไม่ใช่ chainId) เช่น Sepolia 40161</dd>
+    <dt>SendUln302 / ReceiveUln302</dt><dd>message library ที่ assign งานให้ DVN และ executor (ฝั่งส่ง) และรวบรวมการยืนยันของ DVN (ฝั่งรับ)</dd>
+    <dt>DVN</dt><dd>Decentralized Verifier Network: ผู้ยืนยันว่า packet มีอยู่จริงบนต้นทาง ชุด DVN ที่ OApp เลือกคือ security model ของ OApp</dd>
+    <dt>Executor</dt><dd>ผู้ส่งของถึงปลายทาง (commitVerification + lzReceive) ปลอม message ไม่ได้</dd>
+    <dt>ULN config</dt><dd>confirmations, required/optional DVNs และ threshold ของแต่ละ path (บท 3)</dd>
+    <dt>delegate</dt><dd>address ที่ endpoint ยอมให้ตั้ง config ของ OApp แทน owner</dd>
+    <dt>options / enforced options</dt><dd>สิ่งที่ผู้ส่งขอ เช่น gas ของ lzReceive / ค่าขั้นต่ำที่ OApp บังคับทุก message</dd>
+    <dt>GUID</dt><dd>รหัสไม่ซ้ำของ message แต่ละตัว</dd>
+    <dt>payload hash</dt><dd>hash ของ GUID + message ที่ endpoint ปลายทางเก็บไว้หลังยืนยัน ใช้ตรวจว่าของที่ถึงตรงกับที่ส่งจริง</dd>
+    <dt>FORGED / POISONED</dt><dd>ปลายทางรับ payload ที่ต้นทางไม่เคยส่ง / ช่อง nonce ถูกใช้กับ payload อื่น ของจริงจึงไม่มีวันถึง (บท 8)</dd>
+    <dt>BlockedMessageLib</dt><dd>library ที่ปฏิเสธทุก message ใช้หยุด path ฉุกเฉินโดยไม่ต้องมี pause ใน contract</dd>
+    <dt>lzCompose</dt><dd>การเรียกต่อบนปลายทางหลัง lzReceive เป็น tx แยก (บท 7)</dd>
+    <dt>lzRead / read channel</dt><dd>การอ่านค่าจากเชนอื่นผ่าน read DVN ใช้ channel 4294967295 และ ReadLib1002</dd>
+    <dt>shared decimals / dust</dt><dd>ความละเอียด 6 ตำแหน่งที่ใช้ส่งข้ามเชน / เศษที่ละเอียดกว่านั้นซึ่งยังอยู่ใน wallet ผู้ส่ง</dd>
+    <dt>quarantine</dt><dd>การกักเงินที่ส่งมาให้ address ที่ถูก blacklist แทนการ revert (บท 6)</dd>
+    <dt>light client / trusting period</dt><dd>ตัวตรวจ consensus ของอีกเชนบน chain ใน IBC / ช่วงเวลาที่ยังเชื่อ validator set ล่าสุดได้ เกินแล้ว client หมดอายุ</dd>
+    <dt>MsgRecoverClient</dt><dd>gov message ที่คัด state ของ substitute client ไปใส่ client ที่หมดอายุ</dd>
+    <dt>LZBL-1.2</dt><dd>license ของ protocol LayerZero: non-production use เท่านั้นจนถึง 2027-12-14</dd>
+  </dl>
 </section>
 
-<section id="gaps">
-  <h2>ก่อนขึ้น production ยังขาดอะไร</h2>
-  <p class="sub">รายละเอียดเต็มอยู่ใน <code>docs/production-path.md</code></p>
-  <div class="cols">
-    <div class="panel">
-      <h3><span class="tag bad">ต้องทำ</span> LayerZero</h3>
-      <ul>
-        <li>ติดต่อ LayerZero Labs เรื่อง chain integration ทางการ (P8)</li>
-        <li>หา DVN ≥ 2 รายที่อิสระต่อกันและรองรับ potato</li>
-        <li>enforced options ของ POTATO/USDC ยังเป็น 100k ต้องวัดใหม่บนเชนจริง</li>
-        <li>เพิ่ม pause และ rate limit ให้ PotatoNativeAdapter</li>
-        <li>audit contract และ config ของทุก path</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3><span class="tag warn">ต้องทำ</span> Operations และ IBC</h3>
-      <ul>
-        <li>alert real-time เมื่อเจอ FORGED/POISONED, invariant ผิด หรือ message ค้าง</li>
-        <li>relayer ≥ 2 operator และ alert ก่อน client หมดอายุ</li>
-        <li>IBC rate-limit middleware สำหรับ ICS-20</li>
-        <li>indexer ต้อง index event Quarantined</li>
-        <li>ทางกู้เหรียญที่ค้างใน adapter ที่ปิดไปแล้ว (ต้องออกแบบไม่ให้เป็นช่องโหว่ใหม่)</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3><span class="tag ok">พร้อมแล้ว</span></h3>
-      <ul>
-        <li>potato เข้ากันได้กับ LayerZero (Prague, finality ทันที)</li>
-        <li>patch RPC 2 ตัวของ cosmos/evm</li>
-        <li>รูปแบบ control ของ stablecoin + unit test</li>
-        <li>check-supply + audit ด้วย payload hash</li>
-        <li>playbook incident ที่ซ้อมแล้ว, Safe + DevTools workflow</li>
-        <li>runbook กู้ IBC client (<code>make ibc-recover</code>)</li>
-      </ul>
-    </div>
-  </div>
+<section class="appendix tabpanel" id="apx-f">
+  <div class="ch-num">ภาคผนวก F</div>
+  <h2>ไฟล์และเอกสารอ้างอิง</h2>
+  <h3>ใน repo นี้</h3>
+  <ul>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 152 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
+    <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
+    <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
+    <li><a href="docs/incidents/2026-10-15-demoweak-forged-mint.md">postmortem DEMOWEAK</a></li>
+    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a></li>
+  </ul>
+  <h3>ใน potato-chain</h3>
+  <ul>
+    <li><code>docs/known-issues.md</code>: bug ของ RPC และ IBC client หมดอายุ</li>
+    <li><code>patches/cosmos-evm/</code> และ <code>scripts/patch_deps.sh</code></li>
+    <li><code>scripts/ibc_recover.sh</code>, <code>scripts/smoke_ibc.sh</code></li>
+    <li><code>indexer/</code> (Ponder) และ <code>web/src/LzBridge.tsx</code></li>
+  </ul>
+  <h3>ภายนอก</h3>
+  <ul>
+    <li>LayerZero V2 และ LZBL-1.2: github.com/LayerZero-Labs/LayerZero-v2</li>
+    <li>LayerZero docs: integration checklist, deployed contracts, DVN/executor config (docs.layerzero.network)</li>
+    <li>Ronin: Halborn, ForkLog · Wormhole: CertiK, Ackee · Nomad: Immunefi, Coinbase</li>
+    <li>Circle ปิด USDC บน Noble และ native USDC บน Injective (ข้อมูล ณ 2026-10-15 ควรตรวจซ้ำก่อนตัดสินใจ)</li>
+  </ul>
+  <footer class="colophon">
+    เรียบเรียงจาก workshop LayerZero ของโปรเจกต์ stable-coin-L0 และ potato-chain ระหว่างวันที่ 14–16 ตุลาคม 2026 ตัวเลขทั้งหมดวัดจาก lab และ testnet ทางการ ดูคำสั่งที่รันซ้ำได้ใน runbook
+  </footer>
 </section>
 
+</div>
 </main>
-
-<footer>
-  <div class="wrap">
-    เอกสารและไฟล์ที่เกี่ยวข้องใน repo:
-    <ul>
-      <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 152 step พร้อมคำสั่ง ผลที่คาด commit และผลจริง</li>
-      <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>, <a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a>, <a href="docs/production-path.md">docs/production-path.md</a></li>
-      <li><a href="docs/incidents/2026-10-15-demoweak-forged-mint.md">postmortem DEMOWEAK</a>, <a href="docs/runbooks/bridge-incident.md">bridge incident playbook</a>, <a href="docs/adr/">ADR 0001–0005</a></li>
-      <li>potato-chain: <code>docs/known-issues.md</code>, <code>patches/cosmos-evm/</code>, <code>scripts/ibc_recover.sh</code></li>
-    </ul>
-  </div>
-</footer>
+</div>
 
 <script>
 (function () {
-  var root = document.documentElement, btn = document.getElementById('theme');
-  function label() {
-    var t = root.getAttribute('data-theme') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    btn.textContent = t === 'dark' ? 'ธีมสว่าง' : 'ธีมมืด';
-    return t;
-  }
-  try { var saved = localStorage.getItem('lessons-theme'); if (saved) root.setAttribute('data-theme', saved); } catch (e) {}
-  label();
-  btn.addEventListener('click', function () {
-    var next = label() === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', next);
-    try { localStorage.setItem('lessons-theme', next); } catch (e) {}
-    label();
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.tabpanel'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('aside.toc a, details.mtoc a'));
+  var titles = {};
+  panels.forEach(function (p) {
+    var h = p.querySelector('h2') || p.querySelector('h1');
+    var n = p.querySelector('.ch-num');
+    titles[p.id] = { num: n ? n.textContent.split('·')[0].trim() : 'หน้าแรก', title: h ? h.textContent : '' };
   });
+  // prev / next at the end of every tab
+  panels.forEach(function (p, i) {
+    var nav = document.createElement('nav'); nav.className = 'pager'; nav.setAttribute('aria-label', 'บทก่อนหน้าและถัดไป');
+    if (i > 0) { var a = document.createElement('a'); a.href = '#' + panels[i - 1].id;
+      a.innerHTML = '<small>← ' + titles[panels[i - 1].id].num + '</small>' + titles[panels[i - 1].id].title; nav.appendChild(a); }
+    if (i < panels.length - 1) { var b = document.createElement('a'); b.className = 'next'; b.href = '#' + panels[i + 1].id;
+      b.innerHTML = '<small>' + titles[panels[i + 1].id].num + ' →</small>' + titles[panels[i + 1].id].title; nav.appendChild(b); }
+    p.appendChild(nav);
+  });
+  function show(hash, scroll) {
+    var id = (hash || '').replace(/^#/, '');
+    var target = id ? document.getElementById(id) : null;
+    var panel = target ? (target.classList.contains('tabpanel') ? target : target.closest('.tabpanel')) : null;
+    if (!panel) panel = panels[0];
+    panels.forEach(function (p) { p.classList.toggle('active', p === panel); });
+    links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + panel.id); });
+    document.title = (panel.id === 'home' ? '' : titles[panel.id].num + ' · ') + 'LayerZero ฉบับลงมือทำ';
+    var m = document.querySelector('details.mtoc'); if (m) m.open = false;
+    if (scroll !== false) {
+      if (target && target !== panel) target.scrollIntoView();
+      else window.scrollTo(0, 0);
+    }
+    try { localStorage.setItem('lz-book-tab', panel.id); } catch (e) {}
+  }
+  // in-page links switch tabs directly (hashchange does not fire everywhere, e.g. inside previews)
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!document.getElementById(href.slice(1))) return;
+    e.preventDefault();
+    show(href);
+    try { history.pushState(null, '', href); } catch (err) {}
+  });
+  window.addEventListener('popstate', function () { show(location.hash); });
+  window.addEventListener('hashchange', function () { show(location.hash); });
+  var start = location.hash;
+  if (!start) { try { var s = localStorage.getItem('lz-book-tab'); if (s && document.getElementById(s)) start = '#' + s; } catch (e) {} }
+  show(start, false);
+  // keyboard: ← → between tabs (not while typing)
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey || /input|textarea/i.test(e.target.tagName)) return;
+    var i = panels.findIndex(function (p) { return p.classList.contains('active'); });
+    var to = e.key === 'ArrowRight' ? panels[i + 1] : e.key === 'ArrowLeft' ? panels[i - 1] : null;
+    if (!to) return;
+    show('#' + to.id);
+    try { history.pushState(null, '', '#' + to.id); } catch (err) {}
+  });
+  // theme
+  var root = document.documentElement;
+  var btns = [document.getElementById('theme'), document.getElementById('theme-m')].filter(Boolean);
+  function current() { return root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+  function label() { btns.forEach(function (b) { b.textContent = current() === 'dark' ? 'ธีมสว่าง' : 'ธีมมืด'; }); }
+  try { var t = localStorage.getItem('lz-book-theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  label();
+  btns.forEach(function (b) { b.addEventListener('click', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    var next = current() === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', next);
+    try { localStorage.setItem('lz-book-theme', next); } catch (err) {} label();
+  }); });
 })();
 </script>
 </body>

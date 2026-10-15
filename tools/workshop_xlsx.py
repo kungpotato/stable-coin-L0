@@ -659,10 +659,10 @@ steps = [
      "potato-chain", "make relayer   # (อีก terminal: hermes ต้องชี้ port 36657/19090)\nPOTATO_RPC_PORT=36657 RPC=http://localhost:18545 scripts/smoke_ibc.sh",
      "ok ทั้ง 7 ข้อ: potato→gaia, gaia→potato, ICS-20 precompile, PotatoBridge → ibc smoke test passed", "bf8a669 (potato-chain)",
      "ibc smoke test passed (voucher ibc/6B1A5F…53A4 mint/burn ถูกต้อง)", "ผ่าน"),
-    (16, 7, "สรุปบทเรียนทั้ง 16 topics เป็น HTML", "ทบทวนและแชร์บทเรียนได้ในหน้าเดียว โดยไม่ต้องไล่อ่าน runbook 150 กว่าแถว",
+    (16, 7, "สรุปบทเรียนทั้ง 16 topics เป็นหนังสือ HTML", "ทบทวนและแชร์บทเรียนได้ในไฟล์เดียว อ่านเป็นบทแทนการไล่ runbook 150 กว่าแถว",
      S, "open workshop-lessons.html",
-     "หน้าเดียว: 10 บทเรียนหลัก, การ์ดราย topic 16 ใบ, drill DEMOWEAK, ตาราง bug, ADR, สิ่งที่ยังขาดก่อน production", "654f972",
-     "เปิดได้ทั้ง desktop และ mobile (375px ไม่มี horizontal scroll), มี dark mode", "ผ่าน"),
+     "ไฟล์เดียว 23 tab: หน้าแรก/คำนำ, บทที่ 1–16 (เป้าหมาย, แนวคิด, คำสั่ง, ผลจริง, บทเรียน, สรุป, คำถามทบทวน), ภาคผนวก A–F; มีสารบัญด้านข้าง, ปุ่มบทก่อน/ถัดไป, ไดอะแกรม 7 รูป", "(commit นี้)",
+     "สลับ tab ได้ทั้งคลิกและปุ่มลูกศร, 375px ไม่มี horizontal scroll ทุก tab, มี dark mode", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -816,7 +816,7 @@ RERUN = {
     (16, 4): ("ได้", "อ่านอย่างเดียว"),
     (16, 5): ("ได้", "client Active อยู่แล้ว → nothing to do; ถ้าหมดอายุอีกจะสร้าง substitute + proposal ใหม่ (gov proposal id เพิ่มขึ้น)"),
     (16, 6): ("ได้ (มีผลข้างเคียง)", "โอน POTATO จริงบน localnet ทุกครั้ง (1 กลับมา, 2 ไปค้างเป็น voucher บน gaia) และใช้ค่า fee"),
-    (16, 7): ("ได้", "เปิดอ่านอย่างเดียว"),
+    (16, 7): ("ได้", "เปิดอ่านอย่างเดียว (จำ tab ล่าสุดและธีมไว้ใน browser)"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
