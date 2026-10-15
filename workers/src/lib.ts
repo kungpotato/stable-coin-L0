@@ -170,15 +170,42 @@ export function envKey(name: string): Hex {
   return line.slice(name.length + 1).split(/\s/)[0] as Hex;
 }
 
-/** Inbound state of a packet on its destination endpoint. */
-export async function inboundState(dst: ChainCfg, p: Packet): Promise<"delivered" | "committed" | "pending"> {
+// PacketVerified index per destination chain, extended incrementally: which payload the endpoint accepted per nonce
+const packetVerifiedEvent = parseAbiItem(
+  "event PacketVerified((uint32 srcEid, bytes32 sender, uint64 nonce) origin, address receiver, bytes32 payloadHash)",
+);
+const verifiedIndex = new Map<string, { scannedTo: bigint; byKey: Map<string, Hex> }>();
+const vKey = (srcEid: number, sender: Hex, receiver: Address, nonce: bigint) =>
+  `${srcEid}-${sender.toLowerCase()}-${receiver.toLowerCase()}-${nonce}`;
+
+async function acceptedPayload(dst: ChainCfg, p: Packet): Promise<Hex | undefined> {
+  let idx = verifiedIndex.get(dst.name);
+  if (!idx) verifiedIndex.set(dst.name, (idx = { scannedTo: 0n, byKey: new Map() }));
+  const latest = await dst.pub.getBlockNumber();
+  for (let start = idx.scannedTo + 1n; start <= latest; start += 1_000n) {
+    const end = start + 999n < latest ? start + 999n : latest;
+    const logs: Log[] = await dst.pub.getLogs({ address: dst.endpoint, event: packetVerifiedEvent, fromBlock: start, toBlock: end });
+    for (const l of logs) {
+      const { args } = decodeEventLog({ abi: [packetVerifiedEvent], data: l.data, topics: l.topics });
+      idx.byKey.set(vKey(args.origin.srcEid, args.origin.sender, args.receiver, args.origin.nonce), args.payloadHash);
+    }
+    idx.scannedTo = end;
+  }
+  return idx.byKey.get(vKey(p.srcEid, p.sender, p.receiver, p.nonce));
+}
+
+/** Inbound state of a packet on its destination endpoint.
+ *  "poisoned": the destination spent this nonce on a DIFFERENT payload (a forgery). The real packet can never be
+ *  delivered; a nonce <= lazyInboundNonce with an empty slot is not proof that *this* packet arrived. */
+export async function inboundState(dst: ChainCfg, p: Packet): Promise<"delivered" | "committed" | "pending" | "poisoned"> {
   const args = [p.receiver, p.srcEid, p.sender] as const;
   const [lazy, hash] = await Promise.all([
     dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "lazyInboundNonce", args }),
     dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "inboundPayloadHash", args: [...args, p.nonce] }),
   ]);
-  if (BigInt(hash) !== 0n) return "committed";
-  return p.nonce <= lazy ? "delivered" : "pending";
+  if (BigInt(hash) !== 0n) return hash.toLowerCase() === p.payloadHash.toLowerCase() ? "committed" : "poisoned";
+  if (p.nonce > lazy) return "pending";
+  return (await acceptedPayload(dst, p))?.toLowerCase() === p.payloadHash.toLowerCase() ? "delivered" : "poisoned";
 }
 
 // Revert selectors an operator meets on these paths (cast sig "<error>()")

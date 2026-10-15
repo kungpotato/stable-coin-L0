@@ -28,6 +28,7 @@ async function attest(src: ChainCfg, p: Packet) {
 
   // idempotent: anything already verified / committed / delivered needs nothing from us
   const state = await inboundState(dst, p);
+  if (state === "poisoned") return log(ROLE, `${path}: ALERT POISONED, ${dst.name} spent this nonce on a different payload (forged message?); not attesting`);
   if (state !== "pending") return log(ROLE, `${path}: already ${state}`);
   const [submitted] = await dst.pub.readContract({
     address: dst.receiveLib, abi: receiveLibAbi, functionName: "hashLookup", args: [p.headerHash, p.payloadHash, dvnOn(dst)],

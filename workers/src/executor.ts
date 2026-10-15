@@ -22,6 +22,10 @@ async function progress(src: ChainCfg, p: Packet): Promise<boolean> {
 
   let state = await inboundState(dst, p);
   if (state === "delivered") return true;
+  if (state === "poisoned") { // terminal: can never be delivered; alert once, let the cursor move on
+    log(ROLE, `${path}: ALERT POISONED, ${dst.name} spent this nonce on a different payload (forged message?); undeliverable`);
+    return true;
+  }
 
   if (state === "pending") {
     // commitVerification is permissionless but reverts (LZ_ULN_Verifying) until the required DVNs have attested;
