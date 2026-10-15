@@ -11,6 +11,9 @@ import {PingOApp} from "../../src/lab/PingOApp.sol";
 /// @notice Topic 4: our PingOApp on a public testnet, on LayerZero's official endpoint. Peers the other testnet
 /// and, unlike the network default (1 DVN), requires LayerZero Labs + Nethermind on both directions, with the
 /// default confirmations of the sending chain. Run on both chains, then once more on the first. Re-runnable.
+/// Broadcast with --skip-simulation: Sepolia runs Glamsterdam (EIP-8037 state-creation repricing) and forge simulates
+/// with this project's evm_version (Prague, for potato), so its own gas estimate is ~7x too low (deploy: 1.47M
+/// simulated vs 11.39M real) and the deploy runs out of gas. --skip-simulation uses the node's eth_estimateGas.
 /// env: TESTNET_PRIVATE_KEY
 contract DeployPingTestnet is TestnetBase {
     uint32 constant CONFIG_TYPE_ULN = 2;
