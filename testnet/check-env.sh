@@ -32,8 +32,9 @@ check_chain() { # name, rpc var, expected chainId
   [ "$id" = "$3" ] && ok "$1: RPC is chainId $id" || { bad "$1: RPC is chainId $id, expected $3 (wrong network?)"; return; }
   local wei eth
   wei=$(cast balance "$TESTNET_ADDRESS" --rpc-url "${!2}"); eth=$(cast from-wei "$wei")
-  if [ "$(echo "$wei >= 50000000000000000" | bc)" = 1 ]; then ok "$1: balance $eth ETH"
-  else bad "$1: balance $eth ETH, need at least 0.05 (about 0.1 recommended)"; fi
+  # 0.02 covers the topic 4/7/8 deployments: testnet gas on these chains is cheap
+  if [ "$(echo "$wei >= 20000000000000000" | bc)" = 1 ]; then ok "$1: balance $eth ETH"
+  else bad "$1: balance $eth ETH, need at least 0.02"; fi
 }
 check_chain "Sepolia" SEPOLIA_RPC_URL 11155111
 check_chain "Arbitrum Sepolia" ARBITRUM_SEPOLIA_RPC_URL 421614
