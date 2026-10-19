@@ -253,10 +253,10 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>152</b><span>step ใน runbook</span></div>
+    <div><b>153</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
-    <div><b>5</b><span>ADR</span></div>
+    <div><b>6</b><span>ADR</span></div>
     <div><b>1</b><span>drill โจมตี + postmortem</span></div>
   </div>
 </header>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 152 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 153 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -362,9 +362,10 @@ cast balance $POTATO_ADAPTER --rpc-url http://localhost:18545</code></pre>
       <tr><td><b>Ronin</b><br>มี.ค. 2022<br>~$625M</td><td>bridge ต้องใช้ลายเซ็น 5 ใน 9 ผู้โจมตี phishing ได้ key 4 ดอกจากบริษัทเดียวกัน และได้ดอกที่ 5 จากสิทธิ์ของ Axie DAO ที่ลืมถอน กว่าจะรู้ตัวก็ผ่านไป 6 วัน</td><td>key ของผู้ยืนยันหลุด และผู้ยืนยันไม่อิสระต่อกันจริง</td><td>ตรงกับ drill บท 3 (key ของ DVN-A หลุด) ป้องกันด้วย DVN หลายรายที่<b>อิสระจริง</b>, rate limit และ alert ที่เร็ว</td></tr>
       <tr><td><b>Wormhole</b><br>ก.พ. 2022<br>~$320M</td><td>โปรแกรมบน Solana ไม่ตรวจว่า account ที่ใช้ยืนยันลายเซ็นเป็นของจริง จึงปลอม message ให้ mint 120,000 wETH ได้ทั้งที่ไม่มี ETH ถูก lock</td><td>bug ในโค้ดของผู้ยืนยัน</td><td>ผลเหมือน forged mint ในบท 3 การใช้ DVN ที่ใช้<b>โค้ดคนละชุด</b>ลดผลจาก bug ตัวเดียว และ invariant จับได้ทันที</td></tr>
       <tr><td><b>Nomad</b><br>ส.ค. 2022<br>~$190M</td><td>upgrade ตามปกติตั้ง trusted root เป็น <code>0x00</code> ซึ่งตรงกับค่าของ message ที่ยังไม่ถูกพิสูจน์ <b>ทุก message จึงผ่าน</b> คนก๊อป tx ของผู้โจมตีไปทำตามเป็นร้อย address</td><td>config/upgrade ผิดพลาด</td><td>endpoint ของ LayerZero immutable แต่<b>config ของ OApp ผิดได้</b> เราเห็นแล้วทั้ง DEMOWEAK ที่ใช้ default แล้วโดนเจาะ และ config ไม่ตรงกันจน message ค้าง</td></tr>
+      <tr><td><b>Cysic</b><br>ต.ค. 2026<br>~$727K ที่ออกไปได้</td><td>ผู้โจมตีเข้าถึง<b>ฐานข้อมูลของ service ที่ทำงานรองรับ bridge</b> แล้วใช้ช่องโหว่ใน logic การประมวลผล message สร้างคำสั่ง mint ปลอม 10M CYS บน BNB Chain เริ่มเทขายภายใน 5 นาที ย้าย 306.6 ETH ออกไป Ethereum แล้ว blacklist มาถึงที่นาทีที่ 76 (ข้อมูลเบื้องต้น ยังไม่เปิดเผยว่าใช้ bridge แบบไหน)</td><td>ข้อมูล off-chain ที่ผู้ยืนยันเชื่อถูกแก้ไข</td><td>ผลเหมือน drill บท 3 ป้องกันด้วยผู้ยืนยันที่<b>อ่านเชนต้นทางเอง</b>จากแหล่งข้อมูลที่อิสระ (บท 3.6, 12) และ<b>เพดาน mint ขาเข้า</b> ที่เพิ่มหลังเหตุการณ์นี้ (บท 6.6)</td></tr>
     </tbody>
   </table></div>
-  <p>ทั้งสามเหตุการณ์จบแบบเดียวกัน คือ <b>mint หรือถอนเงินได้โดยไม่มีของจริงรองรับ</b> และสิ่งที่ช่วยได้ทุกกรณีมีสี่อย่าง</p>
+  <p>ทุกเหตุการณ์จบแบบเดียวกัน คือ <b>mint หรือถอนเงินได้โดยไม่มีของจริงรองรับ</b> และสิ่งที่ช่วยได้ทุกกรณีมีสี่อย่าง</p>
   <ol>
     <li><b>ผู้ยืนยันหลายรายที่อิสระต่อกัน</b> ทั้งคนละองค์กร คนละ key และคนละ codebase</li>
     <li><b>เพดานความเสียหายต่อช่วงเวลา</b> (rate limit) เพื่อให้เสียได้ไม่เกินที่รับได้ ระหว่างที่ยังไม่มีใครรู้ตัว</li>
@@ -574,7 +575,7 @@ cast call $EP_POTATO 'inboundNonce(address,uint32,bytes32)(uint64)'  $PING 40338
     <li><b>องค์กร</b>: คนละบริษัท ไม่มีใครสั่งอีกฝ่ายได้</li>
     <li><b>key management</b>: คนละ HSM คนละขั้นตอนการเข้าถึง</li>
     <li><b>codebase</b>: ลดโอกาสที่ bug ตัวเดียวจะทำให้ทุกตัวยืนยันผิดพร้อมกัน (บทเรียนจาก Wormhole)</li>
-    <li><b>แหล่งข้อมูล</b>: อ่าน RPC ของต้นทางจากคนละ node</li>
+    <li><b>แหล่งข้อมูล</b>: อ่าน RPC ของต้นทางจากคนละ node และต้องอ่านจากเชนเอง ไม่ใช่จากฐานข้อมูลกลาง (เคส Cysic ในบท 1.3)</li>
   </ul>
   <p>บน testnet เราเลือก <b>LayerZero Labs + Nethermind</b> สำหรับ messaging และ <b>LayerZero Labs + Horizen</b> สำหรับ lzRead</p>
 
@@ -755,9 +756,9 @@ done</code></pre>
 <section class="chapter tabpanel" id="ch6">
   <div class="ch-num">บทที่ 6 · TOPIC 6</div>
   <h2>Control ของ stablecoin</h2>
-  <p class="lead">bridge ของ stablecoin ต่างจาก bridge ทั่วไป เพราะผู้ออกเหรียญต้องคุมได้ว่าเงินไปไหน หยุดได้เมื่อมีเหตุ และไม่ให้ address ที่ถูก sanction ใช้ได้ บทนี้ออกแบบ control สี่อย่างโดยไม่ให้ message ค้าง</p>
+  <p class="lead">bridge ของ stablecoin ต่างจาก bridge ทั่วไป เพราะผู้ออกเหรียญต้องคุมได้ว่าเงินไปไหน หยุดได้เมื่อมีเหตุ และไม่ให้ address ที่ถูก sanction ใช้ได้ บทนี้ออกแบบ control ห้าอย่างโดยไม่ให้ message ค้าง</p>
   <div class="goalbox">
-    <div><b>เป้าหมาย</b>มี rate limit, pause, blacklist และ supply invariant ข้ามเชน</div>
+    <div><b>เป้าหมาย</b>มี rate limit, เพดาน mint ขาเข้า, pause, blacklist และ supply invariant ข้ามเชน</div>
     <div><b>ต้องเตรียม</b>บท 5, AccessControl/Pausable, ข้อกำหนด compliance</div>
     <div><b>ผลลัพธ์</b>USDC v2 ที่มี control ครบ, unit test 15/15, ADR 0003 และ 0005</div>
   </div>
@@ -821,7 +822,36 @@ function _update(address _from, address _to, uint256 _value) internal override {
     super._update(_from, _to, _value);
 }</code></pre>
 
-  <h3>6.5 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
+  <h3>6.5 เพดาน mint ขาเข้า: บทเรียนจาก Cysic (ADR 0006)</h3>
+  <p>rate limit ในข้อ 6.1 นับเฉพาะ<b>ขาออก</b> ถ้าผู้ยืนยันถูกเจาะ message ปลอมไม่ได้ผ่านฝั่งส่งเลย control ฝั่งส่งจึงไม่ช่วย ใน drill DEMOWEAK message ปลอมใบเดียว mint ได้ 1,000,000 และในเหตุการณ์ Cysic (ต.ค. 2026) mint ได้ 10M ในครั้งเดียว ก่อนจะเริ่มเทขายภายใน 5 นาที</p>
+  <p>ทางแก้คือ<b>เพดานยอดที่รับได้ต่อเชนต้นทางต่อ window</b> ใน <code>StablecoinControls</code> (ใช้ร่วมกันทั้ง UsdcOFT และ UsdcAdapter)</p>
+  <ul>
+    <li><b>เกินเพดาน → กักทั้งก้อน</b> ด้วย quarantine เดิม ไม่ revert (message ไม่ค้าง) และไม่แบ่งจ่าย (ไม่งั้นผู้โจมตีได้ส่วนที่พอดีเพดานทุกครั้ง)</li>
+    <li><b>ยอดที่ถูกกักไม่กินเพดานและไม่คืนโควตาขาออก</b> ไม่งั้น message ปลอมจะเติมโควตาให้ผู้โจมตีถอนออก</li>
+    <li><b>owner ปล่อยด้วย <code>releaseQuarantined</code></b> หลังตรวจแล้ว เช่นการโอนก้อนใหญ่ที่ถูกต้อง</li>
+    <li><code>window = 0</code> หมายถึงไม่มีเพดาน (ค่าเริ่มต้น) ส่วน <code>limit = 0</code> หมายถึงกักทุกอย่าง</li>
+  </ul>
+  <pre><code>function _quarantines(address _to, uint32 _srcEid, uint256 _amountLD) internal whenNotPaused returns (bool) {
+    if (isBlacklisted[_to]) { _hold(_to, _srcEid, _amountLD); return true; }
+    InboundCap storage cap = inboundCaps[_srcEid];
+    if (cap.window != 0) {
+        uint256 used = _inboundUsed(cap);                  <span class="c">// ลดลงเป็นเส้นตรงตามเวลา</span>
+        uint256 available = used &gt;= cap.limit ? 0 : cap.limit - used;
+        if (_amountLD &gt; available) {
+            _hold(_to, _srcEid, _amountLD);               <span class="c">// กักทั้งก้อน ไม่ revert</span>
+            emit InboundCapExceeded(_to, _srcEid, _amountLD, available);
+            return true;
+        }
+        cap.used = used + _amountLD;
+        cap.lastUpdated = uint64(block.timestamp);
+    }
+    _inflow(_srcEid, _amountLD);                          <span class="c">// คืนโควตาขาออกเฉพาะยอดที่จ่ายจริง</span>
+    return false;
+}</code></pre>
+  <p>unit test 12 ข้อ (<code>InboundCapTest</code>) รวมกรณีแบบ Cysic: ปลอม 10M แล้วยิงซ้ำเป็นก้อนเล็ก 20 ครั้ง <b>ผู้โจมตีได้ไม่เกินเพดาน 10,000</b> ที่เหลือถูกกักทั้งหมด ทั้งชุดผ่าน 31/31</p>
+  <div class="callout warn"><b>ยังไม่ได้ deploy</b><p>leg ของ USDC v2 ใน lab ใช้ bytecode เดิม จะมีผลจริงต้อง deploy v3 แล้วย้ายเงินตามขั้นตอนในข้อ 6.6 และยังต้องเพิ่ม control นี้ใน PotatoNativeAdapter ด้วย เพดานนี้ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
+
+  <h3>6.6 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
   <p>leg v1 ไม่มี blacklist และ upgrade ไม่ได้ เราจึง deploy <b>v2</b> ที่ใช้ IssuerUSDC ตัวเดิม พร้อม blacklister และ DVN B + C ตั้งแต่ก่อนมี traffic แรก แล้วย้ายแบบ<b>ผู้ใช้ย้ายเอง</b></p>
   <ol class="steps">
     <li><b>ปิด v1 แค่ขาเข้า</b> ตั้ง BlockedMessageLib ให้ฝั่งส่งของ anvil และฝั่งรับของ potato ฝากเข้า v1 ใหม่ไม่ได้ (<code>LZ_NotImplemented</code>) แต่ผู้ถือ v1 ยังถอนกลับ anvil ได้</li>
@@ -829,7 +859,7 @@ function _update(address _from, address _to, uint256 _value) internal override {
   </ol>
   <div class="callout warn"><b>ผลที่ตามมา</b><p>ระหว่างช่วงย้าย ผู้ที่ยังถือ v1 ยังมีความเสี่ยงเดิม และ blacklist ของแต่ละ leg แยกกัน blacklister ต้อง blacklist ทุกเชนเอง ระบบไม่ sync ให้</p></div>
 
-  <h3>6.6 ทดสอบครบทุกกรณี</h3>
+  <h3>6.7 ทดสอบครบทุกกรณี</h3>
   <div class="table-wrap"><table class="wide">
     <thead><tr><th>step</th><th>กรณี</th><th>ผล</th></tr></thead>
     <tbody>
@@ -844,6 +874,7 @@ function _update(address _from, address _to, uint256 _value) internal override {
 
   <div class="summary"><h4>สรุปบทที่ 6</h4><ul>
     <li>rate limit นับขาออกและ revert ตอนส่ง จึงไม่ทำให้ message ค้าง</li>
+    <li>ต้องมีเพดาน mint ขาเข้าด้วย เพราะ message ปลอมไม่ผ่าน control ฝั่งส่ง เกินเพดานให้กักทั้งก้อน</li>
     <li>pause ขารับทำให้ message รอ ไม่หาย กดได้ทันทีที่สงสัย</li>
     <li>blacklister เป็น role แยกจาก owner</li>
     <li>ปฏิเสธเงินขาเข้าด้วย quarantine ห้าม revert ใน lzReceive</li>
@@ -1577,7 +1608,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <ol start="7">
     <li><b>adapter อยู่บน home chain ที่เดียว</b> invariant: locked ≥ minted และแยก "ระหว่างทาง" ออกจาก "mint เกิน" (บท 5)</li>
     <li><b>ห้าม revert ใน lzReceive</b> ปฏิเสธเงินด้วย quarantine หรือ refund แทน ไม่งั้น message ค้างถาวร (บท 6, 7, 13)</li>
-    <li><b>stablecoin ต้องมี control ตั้งแต่วันแรก</b>: rate limit, pause, blacklist (แยก role จาก owner) (บท 6)</li>
+    <li><b>stablecoin ต้องมี control ตั้งแต่วันแรก</b>: rate limit ทั้ง<b>ขาออกและขาเข้า</b>, pause, blacklist (แยก role จาก owner) control ฝั่งส่งอย่างเดียวไม่ช่วยเมื่อผู้ยืนยันถูกเจาะ (บท 6, เคส Cysic)</li>
     <li><b>ตรวจพฤติกรรม token บนเชนก่อนออกแบบ</b> WPOTATO ไม่ใช่ WETH (บท 13)</li>
     <li><b>stablecoin ควรใช้ของ issuer</b> bridge เองทำให้ผู้ถือรับความเสี่ยงเพิ่ม (บท 16)</li>
   </ol>
@@ -1622,6 +1653,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
       <tr><td>anvil-home ค้าง 1 ครั้ง</td><td>ยังไม่รู้</td><td>กู้จาก state dump</td><td>10</td><td><span class="tag warn">ไม่รู้สาเหตุ</span></td></tr>
       <tr><td>Ponder ตายหลัง hot reload ซ้อน</td><td>PGlite ถูกปิดกลางคัน</td><td>restart</td><td>15</td><td><span class="tag info">dev only</span></td></tr>
       <tr><td>UI แสดงเงินที่ถูกกักว่า delivered</td><td>ไม่ได้ index event Quarantined</td><td>ยังไม่แก้</td><td>6, 15</td><td><span class="tag bad">ค้าง</span></td></tr>
+      <tr><td>message ปลอมขาเข้า mint ได้ไม่จำกัด</td><td>rate limit นับแค่ขาออก (เห็นชัดจากเคส Cysic)</td><td>inbound mint cap + quarantine (ADR 0006), test 12/12</td><td>6</td><td><span class="tag warn">ยังไม่ deploy</span></td></tr>
       <tr><td>3 DEMOWEAK ค้างใน adapter v1</td><td>adapter ไม่มีทางกู้เหรียญ</td><td>ต้องออกแบบใน adapter รุ่นต่อไป</td><td>8</td><td><span class="tag bad">ค้าง</span></td></tr>
     </tbody>
   </table></div>
@@ -1642,7 +1674,8 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>ติดต่อ LayerZero Labs เรื่อง chain integration: deploy EndpointV2, EID ทางการ, executor รองรับ potato</td></tr>
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>DVN อย่างน้อย 2 รายที่อิสระต่อกันและรองรับ potato</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
-    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause และ rate limit ให้ PotatoNativeAdapter</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause, rate limit และ inbound mint cap ให้ PotatoNativeAdapter</td></tr>
+    <tr><td><span class="tag warn">พร้อมในโค้ด</span></td><td>inbound mint cap ของ leg USDC (ADR 0006) ต้อง deploy leg ใหม่และตั้งเพดานจาก volume จริง</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>audit PotatoNativeAdapter, StablecoinControls และ config ทุก path</td></tr>
     <tr><td><span class="tag ok">พร้อม</span></td><td>ตั้ง security ราย OApp, pin library, ขั้นตอนเปลี่ยน DVN แบบไม่ให้ message ค้าง</td></tr>
@@ -1721,6 +1754,7 @@ make smoke-ibc</code></pre>
     <dt>lzCompose</dt><dd>การเรียกต่อบนปลายทางหลัง lzReceive เป็น tx แยก (บท 7)</dd>
     <dt>lzRead / read channel</dt><dd>การอ่านค่าจากเชนอื่นผ่าน read DVN ใช้ channel 4294967295 และ ReadLib1002</dd>
     <dt>shared decimals / dust</dt><dd>ความละเอียด 6 ตำแหน่งที่ใช้ส่งข้ามเชน / เศษที่ละเอียดกว่านั้นซึ่งยังอยู่ใน wallet ผู้ส่ง</dd>
+    <dt>inbound mint cap</dt><dd>เพดานยอดที่ leg จ่ายได้ต่อเชนต้นทางต่อ window ส่วนที่เกินถูกกักทั้งก้อน (บท 6.5, ADR 0006)</dd>
     <dt>quarantine</dt><dd>การกักเงินที่ส่งมาให้ address ที่ถูก blacklist แทนการ revert (บท 6)</dd>
     <dt>light client / trusting period</dt><dd>ตัวตรวจ consensus ของอีกเชนบน chain ใน IBC / ช่วงเวลาที่ยังเชื่อ validator set ล่าสุดได้ เกินแล้ว client หมดอายุ</dd>
     <dt>MsgRecoverClient</dt><dd>gov message ที่คัด state ของ substitute client ไปใส่ client ที่หมดอายุ</dd>
@@ -1733,12 +1767,12 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 152 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 153 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
     <li><a href="docs/incidents/2026-10-15-demoweak-forged-mint.md">postmortem DEMOWEAK</a></li>
-    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a></li>
+    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a> · <a href="docs/adr/0006-inbound-mint-cap.md">0006</a></li>
   </ul>
   <h3>ใน potato-chain</h3>
   <ul>
@@ -1752,6 +1786,7 @@ make smoke-ibc</code></pre>
     <li>LayerZero V2 และ LZBL-1.2: github.com/LayerZero-Labs/LayerZero-v2</li>
     <li>LayerZero docs: integration checklist, deployed contracts, DVN/executor config (docs.layerzero.network)</li>
     <li>Ronin: Halborn, ForkLog · Wormhole: CertiK, Ackee · Nomad: Immunefi, Coinbase</li>
+    <li>Cysic bridge exploit 2026-10-17: The Block, FinanceFeeds, Crypto Briefing (ข้อมูลเบื้องต้น)</li>
     <li>Circle ปิด USDC บน Noble และ native USDC บน Injective (ข้อมูล ณ 2026-10-15 ควรตรวจซ้ำก่อนตัดสินใจ)</li>
   </ul>
   <footer class="colophon">
