@@ -600,7 +600,7 @@ steps = [
      "ตามที่คาดทุกข้อ: เพดานกลับเป็น 1,000/3600, totalQuarantined 0, invariant ✅", "ผ่าน"),
     (13, 12, "pause + rate limit ขาออกให้ POTATO (ADR 0007)", "action item ข้อ 4 จาก postmortem: POTATO ไม่มี pause (ต้องใช้ BlockedMessageLib) และส่งออกได้ไม่จำกัด แยก BridgeControls ให้ทุก leg ใช้ร่วมกัน USDC เพิ่มแค่ blacklist",
      L, "forge test --match-contract PotatoControlsTest && forge test",
-     "PotatoControlsTest 9 passed (rate limit ทั้งสอง leg, path ที่ไม่ตั้ง limit ส่งไม่ได้, native send revert ทั้ง tx ไม่ lock เงิน, pause ทั้งส่งและรับ, ไม่มี blacklist) และรวมทั้งหมด 49 passed", "(commit นี้)",
+     "PotatoControlsTest 9 passed (rate limit ทั้งสอง leg, path ที่ไม่ตั้ง limit ส่งไม่ได้, native send revert ทั้ง tx ไม่ lock เงิน, pause ทั้งส่งและรับ, ไม่มี blacklist) และรวมทั้งหมด 49 passed", "66ffcc1",
      "49/49 ผ่าน; DeployPotatoBridge รองรับ CONTROLS=true (1,000 POTATO/ชม. = inbound cap ของอีกฝั่ง); ยังไม่ได้ deploy (ต้อง POTATO v3)", "ผ่าน"),
     (14, 0, "ตรวจ MockUSDC บน potato", "ต้องรู้ว่าเอา MockUSDC เดิมมาเป็นตัว bridge ได้ไหม",
      "potato-chain", "cat contracts/src/MockUSDC.sol",
