@@ -253,7 +253,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>162</b><span>step ใน runbook</span></div>
+    <div><b>163</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
     <div><b>7</b><span>ADR</span></div>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 162 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 163 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -764,7 +764,7 @@ done</code></pre>
   </div>
 
   <h3>6.1 Rate limit: เพดานความเสียหาย</h3>
-  <p>rate limit จำกัดยอดที่ส่งออกได้ต่อเชนปลายทางต่อช่วงเวลา ใน lab ตั้งไว้ <b>10,000 USDC ต่อ 60 วินาที</b> ถ้า DVN, executor หรือ key ถูกเจาะ ความเสียหายต่อ window จะไม่เกินเพดานนี้ ทำให้มีเวลาให้ alert และ pause ทำงาน</p>
+  <p>rate limit จำกัดยอดที่ส่งออกได้ต่อเชนปลายทางต่อช่วงเวลา ใน lab ตั้งไว้ <b>10,000 USDC ต่อชั่วโมง (เดิม 60 วินาที ดูข้อ 6.5)</b> ถ้า DVN, executor หรือ key ถูกเจาะ ความเสียหายต่อ window จะไม่เกินเพดานนี้ ทำให้มีเวลาให้ alert และ pause ทำงาน</p>
   <ul>
     <li>นับเฉพาะ<b>ขาออก</b> (<code>_outflow</code>) ส่วนขาเข้า (<code>_inflow</code>) คืนโควตาให้ path เดียวกัน</li>
     <li>เกิน limit จะ revert <b>ตอนส่ง</b> ไม่ใช่ตอนรับ ไม่มี message ค้าง (step 14.7: ส่ง 15,000 ได้ <code>RateLimitExceeded</code> และ supply ไม่เปลี่ยน)</li>
@@ -859,6 +859,9 @@ function _update(address _from, address _to, uint256 _value) internal override {
       <tr><td class="num">6.13</td><td>owner ตรวจแล้ว release</td><td>ผู้รับได้ 6,000, totalQuarantined 0</td></tr>
     </tbody>
   </table></div>
+  <h4>outbound ต้องสอดคล้องกับ inbound cap</h4>
+  <p>หลัง deploy v3 พบว่า rate limit ขาออก (10,000 ต่อ 60 วินาที) หลวมกว่าเพดานขาเข้าของอีกฝั่ง (10,000 ต่อชั่วโมง) traffic ที่ถูกต้องแต่สูงจึงผ่านต้นทางได้แล้วไปถูกกักที่ปลายทาง ซึ่งเป็นสิ่งที่เกิดใน step 6.13 owner จึงปรับ window ของ rate limit เป็นชั่วโมงด้วย <code>setRateLimits</code> โดยไม่ต้อง deploy ใหม่ (step 14.10) ผลบนเชน: ส่ง 6,000 แล้วรอ 61 วินาที ส่งได้อีกแค่ ~4,186 ก้อน 6,000 ที่สองถูกปฏิเสธด้วย <code>RateLimitExceeded</code> ตั้งแต่ตอนส่ง ไม่มีอะไรถูกกักที่ปลายทาง</p>
+  <div class="callout lesson"><b>บทเรียน</b><p>ตั้ง outbound rate limit ≤ inbound cap ของปลายทางเสมอ เพื่อให้การกักเกิดเฉพาะกับ message ที่ไม่ได้ผ่าน control ของต้นทาง ซึ่งก็คือ message ปลอม</p></div>
   <div class="callout warn"><b>ยังค้าง</b><p>POTATO ได้เพดานนี้แล้วเช่นกัน (บท 13.5, POTATO v2) เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
 
   <h3>6.6 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
@@ -1490,7 +1493,7 @@ contract PotatoNativeAdapter is NativeOFTAdapter, BridgeControls { ... }        
       <tr><td class="num">14.4</td><td>issuer mint 1,000,000 USDC บน anvil</td><td>USDC ตัวจริงมาจาก issuer เท่านั้น bridge ไม่ mint บน home</td></tr>
       <tr><td class="num">14.5</td><td>bridge 1,000 anvil → potato</td><td>delivered 7 วินาที</td></tr>
       <tr><td class="num">14.6</td><td>bridge กลับ 400.5</td><td>locked 599.5 = minted 599.5 ✅</td></tr>
-      <tr><td class="num">14.7</td><td>ส่ง 15,000 ครั้งเดียว (limit 10,000/60s)</td><td><code>RateLimitExceeded</code>, supply ไม่เปลี่ยน</td></tr>
+      <tr><td class="num">14.7</td><td>ส่ง 15,000 ครั้งเดียว (limit 10,000 ต่อ window ตอนนั้น 60 วินาที)</td><td><code>RateLimitExceeded</code>, supply ไม่เปลี่ยน</td></tr>
       <tr><td class="num">14.8</td><td>pause ขารับระหว่างมี message มา</td><td>⏳ 50 ระหว่าง pause, executor เห็น <code>EnforcedPause</code> → delivered 23 วินาทีหลัง unpause</td></tr>
       <tr><td class="num">14.9</td><td>pause ขาส่ง</td><td><code>EnforcedPause</code> ไม่มี tx ถูกส่ง</td></tr>
     </tbody>
@@ -1827,7 +1830,7 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 162 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 163 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>

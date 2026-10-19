@@ -18,7 +18,7 @@
 | USDC ตัวจริง (anvil) | `IssuerUSDC` "USD Coin"/"USDC", 6 decimals, owner (issuer) mint/burn |
 | lock บน anvil | `UsdcAdapter` = `OFTAdapter` + rate limit + pause |
 | USDC บน potato | `UsdcOFT` "USD Coin (LayerZero)"/**"USDC.lz"**, 6 decimals + rate limit + pause |
-| rate limit (lab) | 10,000 USDC ต่อ 60 วินาที ต่อเชนปลายทาง ทั้งสองฝั่ง |
+| rate limit (lab) | 10,000 USDC ต่อ ~~60 วินาที~~ **ชั่วโมง** ต่อเชนปลายทาง ทั้งสองฝั่ง (เปลี่ยนเมื่อ 2026-10-19 ให้ตรงกับ inbound cap ของ [ADR 0006](0006-inbound-mint-cap.md), ดู [ADR 0007](0007-potato-pause-and-rate-limit.md)) |
 | pause | owner หยุดได้ทั้งขาส่งและขารับ |
 
 ## เหตุผล

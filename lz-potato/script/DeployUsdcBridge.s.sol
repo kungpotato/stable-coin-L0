@@ -23,7 +23,9 @@ contract DeployUsdcBridge is LabBase {
 
     uint128 constant LZ_RECEIVE_GAS = 100_000;
     uint192 constant RATE_LIMIT = 10_000e6; // per window, per destination (ADR 0003)
-    uint64 constant RATE_WINDOW = 60;
+    // window = the inbound cap's: what one side may send per hour, the other may pay out per hour, so legit
+    // traffic within the limit is never held at the destination (ADR 0007; was 60s in ADR 0003)
+    uint64 constant RATE_WINDOW = 3600;
     uint256 constant INBOUND_LIMIT = 10_000e6; // per window, per source chain (ADR 0006)
     uint64 constant INBOUND_WINDOW = 3600;
 
