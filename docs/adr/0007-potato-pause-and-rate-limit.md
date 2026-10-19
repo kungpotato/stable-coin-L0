@@ -1,6 +1,6 @@
 # ADR 0007: pause และ rate limit ขาออกของ POTATO
 
-- สถานะ: ตัดสินใจแล้ว (2026-10-19) · implement ใน contract แล้ว แต่ยังไม่ได้ deploy ใน lab (POTATO v2 ยังเป็น bytecode เดิม)
+- สถานะ: ตัดสินใจแล้ว (2026-10-19) · deploy ใน lab แล้วเป็น POTATO v3 (runbook 13.13–13.14)
 - ต่อจาก: [ADR 0002](0002-potato-native-oft-adapter.md), [ADR 0006](0006-inbound-mint-cap.md) · action item ข้อ 4 ของ [postmortem DEMOWEAK](../incidents/2026-10-15-demoweak-forged-mint.md)
 
 ## บริบท
@@ -27,4 +27,4 @@
   - `DeployPotatoBridge` ต้องรันด้วย `CONTROLS=true` ทุกครั้ง
   - ถ้าเพิ่มเชนใหม่ต้องตั้ง limit ให้ path นั้นด้วย
 - **USDC ยังใช้ outbound 10,000/60 วินาที แต่ inbound cap 10,000/ชั่วโมง:** traffic ที่ถูกต้องแต่สูงอาจถูกกักที่ปลายทาง ควรปรับสองค่านี้ให้สอดคล้องกันตอน deploy รอบถัดไป
-- **ต้อง deploy POTATO v3 ถึงจะมีผล:** ย้ายเงินแบบเดียวกับ v1 → v2 แล้วจึงปิด action item ข้อ 4 ของ postmortem ได้
+- **deploy แล้วเป็น POTATO v3:** พิสูจน์บนเชนแล้วว่า rate limit revert ตอนส่งโดยไม่ lock เงิน และ pause หยุดทั้งขาส่งและขารับโดย message ไม่หาย ปิด action item ข้อ 4 ของ postmortem ได้

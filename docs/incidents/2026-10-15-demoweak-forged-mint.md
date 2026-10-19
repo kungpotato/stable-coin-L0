@@ -68,6 +68,6 @@ POTATO, USDC.lz และ DEMOSAFE ไม่ได้รับผลกระท
 | 1 | audit ตาม payload hash ใน `check-supply` | ✅ `49a61c2` |
 | 2 | worker แจ้ง POISONED แทน "already delivered" | ✅ `57fe13e` |
 | 3 | ทุก OApp ใน production ต้องตั้ง security เอง และต้องผ่าน ≥ 2 DVN ที่อิสระต่อกัน | ✅ POTATO, USDC.lz, DEMOSAFE ย้ายไปใช้ B + C แล้ว (USDC ผ่าน pause → config → unpause ใช้เวลา 16 วินาที) ตรวจด้วย `check-security.sh` ส่วน Ping เป็นแอปทดสอบ ยังใช้ A |
-| 4 | ทุก leg ต้องมี pause + rate limit (PotatoNativeAdapter ยังไม่มี) | ⏳ ทำในโค้ดแล้ว ([ADR 0007](../adr/0007-potato-pause-and-rate-limit.md)) รอ deploy POTATO v3 |
+| 4 | ทุก leg ต้องมี pause + rate limit (PotatoNativeAdapter ยังไม่มี) | ✅ POTATO v3 ([ADR 0007](../adr/0007-potato-pause-and-rate-limit.md)) พิสูจน์บนเชนแล้ว (runbook 13.14) |
 | 5 | adapter รุ่นต่อไปควรมีทางกู้เหรียญที่ค้าง (เช่น owner-gated sweep สำหรับ leg ที่ปิดแล้ว) | ⬜ ต้องออกแบบไม่ให้กลายเป็นช่องโหว่ใหม่ |
 | 6 | alert แบบ real-time ทันทีที่ audit/worker ขึ้น FORGED/POISONED (ตอนนี้ต้องรันเอง) | ⬜ topic 8 |
