@@ -1,6 +1,6 @@
 # ADR 0006: เพดาน mint ขาเข้า (inbound mint cap)
 
-- สถานะ: ตัดสินใจแล้ว (2026-10-19) · implement ใน contract แล้ว แต่ยังไม่ได้ deploy ใน lab
+- สถานะ: ตัดสินใจแล้ว (2026-10-19) · deploy ใน lab แล้วเป็น USDC v3 (runbook 6.12–6.13)
 - ต่อจาก: [ADR 0003](0003-usdc-bridge-and-controls.md) (rate limit ขาออก), [ADR 0005](0005-usdc-blacklist-and-quarantine.md) (quarantine)
 
 ## บริบท
@@ -31,5 +31,8 @@
 - **ความเสียหายสูงสุดจากผู้ยืนยันที่ถูกเจาะ ≤ limit ต่อ window ต่อเชนต้นทาง** ไม่ว่าจะปลอมยอดเท่าไหร่ (unit test `test_forgedMintIsLimitedToCap`: ปลอม 10M แล้วยิงซ้ำเป็นก้อนเล็ก ผู้โจมตีได้ไม่เกินเพดาน)
 - **การโอนที่ถูกต้องแต่ใหญ่กว่าเพดานต้องรอ owner ปล่อย** จึงต้องตั้งเพดานจากข้อมูล volume จริง และมีขั้นตอนตรวจที่ชัดเจน
 - **indexer และ UI ต้องรู้จัก event `InboundCapExceeded` และ `Quarantined`** ไม่งั้นจะแสดงว่า delivered (เป็นงานที่ค้างอยู่แล้วจาก ADR 0005)
-- **ยังไม่ได้ deploy:** USDC v2 ใน lab ใช้ bytecode เดิม จะมีผลจริงต้อง deploy leg ใหม่ (v3) แล้วย้ายเงินตามขั้นตอนใน ADR 0005 และต้องเพิ่ม control นี้ใน `PotatoNativeAdapter` ด้วย ซึ่งตอนนี้ยังไม่มี control เลย
+- **deploy แล้วเป็น USDC v3:** 10,000 USDC ต่อชั่วโมงต่อเชนต้นทาง (`DeployUsdcBridge` กับ `INBOUND_CAP=true`) ปิดขาเข้าของ v2 แล้วและย้ายเงินของ dev0 แล้ว พิสูจน์บนเชนว่าก้อนที่เกินเพดานถูกกักทั้งก้อน message ไม่ค้าง และ invariant ✅
+- **ยังค้าง:**
+  - `UsdcVault` และ `UsdcDepositComposer` ยังผูกกับ USDC.lz v2 (เหลือ 105 ใน vault) ต้อง deploy คู่ใหม่ให้ v3
+  - `PotatoNativeAdapter` ยังไม่มี control นี้ (และยังไม่มี pause หรือ rate limit)
 - **ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time:** เพดานแค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง

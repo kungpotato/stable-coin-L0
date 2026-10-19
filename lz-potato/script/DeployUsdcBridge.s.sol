@@ -9,18 +9,22 @@ import {RateLimiter} from "@layerzerolabs/oapp-evm/contracts/oapp/utils/RateLimi
 import {IssuerUSDC} from "../src/token/IssuerUSDC.sol";
 import {UsdcAdapter} from "../src/token/UsdcAdapter.sol";
 import {UsdcOFT} from "../src/token/UsdcOFT.sol";
+import {StablecoinControls} from "../src/token/StablecoinControls.sol";
 
 /// @notice Topic 14: USDC bridge leg on the connected chain (ADR 0003). On the home chain
 /// (.assets.USDC.home) IssuerUSDC + UsdcAdapter, elsewhere UsdcOFT, recorded as "USDC" (and "IssuerUSDC").
-/// Peers, enforced lzReceive gas and the lab rate limit for every other chain. Run on every chain, then once
-/// more on the first (peers need the remote address). Re-runnable.
-/// env: KEY_<chain>, BLACKLISTER (optional address)
+/// Peers, enforced lzReceive gas, the lab rate limit and (with INBOUND_CAP=true, legs from v3 on, ADR 0006) the
+/// inbound mint cap for every other chain. Run on every chain, then once more on the first (peers need the
+/// remote address). Re-runnable.
+/// env: KEY_<chain>, BLACKLISTER (optional address), INBOUND_CAP (optional bool; v1/v2 bytecode has no cap)
 contract DeployUsdcBridge is LabBase {
     using OptionsBuilder for bytes;
 
     uint128 constant LZ_RECEIVE_GAS = 100_000;
     uint192 constant RATE_LIMIT = 10_000e6; // per window, per destination (ADR 0003)
     uint64 constant RATE_WINDOW = 60;
+    uint256 constant INBOUND_LIMIT = 10_000e6; // per window, per source chain (ADR 0006)
+    uint64 constant INBOUND_WINDOW = 3600;
 
     function run() external {
         string memory local = localName();
@@ -84,6 +88,18 @@ contract DeployUsdcBridge is LabBase {
                 cfg[0] = RateLimiter.RateLimitConfig(remoteEid, RATE_LIMIT, RATE_WINDOW);
                 leg.setRateLimits(cfg);
                 console.log("  set  rate limit", names[i]);
+            }
+
+            if (vm.envOr("INBOUND_CAP", false)) {
+                (uint256 capLimit, uint64 capWindow,,) = leg.inboundCaps(remoteEid);
+                if (capLimit == INBOUND_LIMIT && capWindow == INBOUND_WINDOW) {
+                    console.log("  ok   inbound cap", names[i]);
+                } else {
+                    StablecoinControls.InboundCapConfig[] memory caps = new StablecoinControls.InboundCapConfig[](1);
+                    caps[0] = StablecoinControls.InboundCapConfig(remoteEid, INBOUND_LIMIT, INBOUND_WINDOW);
+                    leg.setInboundCaps(caps);
+                    console.log("  set  inbound cap", names[i]);
+                }
             }
         }
         vm.stopBroadcast();

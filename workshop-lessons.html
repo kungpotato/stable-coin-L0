@@ -253,7 +253,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>153</b><span>step ใน runbook</span></div>
+    <div><b>155</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
     <div><b>6</b><span>ADR</span></div>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 153 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 155 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -849,7 +849,17 @@ function _update(address _from, address _to, uint256 _value) internal override {
     return false;
 }</code></pre>
   <p>unit test 12 ข้อ (<code>InboundCapTest</code>) รวมกรณีแบบ Cysic: ปลอม 10M แล้วยิงซ้ำเป็นก้อนเล็ก 20 ครั้ง <b>ผู้โจมตีได้ไม่เกินเพดาน 10,000</b> ที่เหลือถูกกักทั้งหมด ทั้งชุดผ่าน 31/31</p>
-  <div class="callout warn"><b>ยังไม่ได้ deploy</b><p>leg ของ USDC v2 ใน lab ใช้ bytecode เดิม จะมีผลจริงต้อง deploy v3 แล้วย้ายเงินตามขั้นตอนในข้อ 6.6 และยังต้องเพิ่ม control นี้ใน PotatoNativeAdapter ด้วย เพดานนี้ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
+  <h4>deploy เป็น USDC v3 และพิสูจน์บนเชน</h4>
+  <p>v2 upgrade ไม่ได้ จึง deploy leg ใหม่ (v3) ด้วย IssuerUSDC เดิม ตั้งเพดาน <b>10,000 USDC ต่อชั่วโมงต่อเชนต้นทาง</b> พร้อม blacklister และ DVN B + C แล้วปิดขาเข้าของ v2 และย้ายเงินของ dev0 862.5 ตามขั้นตอนในข้อ 6.6</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>ทำอะไร</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">6.13</td><td>รับ 6,000 จาก anvil</td><td>จ่ายปกติ, เพดานที่เหลือ 9,184.7 → 3,206.9</td></tr>
+      <tr><td class="num">6.13</td><td>รับอีก 6,000 (เกินที่เหลือ)</td><td>message delivered (nonce 3 ไม่ค้าง) แต่ <b>balance ไม่เพิ่ม</b>, quarantined 6,000, invariant ✅</td></tr>
+      <tr><td class="num">6.13</td><td>owner ตรวจแล้ว release</td><td>ผู้รับได้ 6,000, totalQuarantined 0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>ยังค้าง</b><p>UsdcVault และ composer (บท 7) ยังผูกกับ USDC.lz v2 (เหลือ 105 ใน vault) ต้อง deploy คู่ใหม่ให้ v3 และ PotatoNativeAdapter ยังไม่มีเพดานนี้ เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
 
   <h3>6.6 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
   <p>leg v1 ไม่มี blacklist และ upgrade ไม่ได้ เราจึง deploy <b>v2</b> ที่ใช้ IssuerUSDC ตัวเดิม พร้อม blacklister และ DVN B + C ตั้งแต่ก่อนมี traffic แรก แล้วย้ายแบบ<b>ผู้ใช้ย้ายเอง</b></p>
@@ -1653,7 +1663,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
       <tr><td>anvil-home ค้าง 1 ครั้ง</td><td>ยังไม่รู้</td><td>กู้จาก state dump</td><td>10</td><td><span class="tag warn">ไม่รู้สาเหตุ</span></td></tr>
       <tr><td>Ponder ตายหลัง hot reload ซ้อน</td><td>PGlite ถูกปิดกลางคัน</td><td>restart</td><td>15</td><td><span class="tag info">dev only</span></td></tr>
       <tr><td>UI แสดงเงินที่ถูกกักว่า delivered</td><td>ไม่ได้ index event Quarantined</td><td>ยังไม่แก้</td><td>6, 15</td><td><span class="tag bad">ค้าง</span></td></tr>
-      <tr><td>message ปลอมขาเข้า mint ได้ไม่จำกัด</td><td>rate limit นับแค่ขาออก (เห็นชัดจากเคส Cysic)</td><td>inbound mint cap + quarantine (ADR 0006), test 12/12</td><td>6</td><td><span class="tag warn">ยังไม่ deploy</span></td></tr>
+      <tr><td>message ปลอมขาเข้า mint ได้ไม่จำกัด</td><td>rate limit นับแค่ขาออก (เห็นชัดจากเคส Cysic)</td><td>inbound mint cap + quarantine (ADR 0006), test 12/12, deploy เป็น USDC v3</td><td>6</td><td><span class="tag ok">แก้แล้ว (lab)</span></td></tr>
       <tr><td>3 DEMOWEAK ค้างใน adapter v1</td><td>adapter ไม่มีทางกู้เหรียญ</td><td>ต้องออกแบบใน adapter รุ่นต่อไป</td><td>8</td><td><span class="tag bad">ค้าง</span></td></tr>
     </tbody>
   </table></div>
@@ -1675,7 +1685,8 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>DVN อย่างน้อย 2 รายที่อิสระต่อกันและรองรับ potato</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause, rate limit และ inbound mint cap ให้ PotatoNativeAdapter</td></tr>
-    <tr><td><span class="tag warn">พร้อมในโค้ด</span></td><td>inbound mint cap ของ leg USDC (ADR 0006) ต้อง deploy leg ใหม่และตั้งเพดานจาก volume จริง</td></tr>
+    <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ leg USDC (ADR 0006, USDC v3) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>deploy UsdcVault + composer คู่ใหม่ให้ USDC v3</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>audit PotatoNativeAdapter, StablecoinControls และ config ทุก path</td></tr>
     <tr><td><span class="tag ok">พร้อม</span></td><td>ตั้ง security ราย OApp, pin library, ขั้นตอนเปลี่ยน DVN แบบไม่ให้ message ค้าง</td></tr>
@@ -1767,7 +1778,7 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 153 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 155 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
