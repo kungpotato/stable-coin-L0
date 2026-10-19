@@ -9,13 +9,16 @@ import {OFTCore} from "@layerzerolabs/oft-evm/contracts/OFTCore.sol";
 import {PotatoNativeAdapter} from "../src/token/PotatoNativeAdapter.sol";
 import {PotatoOFT} from "../src/token/PotatoOFT.sol";
 import {InboundMintCap} from "../src/token/InboundMintCap.sol";
+import {BridgeControls} from "../src/token/BridgeControls.sol";
+import {RateLimiter} from "@layerzerolabs/oapp-evm/contracts/oapp/utils/RateLimiter.sol";
 
 /// @notice Topic 13: POTATO bridge leg on the connected chain (ADR 0002). On the asset's home chain
 /// (config/topology.json .assets.POTATO.home) a PotatoNativeAdapter, elsewhere a PotatoOFT, recorded as
 /// "POTATO". Peers every other recorded leg and enforces lzReceive gas for SEND / SEND_AND_CALL.
-/// With INBOUND_CAP=true (legs from v2 on, ADR 0006) also the inbound mint cap per source chain.
+/// With INBOUND_CAP=true (legs from v2 on, ADR 0006) also the inbound mint cap per source chain; with
+/// CONTROLS=true (legs from v3 on, ADR 0007) also the outbound rate limit, without which the leg cannot send.
 /// Run on every chain, then once more on the first (peers need the remote address). Re-runnable.
-/// env: KEY_<chain>, INBOUND_CAP (optional bool; v1 bytecode has no cap)
+/// env: KEY_<chain>, INBOUND_CAP (optional bool; v1 has no cap), CONTROLS (optional bool; v1/v2 have no rate limit)
 contract DeployPotatoBridge is LabBase {
     using OptionsBuilder for bytes;
 
@@ -23,6 +26,9 @@ contract DeployPotatoBridge is LabBase {
     uint128 constant LZ_RECEIVE_GAS = 100_000;
     uint256 constant INBOUND_LIMIT = 1_000 ether; // POTATO per window, per source chain (ADR 0006)
     uint64 constant INBOUND_WINDOW = 3600;
+    // outbound = the remote's inbound cap: legit traffic within the limit is never held on the other side (ADR 0007)
+    uint192 constant RATE_LIMIT = 1_000 ether;
+    uint64 constant RATE_WINDOW = 3600;
 
     function run() external {
         string memory local = localName();
@@ -67,6 +73,19 @@ contract DeployPotatoBridge is LabBase {
                 p[1] = EnforcedOptionParam(remoteEid, 2, opts); // SEND_AND_CALL
                 leg.setEnforcedOptions(p);
                 console.log("  set  enforced options", names[i]);
+            }
+
+            if (vm.envOr("CONTROLS", false)) {
+                BridgeControls controlled = BridgeControls(address(leg));
+                (,, uint192 limit, uint64 window) = controlled.rateLimits(remoteEid);
+                if (limit == RATE_LIMIT && window == RATE_WINDOW) {
+                    console.log("  ok   rate limit", names[i]);
+                } else {
+                    RateLimiter.RateLimitConfig[] memory rl = new RateLimiter.RateLimitConfig[](1);
+                    rl[0] = RateLimiter.RateLimitConfig(remoteEid, RATE_LIMIT, RATE_WINDOW);
+                    controlled.setRateLimits(rl);
+                    console.log("  set  rate limit", names[i]);
+                }
             }
 
             if (vm.envOr("INBOUND_CAP", false)) {

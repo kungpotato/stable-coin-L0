@@ -253,10 +253,10 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>159</b><span>step ใน runbook</span></div>
+    <div><b>160</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
-    <div><b>6</b><span>ADR</span></div>
+    <div><b>7</b><span>ADR</span></div>
     <div><b>1</b><span>drill โจมตี + postmortem</span></div>
   </div>
 </header>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 159 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 160 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -1427,7 +1427,18 @@ cast chain-id --rpc-url http://localhost:18545     <span class="c"># 707070</spa
       <tr><td class="num">13.11</td><td>owner release แล้วรัน deploy script</td><td>ผู้รับได้ 30, script ตั้งเพดานกลับเป็น 1,000</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><b>ช่องว่างที่ยังเปิดอยู่</b><p>POTATO ยังไม่มี pause ใน drill จึงต้องใช้ BlockedMessageLib หยุดแทน และตอนย้าย DVN ต้องทำแบบไม่มี pause (บท 8) และยังไม่มี rate limit ขาออก</p></div>
+  <h3>13.6 pause และ rate limit ขาออกสำหรับ POTATO (ADR 0007)</h3>
+  <p>action item ข้อ 4 จาก postmortem ในบท 8 คือ "ทุก leg ต้องมี pause + rate limit" ส่วนที่ USDC มีอยู่แล้วถูกแยกออกเป็น <code>BridgeControls</code> (pause + rate limit ขาออก + inbound cap) ให้ทุก leg ใช้ร่วมกัน ส่วน <code>StablecoinControls</code> เหลือแค่ blacklist ซึ่งต่อเข้ามาผ่าน hook</p>
+  <pre><code>abstract contract BridgeControls is RateLimiter, Pausable, InboundMintCap { ... }   <span class="c">// ทุก leg</span>
+abstract contract StablecoinControls is BridgeControls { ... }                    <span class="c">// USDC: + blacklist</span>
+contract PotatoNativeAdapter is NativeOFTAdapter, BridgeControls { ... }          <span class="c">// POTATO: ไม่มี blacklist</span></code></pre>
+  <ul>
+    <li><b>rate limit ขาออก 1,000 POTATO ต่อชั่วโมง</b> เท่ากับ inbound cap ของอีกฝั่ง: traffic ที่ไม่เกิน limit จะไม่ถูกกักที่ปลายทาง</li>
+    <li><b>pause</b>: ขาส่ง revert ทั้ง tx (<code>msg.value</code> ไม่ถูก lock) ส่วนขารับให้ message รอที่ executor แล้วส่งต่อหลัง unpause</li>
+    <li><b>กับดัก</b>: <code>RateLimiter</code> ถือว่า path ที่ไม่ได้ตั้ง limit มีเพดาน 0 leg ใหม่จะส่งไม่ได้เลยจนกว่าจะตั้ง <code>DeployPotatoBridge</code> จึงรองรับ <code>CONTROLS=true</code></li>
+  </ul>
+  <p>unit test 9 ข้อ (step 13.12) ทั้งชุดผ่าน 49/49</p>
+  <div class="callout warn"><b>ยังไม่ได้ deploy</b><p>POTATO v2 ใน lab ยังเป็น bytecode ที่มีแค่ inbound cap ต้อง deploy v3 แล้วย้ายเงินแบบเดียวกับ v1 → v2 จึงจะปิด action item นี้ได้จริง</p></div>
 
   <div class="summary"><h4>สรุปบทที่ 13</h4><ul>
     <li>ตรวจพฤติกรรมของ token บนเชนก่อนออกแบบ อย่าเชื่อชื่อ</li>
@@ -1712,7 +1723,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>DVN อย่างน้อย 2 รายที่อิสระต่อกันและรองรับ potato</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
     <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ POTATO (บท 13.5, POTATO v2) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
-    <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause และ rate limit ให้ PotatoNativeAdapter</td></tr>
+    <tr><td><span class="tag warn">พร้อมในโค้ด</span></td><td>pause และ rate limit ขาออกของ POTATO (บท 13.6, ADR 0007) ต้อง deploy POTATO v3</td></tr>
     <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ leg USDC (ADR 0006, USDC v3) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>audit PotatoNativeAdapter, StablecoinControls และ config ทุก path</td></tr>
@@ -1805,12 +1816,12 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 159 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 160 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
     <li><a href="docs/incidents/2026-10-15-demoweak-forged-mint.md">postmortem DEMOWEAK</a></li>
-    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a> · <a href="docs/adr/0006-inbound-mint-cap.md">0006</a></li>
+    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a> · <a href="docs/adr/0006-inbound-mint-cap.md">0006</a> · <a href="docs/adr/0007-potato-pause-and-rate-limit.md">0007</a></li>
   </ul>
   <h3>ใน potato-chain</h3>
   <ul>
