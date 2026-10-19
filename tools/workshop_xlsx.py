@@ -251,7 +251,7 @@ steps = [
      "ใช้ได้ แต่ indexer/web แสดง transfer ที่ถูกกักว่า 'delivered' (ยังไม่ได้ index event Quarantined) → งานต่อ", "บางส่วน"),
     (6, 11, "inbound mint cap (ADR 0006, บทเรียนจาก Cysic)", "rate limit เดิมนับแค่ขาออก: message ปลอมขาเข้า mint ได้ไม่จำกัด (DEMOWEAK 1M, Cysic 10M) ต้องมีเพดานยอดที่รับได้ต่อเชนต้นทางต่อ window",
      L, "forge test --match-contract InboundCapTest && forge test",
-     "InboundCapTest 12 passed (เกินเพดาน → กักทั้งก้อนไม่ revert, ปลอม 10M ได้ไม่เกินเพดาน, กักแล้วไม่คืนโควตาขาออก, owner ปล่อยได้) และรวมทั้งหมด 31 passed", "(commit นี้)",
+     "InboundCapTest 12 passed (เกินเพดาน → กักทั้งก้อนไม่ revert, ปลอม 10M ได้ไม่เกินเพดาน, กักแล้วไม่คืนโควตาขาออก, owner ปล่อยได้) และรวมทั้งหมด 31 passed", "857c86d",
      "31/31 ผ่าน; ยังไม่ได้ deploy (ต้อง v3) และยังไม่ได้ใส่ใน PotatoNativeAdapter", "ผ่าน"),
     (7, 0, "unit test ของ composer", "ทดสอบเงื่อนไขความปลอดภัยของ compose ก่อนขึ้นเชน",
      L, "forge test --match-contract DepositComposerTest",
