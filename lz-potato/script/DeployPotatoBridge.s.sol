@@ -8,17 +8,21 @@ import {EnforcedOptionParam} from "@layerzerolabs/oapp-evm/contracts/oapp/interf
 import {OFTCore} from "@layerzerolabs/oft-evm/contracts/OFTCore.sol";
 import {PotatoNativeAdapter} from "../src/token/PotatoNativeAdapter.sol";
 import {PotatoOFT} from "../src/token/PotatoOFT.sol";
+import {InboundMintCap} from "../src/token/InboundMintCap.sol";
 
 /// @notice Topic 13: POTATO bridge leg on the connected chain (ADR 0002). On the asset's home chain
 /// (config/topology.json .assets.POTATO.home) a PotatoNativeAdapter, elsewhere a PotatoOFT, recorded as
 /// "POTATO". Peers every other recorded leg and enforces lzReceive gas for SEND / SEND_AND_CALL.
+/// With INBOUND_CAP=true (legs from v2 on, ADR 0006) also the inbound mint cap per source chain.
 /// Run on every chain, then once more on the first (peers need the remote address). Re-runnable.
-/// env: KEY_<chain>
+/// env: KEY_<chain>, INBOUND_CAP (optional bool; v1 bytecode has no cap)
 contract DeployPotatoBridge is LabBase {
     using OptionsBuilder for bytes;
 
     string constant KEY = "POTATO";
     uint128 constant LZ_RECEIVE_GAS = 100_000;
+    uint256 constant INBOUND_LIMIT = 1_000 ether; // POTATO per window, per source chain (ADR 0006)
+    uint64 constant INBOUND_WINDOW = 3600;
 
     function run() external {
         string memory local = localName();
@@ -63,6 +67,19 @@ contract DeployPotatoBridge is LabBase {
                 p[1] = EnforcedOptionParam(remoteEid, 2, opts); // SEND_AND_CALL
                 leg.setEnforcedOptions(p);
                 console.log("  set  enforced options", names[i]);
+            }
+
+            if (vm.envOr("INBOUND_CAP", false)) {
+                InboundMintCap capped = InboundMintCap(address(leg));
+                (uint256 capLimit, uint64 capWindow,,) = capped.inboundCaps(remoteEid);
+                if (capLimit == INBOUND_LIMIT && capWindow == INBOUND_WINDOW) {
+                    console.log("  ok   inbound cap", names[i]);
+                } else {
+                    InboundMintCap.InboundCapConfig[] memory caps = new InboundMintCap.InboundCapConfig[](1);
+                    caps[0] = InboundMintCap.InboundCapConfig(remoteEid, INBOUND_LIMIT, INBOUND_WINDOW);
+                    capped.setInboundCaps(caps);
+                    console.log("  set  inbound cap", names[i]);
+                }
             }
         }
         vm.stopBroadcast();

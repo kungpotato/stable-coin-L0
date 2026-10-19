@@ -253,7 +253,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>157</b><span>step ใน runbook</span></div>
+    <div><b>159</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
     <div><b>6</b><span>ADR</span></div>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 157 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 159 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -859,7 +859,7 @@ function _update(address _from, address _to, uint256 _value) internal override {
       <tr><td class="num">6.13</td><td>owner ตรวจแล้ว release</td><td>ผู้รับได้ 6,000, totalQuarantined 0</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><b>ยังค้าง</b><p>POTATO ได้เพดานนี้ในโค้ดแล้ว (บท 13.5) แต่ยังไม่ได้ deploy เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
+  <div class="callout warn"><b>ยังค้าง</b><p>POTATO ได้เพดานนี้แล้วเช่นกัน (บท 13.5, POTATO v2) เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
 
   <h3>6.6 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
   <p>leg v1 ไม่มี blacklist และ upgrade ไม่ได้ เราจึง deploy <b>v2</b> ที่ใช้ IssuerUSDC ตัวเดิม พร้อม blacklister และ DVN B + C ตั้งแต่ก่อนมี traffic แรก แล้วย้ายแบบ<b>ผู้ใช้ย้ายเอง</b></p>
@@ -1417,7 +1417,17 @@ cast chain-id --rpc-url http://localhost:18545     <span class="c"># 707070</spa
     }
 }</code></pre>
   <p>unit test 9 ข้อ (step 13.9) รวมกรณีปลอมคำสั่งปล่อยทั้ง lockbox 100,000 POTATO แล้วยิงซ้ำเป็นก้อนเล็ก <b>ผู้โจมตีได้ไม่เกินเพดาน 1,000</b> ทั้งชุดผ่าน 40/40</p>
-  <div class="callout warn"><b>ช่องว่างที่ยังเปิดอยู่</b><p>เพดานนี้ยังอยู่ในโค้ดเท่านั้น POTATO bridge ใน lab ยังเป็น bytecode เดิม ต้อง deploy v2 แล้วย้ายเงิน และ POTATO ยังไม่มี pause ใน drill จึงต้องใช้ BlockedMessageLib หยุดแทน และตอนย้าย DVN ต้องทำแบบไม่มี pause (บท 8)</p></div>
+  <h4>deploy เป็น POTATO v2 และพิสูจน์บนเชน</h4>
+  <p>deploy leg ใหม่ (v2) ด้วยเพดาน <b>1,000 POTATO ต่อชั่วโมงต่อเชนต้นทาง</b> และ DVN B + C ปิดขาเข้าของ v1 แต่เปิดขาออกไว้ แล้วย้าย 66.876544 POTATO ของ anvil #0 ส่วน burner ของเว็บยังถือ v1 อยู่ 2 POTATO ซึ่งถอนกลับ potato เองได้</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>step</th><th>ทำอะไร</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td class="num">13.11</td><td>owner ลดเพดานชั่วคราวเหลือ 100 (dev0 มี POTATO ไม่ถึง 1,000) แล้วส่ง 20</td><td>จ่ายปกติ, เพดานที่เหลือ 38.4 → 18.7</td></tr>
+      <tr><td class="num">13.11</td><td>ส่งอีก 30 (เกินที่เหลือ)</td><td>message delivered (nonce 3) แต่ balance ไม่เพิ่ม, quarantined 30, invariant ✅</td></tr>
+      <tr><td class="num">13.11</td><td>owner release แล้วรัน deploy script</td><td>ผู้รับได้ 30, script ตั้งเพดานกลับเป็น 1,000</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>ช่องว่างที่ยังเปิดอยู่</b><p>POTATO ยังไม่มี pause ใน drill จึงต้องใช้ BlockedMessageLib หยุดแทน และตอนย้าย DVN ต้องทำแบบไม่มี pause (บท 8) และยังไม่มี rate limit ขาออก</p></div>
 
   <div class="summary"><h4>สรุปบทที่ 13</h4><ul>
     <li>ตรวจพฤติกรรมของ token บนเชนก่อนออกแบบ อย่าเชื่อชื่อ</li>
@@ -1701,7 +1711,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>ติดต่อ LayerZero Labs เรื่อง chain integration: deploy EndpointV2, EID ทางการ, executor รองรับ potato</td></tr>
     <tr><td><span class="tag warn">ต้องยืนยัน</span></td><td>DVN อย่างน้อย 2 รายที่อิสระต่อกันและรองรับ potato</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
-    <tr><td><span class="tag warn">พร้อมในโค้ด</span></td><td>inbound mint cap ของ POTATO (บท 13.5) ต้อง deploy POTATO v2 และย้ายเงิน</td></tr>
+    <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ POTATO (บท 13.5, POTATO v2) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause และ rate limit ให้ PotatoNativeAdapter</td></tr>
     <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ leg USDC (ADR 0006, USDC v3) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
@@ -1795,7 +1805,7 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 157 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 159 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>

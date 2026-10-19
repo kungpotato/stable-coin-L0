@@ -36,6 +36,6 @@
 - **deploy แล้วเป็น USDC v3:** 10,000 USDC ต่อชั่วโมงต่อเชนต้นทาง (`DeployUsdcBridge` กับ `INBOUND_CAP=true`) ปิดขาเข้าของ v2 แล้วและย้ายเงินของ dev0 แล้ว พิสูจน์บนเชนว่าก้อนที่เกินเพดานถูกกักทั้งก้อน message ไม่ค้าง และ invariant ✅
 - **vault และ composer ของ topic 7:** deploy คู่ใหม่ให้ v3 แล้ว (runbook 7.8) และ USDC.lz v2 เหลือ supply 0
 - **ยังค้าง:**
-  - **POTATO:** ทำในโค้ดแล้ว (`PotatoNativeAdapter` และ `PotatoOFT` ใช้ `InboundMintCap` ร่วมกับ USDC) มี unit test 9 ข้อ และ `check-supply` หักยอดที่ถูกกักใน adapter ออกแล้ว แต่ยังไม่ได้ deploy เพราะ POTATO bridge ใน lab ยังเป็น bytecode เดิม ต้อง deploy v2 แล้วย้ายเงิน
+  - **POTATO:** deploy แล้วเป็น POTATO v2 (runbook 13.10–13.11) เพดาน 1,000 POTATO ต่อชั่วโมงต่อเชนต้นทาง และพิสูจน์บนเชนแล้วว่าก้อนที่เกินเพดานถูกกัก ส่วน burner ของเว็บยังถือ v1 อยู่ 2 POTATO ถอนเองได้ผ่านขาออกของ v1 ที่เปิดไว้
   - POTATO ยังไม่มี pause, rate limit ขาออก และ blacklist ต้องใช้ BlockedMessageLib หยุดแทน
 - **ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time:** เพดานแค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง
