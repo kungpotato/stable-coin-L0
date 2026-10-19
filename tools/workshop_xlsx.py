@@ -588,7 +588,7 @@ steps = [
      "2/2 ผ่าน: CreditFailed และไม่มีเหรียญขยับ (ทดสอบใน unit test แทนเชนจริง เพื่อไม่ทิ้ง message ค้าง)", "ผ่าน"),
     (13, 9, "inbound mint cap ให้ POTATO (ADR 0006)", "PotatoNativeAdapter คือ lockbox ของ native POTATO: ถ้าผู้ยืนยันถูกเจาะ message ปลอมดูด lockbox ได้ทั้งก้อนแบบ drill DEMOWEAK จึงใช้เพดานเดียวกับ USDC (แยกเป็น InboundMintCap)",
      L, "forge test --match-contract PotatoInboundCapTest && forge test",
-     "PotatoInboundCapTest 9 passed (adapter เกินเพดาน → native อยู่ใน lockbox และถูกกัก, ปลอมดูดทั้ง lockbox ได้ไม่เกินเพดาน, release ให้ contract ที่ไม่มี receive() revert แต่ยังกักไว้, PotatoOFT mint เข้าตัวเอง) รวมทั้งหมด 40 passed", "(commit นี้)",
+     "PotatoInboundCapTest 9 passed (adapter เกินเพดาน → native อยู่ใน lockbox และถูกกัก, ปลอมดูดทั้ง lockbox ได้ไม่เกินเพดาน, release ให้ contract ที่ไม่มี receive() revert แต่ยังกักไว้, PotatoOFT mint เข้าตัวเอง) รวมทั้งหมด 40 passed", "5850520",
      "40/40 ผ่าน, USDC ยังผ่านครบหลังแยก InboundMintCap; check-supply POTATO หักยอดที่ถูกกักแล้ว; ยังไม่ได้ deploy (ต้อง POTATO v2)", "ผ่าน"),
     (14, 0, "ตรวจ MockUSDC บน potato", "ต้องรู้ว่าเอา MockUSDC เดิมมาเป็นตัว bridge ได้ไหม",
      "potato-chain", "cat contracts/src/MockUSDC.sol",
