@@ -253,7 +253,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>155</b><span>step ใน runbook</span></div>
+    <div><b>156</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
     <div><b>6</b><span>ADR</span></div>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 155 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 156 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -859,7 +859,7 @@ function _update(address _from, address _to, uint256 _value) internal override {
       <tr><td class="num">6.13</td><td>owner ตรวจแล้ว release</td><td>ผู้รับได้ 6,000, totalQuarantined 0</td></tr>
     </tbody>
   </table></div>
-  <div class="callout warn"><b>ยังค้าง</b><p>UsdcVault และ composer (บท 7) ยังผูกกับ USDC.lz v2 (เหลือ 105 ใน vault) ต้อง deploy คู่ใหม่ให้ v3 และ PotatoNativeAdapter ยังไม่มีเพดานนี้ เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
+  <div class="callout warn"><b>ยังค้าง</b><p>PotatoNativeAdapter ยังไม่มีเพดานนี้ เพดานไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time แค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง</p></div>
 
   <h3>6.6 contract upgrade ไม่ได้ จะเพิ่ม control อย่างไร</h3>
   <p>leg v1 ไม่มี blacklist และ upgrade ไม่ได้ เราจึง deploy <b>v2</b> ที่ใช้ IssuerUSDC ตัวเดิม พร้อม blacklister และ DVN B + C ตั้งแต่ก่อนมี traffic แรก แล้วย้ายแบบ<b>ผู้ใช้ย้ายเอง</b></p>
@@ -961,6 +961,7 @@ function _update(address _from, address _to, uint256 _value) internal override {
       <tr><td class="num">7.4</td><td>ผู้โจมตีเรียก <code>sendCompose</code> เองหา composer อ้างยอด 1,000,000</td><td>composer revert <code>UntrustedOApp</code> เงินปลอดภัย</td></tr>
     </tbody>
   </table></div>
+  <div class="callout note"><b>composer ผูก OFT แบบ immutable</b><p>เมื่อย้าย USDC.lz เป็น v3 (บท 6.5) vault และ composer ต้อง deploy คู่ใหม่ด้วย (step 7.8): ผู้ถือ shares ของ vault เดิม redeem ออกมา ถอน v2 กลับ anvil แล้ว bridge-and-deposit เข้า vault ใหม่ ใช้เวลา 11 วินาที จากนั้น USDC.lz v2 เหลือ supply 0 และ executor ต้อง restart เพื่อให้รู้จัก composer ใหม่ (allowlist อ่านจาก deployments ตอนเริ่ม)</p></div>
   <div class="callout warn"><b>กับดักฝั่ง executor</b><p>ใน step 7.4 แม้เงินจะปลอดภัย แต่ executor ของเรา retry compose ปลอมทุก 2 วินาทีไม่สิ้นสุด เพราะเห็นว่ามีงานในคิว แก้ด้วย <b>allowlist</b>: executor ทำ compose เฉพาะที่ queue โดย OApp ที่รู้จัก ที่เหลือ log ครั้งเดียวแล้ว skip</p></div>
 
   <h3>7.4 lzRead: อ่านค่าจากเชนอื่น</h3>
@@ -1686,7 +1687,6 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ตั้ง lzReceive/lzCompose gas จากการวัดบนเชนจริงต่อเชนปลายทาง (enforced options ของ lab ยังเป็น 100k)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เพิ่ม pause, rate limit และ inbound mint cap ให้ PotatoNativeAdapter</td></tr>
     <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>inbound mint cap ของ leg USDC (ADR 0006, USDC v3) ใน production ต้องตั้งเพดานจาก volume จริง</td></tr>
-    <tr><td><span class="tag bad">ต้องทำ</span></td><td>deploy UsdcVault + composer คู่ใหม่ให้ USDC v3</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>เลิกใช้ contract ของ lab (EndpointV2/ULN302 ที่ deploy เอง, LabDVN, LabExecutor, workers)</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>audit PotatoNativeAdapter, StablecoinControls และ config ทุก path</td></tr>
     <tr><td><span class="tag ok">พร้อม</span></td><td>ตั้ง security ราย OApp, pin library, ขั้นตอนเปลี่ยน DVN แบบไม่ให้ message ค้าง</td></tr>
@@ -1778,7 +1778,7 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 155 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 156 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>

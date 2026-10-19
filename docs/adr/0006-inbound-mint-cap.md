@@ -32,7 +32,7 @@
 - **การโอนที่ถูกต้องแต่ใหญ่กว่าเพดานต้องรอ owner ปล่อย** จึงต้องตั้งเพดานจากข้อมูล volume จริง และมีขั้นตอนตรวจที่ชัดเจน
 - **indexer และ UI ต้องรู้จัก event `InboundCapExceeded` และ `Quarantined`** ไม่งั้นจะแสดงว่า delivered (เป็นงานที่ค้างอยู่แล้วจาก ADR 0005)
 - **deploy แล้วเป็น USDC v3:** 10,000 USDC ต่อชั่วโมงต่อเชนต้นทาง (`DeployUsdcBridge` กับ `INBOUND_CAP=true`) ปิดขาเข้าของ v2 แล้วและย้ายเงินของ dev0 แล้ว พิสูจน์บนเชนว่าก้อนที่เกินเพดานถูกกักทั้งก้อน message ไม่ค้าง และ invariant ✅
+- **vault และ composer ของ topic 7:** deploy คู่ใหม่ให้ v3 แล้ว (runbook 7.8) และ USDC.lz v2 เหลือ supply 0
 - **ยังค้าง:**
-  - `UsdcVault` และ `UsdcDepositComposer` ยังผูกกับ USDC.lz v2 (เหลือ 105 ใน vault) ต้อง deploy คู่ใหม่ให้ v3
   - `PotatoNativeAdapter` ยังไม่มี control นี้ (และยังไม่มี pause หรือ rate limit)
 - **ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time:** เพดานแค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง
