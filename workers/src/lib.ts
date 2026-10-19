@@ -178,6 +178,7 @@ export function envKey(name: string): Hex {
 const packetVerifiedEvent = parseAbiItem(
   "event PacketVerified((uint32 srcEid, bytes32 sender, uint64 nonce) origin, address receiver, bytes32 payloadHash)",
 );
+const RESCAN = 5n;
 const verifiedIndex = new Map<string, { scannedTo: bigint; byKey: Map<string, Hex> }>();
 const vKey = (srcEid: number, sender: Hex, receiver: Address, nonce: bigint) =>
   `${srcEid}-${sender.toLowerCase()}-${receiver.toLowerCase()}-${nonce}`;
@@ -186,7 +187,10 @@ async function acceptedPayload(dst: ChainCfg, p: Packet): Promise<Hex | undefine
   let idx = verifiedIndex.get(dst.name);
   if (!idx) verifiedIndex.set(dst.name, (idx = { scannedTo: 0n, byKey: new Map() }));
   const latest = await dst.pub.getBlockNumber();
-  for (let start = idx.scannedTo + 1n; start <= latest; start += 1_000n) {
+  // re-read the last few blocks every time: right at the tip cosmos/evm can answer getLogs before the block's logs
+  // are indexed, and a missed PacketVerified would leave an older (e.g. nilified forged) payload as the answer
+  const rescanFrom = idx.scannedTo > RESCAN ? idx.scannedTo - RESCAN + 1n : 1n;
+  for (let start = rescanFrom; start <= latest; start += 1_000n) {
     const end = start + 999n < latest ? start + 999n : latest;
     const logs: Log[] = await dst.pub.getLogs({ address: dst.endpoint, event: packetVerifiedEvent, fromBlock: start, toBlock: end });
     for (const l of logs) {
@@ -201,12 +205,16 @@ async function acceptedPayload(dst: ChainCfg, p: Packet): Promise<Hex | undefine
 /** Inbound state of a packet on its destination endpoint.
  *  "poisoned": the destination spent this nonce on a DIFFERENT payload (a forgery). The real packet can never be
  *  delivered; a nonce <= lazyInboundNonce with an empty slot is not proof that *this* packet arrived. */
+const NIL_PAYLOAD_HASH = `0x${"f".repeat(64)}`;
+
 export async function inboundState(dst: ChainCfg, p: Packet): Promise<"delivered" | "committed" | "pending" | "poisoned"> {
   const args = [p.receiver, p.srcEid, p.sender] as const;
   const [lazy, hash] = await Promise.all([
     dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "lazyInboundNonce", args }),
     dst.pub.readContract({ address: dst.endpoint, abi: endpointAbi, functionName: "inboundPayloadHash", args: [...args, p.nonce] }),
   ]);
+  // NIL (all 0xff): the owner nilified a forged payload at this nonce; the real packet can still be verified there
+  if (hash.toLowerCase() === NIL_PAYLOAD_HASH) return "pending";
   if (BigInt(hash) !== 0n) return hash.toLowerCase() === p.payloadHash.toLowerCase() ? "committed" : "poisoned";
   if (p.nonce > lazy) return "pending";
   return (await acceptedPayload(dst, p))?.toLowerCase() === p.payloadHash.toLowerCase() ? "delivered" : "poisoned";

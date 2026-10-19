@@ -1,6 +1,6 @@
 # Playbook: bridge incident (forged mint / DVN compromise)
 
-ใช้เมื่อพบอย่างใดอย่างหนึ่งต่อไปนี้:
+ใช้เมื่อพบอย่างใดอย่างหนึ่งต่อไปนี้ (`npm run alert` แจ้งทุกข้อให้เองแบบ real-time):
 - `check-supply.sh` ขึ้น ❌
 - `npm run audit` ได้ exit 2 (FORGED หรือ POISONED)
 - worker ขึ้น `ALERT POISONED`
@@ -22,7 +22,7 @@
 - ผู้ใช้ส่งเข้าแล้วต้อง revert
 - `FORCE=true … ForgeMint.s.sol` แบบจำลองต้อง revert
 
-**ถ้าเจอ message ปลอมที่ commit แล้วแต่ยังไม่ execute** (audit ขึ้น FORGED และ `inboundPayloadHash` ยังไม่ว่าง): owner ใช้ `endpoint.burn(oapp, srcEid, sender, nonce, payloadHash)` ทิ้ง payload นั้นได้ก่อนที่ใครจะเรียก `lzReceive` โอกาสนี้มีแค่ช่วงสั้นๆ
+**ถ้าเจอ message ปลอมที่ commit แล้วแต่ยังไม่ execute** (alert `FORGED_VERIFIED` หรือ audit ขึ้น FORGED และ `inboundPayloadHash` ยังไม่ว่าง): owner หรือ delegate เรียก `endpoint.nilify(oapp, srcEid, sender, nonce, payloadHash)` ทันที (alert จะพิมพ์คำสั่งที่ใส่ค่าครบแล้วให้) slot นั้นจะกลายเป็น NIL ซึ่ง execute ไม่ได้ แต่ packet จริงที่ nonce เดียวกันยัง verify ทับได้ จึงไม่ค้างถาวร ส่วน `burn` ใช้ไม่ได้ในกรณีนี้ เพราะใช้ได้เฉพาะ nonce ≤ lazyInboundNonce ([ADR 0008](../adr/0008-real-time-alerts.md))
 
 ## 2. ประเมินความเสียหาย
 

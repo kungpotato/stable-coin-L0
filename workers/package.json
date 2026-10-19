@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "attest": "node src/attest.ts",
     "audit": "node src/audit.ts",
-    "snapshot": "node src/snapshot.ts"
+    "snapshot": "node src/snapshot.ts",
+    "alert": "node src/alert.ts"
   },
   "engines": {
     "node": ">=22.18"

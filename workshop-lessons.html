@@ -253,10 +253,10 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
     <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>163</b><span>step ใน runbook</span></div>
+    <div><b>166</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
-    <div><b>7</b><span>ADR</span></div>
+    <div><b>8</b><span>ADR</span></div>
     <div><b>1</b><span>drill โจมตี + postmortem</span></div>
   </div>
 </header>
@@ -302,7 +302,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 163 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 166 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -1037,7 +1037,7 @@ npm run audit -- DEMOSAFE
 
   <h3>8.4 Playbook 5 ขั้น</h3>
   <ol class="steps">
-    <li><b>หยุดความเสียหาย</b> ทำทันทีที่สงสัย ไม่ต้องรอยืนยัน เพราะยกเลิกได้: leg ที่มี pause ให้ pause ทุกเชน, leg ที่ไม่มีให้ตั้ง BlockedMessageLib ถ้าเจอ message ปลอมที่ commit แล้วแต่ยังไม่ execute owner ใช้ <code>endpoint.burn(...)</code> ทิ้ง payload นั้นได้ก่อนใครเรียก lzReceive</li>
+    <li><b>หยุดความเสียหาย</b> ทำทันทีที่สงสัย ไม่ต้องรอยืนยัน เพราะยกเลิกได้: leg ที่มี pause ให้ pause ทุกเชน, leg ที่ไม่มีให้ตั้ง BlockedMessageLib ถ้าเจอ message ปลอมที่ commit แล้วแต่ยังไม่ execute owner หรือ delegate ใช้ <code>endpoint.nilify(...)</code> บล็อกไม่ให้ execute ได้ (ไม่ใช่ <code>burn</code> ดูข้อ 8.9)</li>
     <li><b>ประเมินความเสียหาย</b> ด้วย audit, check-supply และ snapshot แล้วบันทึกตัวเลขลง incident doc</li>
     <li><b>อุดรู</b> ถอด DVN ที่หลุดออกจากทุก OApp ห้ามเปิด path ใหม่จนกว่าจะพิสูจน์ว่า key ที่หลุดใช้ไม่ได้แล้ว</li>
     <li><b>กู้คืน</b> deploy v2, เปลี่ยนชื่อ key เก่าเป็น <code>_V1</code>, ชดเชยตาม snapshot ให้ supply ใหม่มีหลักประกันครบ</li>
@@ -1092,6 +1092,30 @@ npm run audit -- DEMOSAFE
   <p>เพราะ owner เป็น Safe แล้ว DevTools ส่ง tx เองไม่ได้ เราจึงเขียน <code>wire-via-safe.sh</code> ให้นำ calldata จาก dry-run มาส่งผ่าน Safe ทีละ tx หลังส่งครบ DevTools ตอบว่า <b>"The OApp is wired, no action is necessary"</b></p>
   <div class="callout lesson"><b>บทเรียน</b><p>การตั้ง config ด้วยมือ แม้จะระวังแค่ไหนก็พลาดรายละเอียดได้ เครื่องมือที่เทียบ "ที่ควรเป็น" กับ "ที่เป็นอยู่" ทั้งหมดในครั้งเดียวจับสิ่งที่ตาคนมองข้ามได้</p></div>
 
+  <h3>8.9 Alert แบบ real-time (ADR 0008)</h3>
+  <p>action item ข้อ 6 ของ postmortem: ใน drill ทุกการตรวจจับต้องมีคนรันเอง ส่วนเหตุการณ์ Cysic เริ่มเทขาย 5 นาทีหลัง mint แต่ blacklist ตามมาที่นาทีที่ 76 เราจึงเขียน <code>npm run alert</code> ซึ่งตรวจทั้งสองเชนทุก 3 วินาที อ่านอย่างเดียวและไม่ถือ key</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>alert</th><th>เงื่อนไข</th></tr></thead>
+    <tbody>
+      <tr><td>🚨 <code>FORGED_VERIFIED</code></td><td>endpoint ปลายทาง commit payload ที่ต้นทางไม่เคยส่ง แจ้ง<b>ตั้งแต่ตอน commit ก่อน lzReceive</b> พร้อมคำสั่ง nilify ที่ใส่ค่าครบ</td></tr>
+      <tr><td>🚨 <code>SUPPLY</code></td><td>minted &gt; locked − ยอดที่ home leg กักไว้</td></tr>
+      <tr><td>🚨 <code>POISONED</code></td><td>packet จริงส่งไม่ถึงตลอดไป (ยืนยัน 2 tick ติดกัน)</td></tr>
+      <tr><td>⚠️ <code>STUCK</code> / <code>HELD</code> / <code>RPC</code></td><td>ค้างนานเกินกำหนด / ถูกกักเพราะ cap หรือ blacklist / เชนไม่ตอบ</td></tr>
+      <tr><td>ℹ️ <code>PAUSED</code> <code>NILIFIED</code> ...</td><td>ใครเข้ามาแก้ระบบ ทำให้ช่องทาง alert เป็น timeline ของ incident ด้วย</td></tr>
+    </tbody>
+  </table></div>
+  <p>ช่องทางแจ้ง: console, <code>alerts.jsonl</code>, webhook (Slack/Discord) และ notification ของ macOS แต่ละเงื่อนไขแจ้งครั้งเดียว และแจ้งอีกครั้งตอน resolved</p>
+  <h4>ซ้อม: key ของ DVN B และ C หลุดพร้อมกัน</h4>
+  <ol class="timeline">
+    <li class="bad"><b>ปลอมแล้ว commit แต่ยังไม่ execute</b><span><code>ForgeMint</code> กับ <code>DVN_IDS=LabDVN_B,LabDVN_C</code> และ <code>STOP_AFTER_COMMIT=true</code> บน DEMOWEAK v2</span></li>
+    <li><b>🚨 FORGED_VERIFIED ภายใน tick เดียว</b><span>DEMOWEAK anvil-&gt;potato nonce 2 พร้อมคำสั่ง <code>endpoint.nilify(...)</code></span></li>
+    <li><b>delegate เรียก nilify</b><span>slot กลายเป็น <code>0xff…ff</code> ถ้าลอง lzReceive จะได้ <code>LZ_PayloadHashNotFound</code> แล้ว alert แจ้ง NILIFIED และ RESOLVED ให้เอง</span></li>
+    <li class="ok"><b>การโอนจริงครั้งถัดไปใช้ nonce 2 เดิมได้</b><span>delivered, audit 2/2 OK ต่างจาก drill ในข้อ 8.3 ที่ nonce 2 ค้างถาวร</span></li>
+  </ol>
+  <p>ซ้อมกรณีอื่นด้วย: pause USDC → <code>PAUSED</code> → <code>STUCK</code> หลัง 30 วินาที → unpause → resolved และลด cap ของ POTATO → <code>HELD</code> → release ตั้งแต่เปิด worker ก็เจอ <code>SUPPLY:DEMOWEAK_V1</code> (unbacked 999,999) ซึ่งเป็นของเสียจริงที่ค้างจาก drill ในบท 3</p>
+  <div class="callout warn"><b>bug ที่เจอตอนซ้อม</b><p>alert แจ้ง POISONED ผิดหนึ่งครั้ง เพราะ index ของ PacketVerified สแกน block ปลายสุดครั้งเดียว และ RPC ของ cosmos/evm บางครั้งตอบ getLogs ก่อนที่ log ของ block นั้นจะถูก index index จึงเห็นแต่ payload ปลอม แก้ด้วยการสแกนซ้อน 5 block ทุกครั้ง และให้ POISONED ต้องยืนยัน 2 tick ติดกัน หลังแก้ ส่งจริงอีก 5 ครั้งไม่มี alert ผิด</p></div>
+  <div class="callout lesson"><b>บทเรียน</b><p>alert ที่ดีต้องบอกด้วยว่าต้องทำอะไรต่อ (คำสั่ง nilify ที่ใส่ค่าครบ) ไม่ใช่แค่บอกว่ามีปัญหา และเครื่องมือฉุกเฉินต้องตรวจกับ source จริง (burn กับ nilify ต่างกันมาก) ส่วนที่ยังขาดคือ worker ตัวเดียวเป็น single point of failure และยังไม่มี auto-pause ซึ่งควรใช้ role pauser แยกจาก owner</p></div>
+
   <div class="summary"><h4>สรุปบทที่ 8</h4><ul>
     <li>ยืนยันข้อเท็จจริงก่อนตัดสินใจ: path ไม่ได้พังทั้งหมด เสียแค่ nonce ที่ถูกปลอม</li>
     <li>ตรวจจับด้วย payload hash ไม่ใช่การนับ nonce และแจ้ง POISONED แทน "already delivered"</li>
@@ -1099,9 +1123,10 @@ npm run audit -- DEMOSAFE
     <li>กู้คืนด้วย v2 + snapshot ที่ไม่นับเหรียญปลอม แล้ว treasury ชดเชยด้วยของจริง</li>
     <li>ย้าย DVN ตอนไม่มี message ค้าง, pin library, owner และ delegate เป็น Safe (ตั้ง delegate ก่อน)</li>
     <li>ใช้ DevTools เป็นตัวตรวจ config ทั้งหมด</li>
+    <li>alert real-time แจ้ง message ปลอมตั้งแต่ตอน commit และใช้ nilify (ไม่ใช่ burn) บล็อกก่อน execute</li>
   </ul></div>
   <div class="quiz"><h4>คำถามทบทวน</h4>
-    <details><summary>ถ้าพบ message ปลอมที่ commit แล้วแต่ยังไม่มีใครเรียก lzReceive ควรทำอะไร</summary><p>owner ของ OApp เรียก <code>endpoint.burn(oapp, srcEid, sender, nonce, payloadHash)</code> ทิ้ง payload นั้นทันที ก่อนที่ executor หรือผู้โจมตีจะเรียก lzReceive และควร pause หรือตั้ง BlockedMessageLib ไปพร้อมกัน</p></details>
+    <details><summary>ถ้าพบ message ปลอมที่ commit แล้วแต่ยังไม่มีใครเรียก lzReceive ควรทำอะไร</summary><p>owner หรือ delegate ของ OApp เรียก <code>endpoint.nilify(oapp, srcEid, sender, nonce, payloadHash)</code> ทันที slot นั้นจะเป็น NIL ซึ่ง execute ไม่ได้ แต่ packet จริงที่ nonce เดียวกันยัง verify ทับได้ และควร pause หรือตั้ง BlockedMessageLib ไปพร้อมกัน ฉบับแรกของเล่มนี้เขียนว่า <code>burn</code> ซึ่งผิด เพราะ burn ใช้ได้เฉพาะ nonce ≤ lazyInboundNonce (พบตอนอ่าน source ในข้อ 8.9)</p></details>
     <details><summary>ทำไมต้องตั้ง delegate ไปที่ Safe ก่อนโอน owner</summary><p>เพราะ <code>setDelegate</code> เรียกได้โดย owner เท่านั้น ถ้าโอน owner ไปก่อน EOA เดิมจะเรียกไม่ได้ ต้องทำผ่าน Safe อีกรอบ</p></details>
   </div>
 </section>
@@ -1716,6 +1741,8 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
       <tr><td>Ponder ตายหลัง hot reload ซ้อน</td><td>PGlite ถูกปิดกลางคัน</td><td>restart</td><td>15</td><td><span class="tag info">dev only</span></td></tr>
       <tr><td>UI แสดงเงินที่ถูกกักว่า delivered</td><td>ไม่ได้ index event Quarantined</td><td>ยังไม่แก้</td><td>6, 15</td><td><span class="tag bad">ค้าง</span></td></tr>
       <tr><td>message ปลอมขาเข้า mint ได้ไม่จำกัด</td><td>rate limit นับแค่ขาออก (เห็นชัดจากเคส Cysic)</td><td>inbound mint cap + quarantine (ADR 0006), test 12/12, deploy เป็น USDC v3</td><td>6</td><td><span class="tag ok">แก้แล้ว (lab)</span></td></tr>
+      <tr><td>playbook ให้ใช้ <code>burn</code> กับ message ปลอมที่ยังไม่ execute</td><td>burn ใช้ได้เฉพาะ nonce ≤ lazyInboundNonce</td><td>เปลี่ยนเป็น <code>nilify</code> พร้อมพิสูจน์บนเชน (ADR 0008)</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
+      <tr><td>alert แจ้ง POISONED ผิด</td><td>index สแกน block ปลายสุดครั้งเดียว แต่ RPC ยังไม่มี log</td><td>สแกนซ้อน 5 block + ยืนยัน 2 tick</td><td>8</td><td><span class="tag ok">แก้แล้ว</span></td></tr>
       <tr><td>3 DEMOWEAK ค้างใน adapter v1</td><td>adapter ไม่มีทางกู้เหรียญ</td><td>ต้องออกแบบใน adapter รุ่นต่อไป</td><td>8</td><td><span class="tag bad">ค้าง</span></td></tr>
     </tbody>
   </table></div>
@@ -1754,7 +1781,8 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <h3>Operations</h3>
   <div class="table-wrap"><table class="wide"><tbody>
     <tr><td><span class="tag ok">พร้อม</span></td><td>indexer สองเชน, check-supply + audit ด้วย payload hash, playbook ที่ซ้อมแล้ว</td></tr>
-    <tr><td><span class="tag bad">ต้องทำ</span></td><td>alert real-time: FORGED/POISONED, invariant ผิด, message ค้างนาน, client ใกล้หมดอายุ, relayer/DVN หยุด</td></tr>
+    <tr><td><span class="tag ok">พร้อม (lab)</span></td><td>alert real-time (<code>npm run alert</code>, ADR 0008): FORGED_VERIFIED, SUPPLY, POISONED, STUCK, HELD, RPC</td></tr>
+    <tr><td><span class="tag bad">ต้องทำ</span></td><td>รัน alert หลายที่พร้อม heartbeat, alert IBC client ใกล้หมดอายุ และ auto-pause ด้วย role pauser แยกจาก owner</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>index event Quarantined และแสดงใน UI</td></tr>
     <tr><td><span class="tag bad">ต้องทำ</span></td><td>ทางกู้เหรียญที่ค้างใน adapter ที่ปิดแล้ว (ออกแบบไม่ให้เป็นช่องโหว่ใหม่)</td></tr>
   </tbody></table></div>
@@ -1773,7 +1801,8 @@ cd workers &amp;&amp; npm run dvn &amp; DVN_ID=LabDVN_B DVN_KEY_VAR=DVN_B_KEY np
 ./check-wiring.sh            <span class="c"># default config ของ protocol</span>
 ./check-security.sh          <span class="c"># DVN ของทุก OApp ทุก path</span>
 ./check-supply.sh USDC       <span class="c"># locked vs minted + audit</span>
-npm run audit -- DEMOSAFE    <span class="c"># (workers/) payload hash ราย nonce</span></code></pre>
+npm run audit -- DEMOSAFE    <span class="c"># (workers/) payload hash ราย nonce</span>
+npm run alert                <span class="c"># (workers/) alert real-time: ALERT_WEBHOOK_URL, ALERT_DESKTOP=1, STUCK_SECONDS</span></code></pre>
   <h3>bridge</h3>
   <pre><code>./bridge.sh USDC anvil potato 100
 ./bridge-potato.sh potato anvil 5
@@ -1813,6 +1842,7 @@ make smoke-ibc</code></pre>
     <dt>GUID</dt><dd>รหัสไม่ซ้ำของ message แต่ละตัว</dd>
     <dt>payload hash</dt><dd>hash ของ GUID + message ที่ endpoint ปลายทางเก็บไว้หลังยืนยัน ใช้ตรวจว่าของที่ถึงตรงกับที่ส่งจริง</dd>
     <dt>FORGED / POISONED</dt><dd>ปลายทางรับ payload ที่ต้นทางไม่เคยส่ง / ช่อง nonce ถูกใช้กับ payload อื่น ของจริงจึงไม่มีวันถึง (บท 8)</dd>
+    <dt>nilify</dt><dd>เครื่องมือของ owner/delegate บน endpoint ที่ทำให้ payload ที่ commit แล้วของ nonce หนึ่ง execute ไม่ได้ แต่ packet จริงยัง verify ทับได้ ใช้กับ message ปลอมที่ยังไม่ execute (ADR 0008)</dd>
     <dt>BlockedMessageLib</dt><dd>library ที่ปฏิเสธทุก message ใช้หยุด path ฉุกเฉินโดยไม่ต้องมี pause ใน contract</dd>
     <dt>lzCompose</dt><dd>การเรียกต่อบนปลายทางหลัง lzReceive เป็น tx แยก (บท 7)</dd>
     <dt>lzRead / read channel</dt><dd>การอ่านค่าจากเชนอื่นผ่าน read DVN ใช้ channel 4294967295 และ ReadLib1002</dd>
@@ -1830,12 +1860,12 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 163 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 166 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
     <li><a href="docs/incidents/2026-10-15-demoweak-forged-mint.md">postmortem DEMOWEAK</a></li>
-    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a> · <a href="docs/adr/0006-inbound-mint-cap.md">0006</a> · <a href="docs/adr/0007-potato-pause-and-rate-limit.md">0007</a></li>
+    <li>ADR: <a href="docs/adr/0001-counterpart-chain-and-home-chains.md">0001</a> · <a href="docs/adr/0002-potato-native-oft-adapter.md">0002</a> · <a href="docs/adr/0003-usdc-bridge-and-controls.md">0003</a> · <a href="docs/adr/0004-production-routing.md">0004</a> · <a href="docs/adr/0005-usdc-blacklist-and-quarantine.md">0005</a> · <a href="docs/adr/0006-inbound-mint-cap.md">0006</a> · <a href="docs/adr/0007-potato-pause-and-rate-limit.md">0007</a> · <a href="docs/adr/0008-real-time-alerts.md">0008</a></li>
   </ul>
   <h3>ใน potato-chain</h3>
   <ul>
