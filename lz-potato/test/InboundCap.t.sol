@@ -7,6 +7,7 @@ import {EndpointV2} from "@layerzerolabs/lz-evm-protocol-v2/contracts/EndpointV2
 import {RateLimiter} from "@layerzerolabs/oapp-evm/contracts/oapp/utils/RateLimiter.sol";
 import {IssuerUSDC} from "../src/token/IssuerUSDC.sol";
 import {StablecoinControls} from "../src/token/StablecoinControls.sol";
+import {InboundMintCap} from "../src/token/InboundMintCap.sol";
 import {UsdcOFTHarness, UsdcAdapterHarness} from "./UsdcControls.t.sol";
 
 /// ADR 0006: inbound mint cap. A forged inbound message (compromised verifier, as in the DEMOWEAK drill or the
@@ -32,8 +33,8 @@ contract InboundCapTest is Test {
     }
 
     function _setCap(StablecoinControls leg, uint32 eid, uint256 limit, uint64 window) internal {
-        StablecoinControls.InboundCapConfig[] memory cfg = new StablecoinControls.InboundCapConfig[](1);
-        cfg[0] = StablecoinControls.InboundCapConfig(eid, limit, window);
+        InboundMintCap.InboundCapConfig[] memory cfg = new InboundMintCap.InboundCapConfig[](1);
+        cfg[0] = InboundMintCap.InboundCapConfig(eid, limit, window);
         leg.setInboundCaps(cfg);
     }
 
@@ -55,7 +56,7 @@ contract InboundCapTest is Test {
     function test_aboveCapHoldsWholeMessage() public {
         oft.credit(user, 6_000e6, SRC);
         vm.expectEmit(address(oft));
-        emit StablecoinControls.InboundCapExceeded(user, SRC, 5_000e6, 4_000e6);
+        emit InboundMintCap.InboundCapExceeded(user, SRC, 5_000e6, 4_000e6);
         oft.credit(user, 5_000e6, SRC); // must not revert: a reverting lzReceive would strand the message
         assertEq(oft.balanceOf(user), 6_000e6); // nothing of it paid, not even the 4,000 that would fit
         assertEq(oft.quarantined(user), 5_000e6);
@@ -143,7 +144,7 @@ contract InboundCapTest is Test {
     }
 
     function test_onlyOwnerSetsCaps() public {
-        StablecoinControls.InboundCapConfig[] memory cfg = new StablecoinControls.InboundCapConfig[](0);
+        InboundMintCap.InboundCapConfig[] memory cfg = new InboundMintCap.InboundCapConfig[](0);
         vm.prank(stranger);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
         oft.setInboundCaps(cfg);

@@ -14,7 +14,9 @@
 
 ## การตัดสินใจ
 
-1. **ตั้งเพดานต่อเชนต้นทาง** ด้วย `setInboundCaps([{srcEid, limit, window}])` ใน `StablecoinControls` ซึ่ง leg ของ USDC ทั้งสองฝั่งใช้ร่วมกัน
+1. **ตั้งเพดานต่อเชนต้นทาง** ด้วย `setInboundCaps([{srcEid, limit, window}])` ใน `InboundMintCap`
+   - USDC ใช้ผ่าน `StablecoinControls` ซึ่งเพิ่ม blacklist, pause และ rate limit
+   - POTATO (`PotatoNativeAdapter` และ `PotatoOFT`) ใช้ `InboundMintCap` ตรงๆ ไม่บังคับ rate limit ขาออก เพราะ `RateLimiter` ที่ยังไม่ได้ตั้งค่าจะมีเพดานเป็น 0 และบล็อกการส่งทั้งหมด
    - ยอดที่ใช้ไปลดลงแบบเส้นตรงตามเวลา (แบบเดียวกับ `RateLimiter`)
    - `window = 0` หมายถึงไม่มีเพดาน (ค่าเริ่มต้น เพื่อไม่ให้ leg เดิมเปลี่ยนพฤติกรรม)
    - `limit = 0` คู่กับ `window > 0` หมายถึงกักทุกอย่าง
@@ -34,5 +36,6 @@
 - **deploy แล้วเป็น USDC v3:** 10,000 USDC ต่อชั่วโมงต่อเชนต้นทาง (`DeployUsdcBridge` กับ `INBOUND_CAP=true`) ปิดขาเข้าของ v2 แล้วและย้ายเงินของ dev0 แล้ว พิสูจน์บนเชนว่าก้อนที่เกินเพดานถูกกักทั้งก้อน message ไม่ค้าง และ invariant ✅
 - **vault และ composer ของ topic 7:** deploy คู่ใหม่ให้ v3 แล้ว (runbook 7.8) และ USDC.lz v2 เหลือ supply 0
 - **ยังค้าง:**
-  - `PotatoNativeAdapter` ยังไม่มี control นี้ (และยังไม่มี pause หรือ rate limit)
+  - **POTATO:** ทำในโค้ดแล้ว (`PotatoNativeAdapter` และ `PotatoOFT` ใช้ `InboundMintCap` ร่วมกับ USDC) มี unit test 9 ข้อ และ `check-supply` หักยอดที่ถูกกักใน adapter ออกแล้ว แต่ยังไม่ได้ deploy เพราะ POTATO bridge ใน lab ยังเป็น bytecode เดิม ต้อง deploy v2 แล้วย้ายเงิน
+  - POTATO ยังไม่มี pause, rate limit ขาออก และ blacklist ต้องใช้ BlockedMessageLib หยุดแทน
 - **ไม่ได้แทนที่การมี ≥ 2 DVN ที่อิสระ หรือ alert แบบ real-time:** เพดานแค่จำกัดความเสียหายระหว่างรอให้คนตอบสนอง

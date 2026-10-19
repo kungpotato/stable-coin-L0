@@ -10,6 +10,7 @@ import {IssuerUSDC} from "../src/token/IssuerUSDC.sol";
 import {UsdcAdapter} from "../src/token/UsdcAdapter.sol";
 import {UsdcOFT} from "../src/token/UsdcOFT.sol";
 import {StablecoinControls} from "../src/token/StablecoinControls.sol";
+import {InboundMintCap} from "../src/token/InboundMintCap.sol";
 
 /// @notice Topic 14: USDC bridge leg on the connected chain (ADR 0003). On the home chain
 /// (.assets.USDC.home) IssuerUSDC + UsdcAdapter, elsewhere UsdcOFT, recorded as "USDC" (and "IssuerUSDC").
@@ -95,8 +96,8 @@ contract DeployUsdcBridge is LabBase {
                 if (capLimit == INBOUND_LIMIT && capWindow == INBOUND_WINDOW) {
                     console.log("  ok   inbound cap", names[i]);
                 } else {
-                    StablecoinControls.InboundCapConfig[] memory caps = new StablecoinControls.InboundCapConfig[](1);
-                    caps[0] = StablecoinControls.InboundCapConfig(remoteEid, INBOUND_LIMIT, INBOUND_WINDOW);
+                    InboundMintCap.InboundCapConfig[] memory caps = new InboundMintCap.InboundCapConfig[](1);
+                    caps[0] = InboundMintCap.InboundCapConfig(remoteEid, INBOUND_LIMIT, INBOUND_WINDOW);
                     leg.setInboundCaps(caps);
                     console.log("  set  inbound cap", names[i]);
                 }

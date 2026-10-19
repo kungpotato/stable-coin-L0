@@ -29,7 +29,10 @@ HOME_LEG=$(dep "$HOME_CHAIN" "$ASSET"); HOME_RPC=$(get "$HOME_CHAIN" rpc); HOME_
 [ -n "$HOME_LEG" ] || { echo "❌ no $ASSET leg recorded on $HOME_CHAIN"; exit 1; }
 
 case "$BASE" in
-  POTATO) locked=$(cast balance "$HOME_LEG" --rpc-url "$HOME_RPC") ;;  # native coin held by the adapter
+  POTATO) locked=$(cast balance "$HOME_LEG" --rpc-url "$HOME_RPC")  # native coin held by the adapter
+     # POTATO held above the inbound cap (ADR 0006) is not backing anything on the other chains (legs before it: none)
+     q=$(cast call "$HOME_LEG" "totalQuarantined()(uint256)" --rpc-url "$HOME_RPC" 2>/dev/null | num)
+     [ -n "$q" ] && [ "$q" != 0 ] && { echo "quarantined in adapter: $(cast format-units "$q" 18)"; locked=$(echo "$locked - $q" | bc); } ;;
   USDC) locked=$(cast call "$(dep "$HOME_CHAIN" IssuerUSDC)" "balanceOf(address)(uint256)" "$HOME_LEG" --rpc-url "$HOME_RPC" | num)
      # USDC held for blacklisted recipients (ADR 0005) is not backing anything on the other chains
      q=$(cast call "$HOME_LEG" "totalQuarantined()(uint256)" --rpc-url "$HOME_RPC" 2>/dev/null | num)
