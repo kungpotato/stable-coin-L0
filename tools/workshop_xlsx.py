@@ -645,7 +645,7 @@ steps = [
      "Error: … EnforcedPause (ไม่มี tx ส่งจริง)", "3bd57f0", "EnforcedPause, แล้ว unpause คืน", "ผ่าน"),
     (14, 10, "ปรับ rate limit ขาออกของ USDC ให้ตรงกับ inbound cap (ADR 0007)", "outbound 10,000/60s แต่ inbound cap 10,000/ชม.: traffic ที่ถูกต้องแต่สูงผ่านต้นทางได้แล้วไปถูกกักที่ปลายทาง (6.13) ควรถูกปฏิเสธตั้งแต่ตอนส่ง owner ปรับได้โดยไม่ต้อง deploy ใหม่",
      L, "set -a; . config/dev-keys.env; set +a; export BLACKLISTER=$(cast wallet address $BLACKLISTER_KEY) INBOUND_CAP=true; for r in http://localhost:28545 http://localhost:18545; do forge script script/DeployUsdcBridge.s.sol --rpc-url $r --broadcast --slow; done; ./bridge.sh USDC anvil potato 6000; sleep 61; ./bridge.sh USDC anvil potato 6000",
-     "set rate limit ทั้งสองเชน (rateLimits: 10000000000, window 3600); 6000 แรก delivered; หลัง 61s ส่งได้ ~4,186; 6000 ที่สอง: RateLimitExceeded ตอนส่ง, quarantined 0, ✅", "(commit นี้)",
+     "set rate limit ทั้งสองเชน (rateLimits: 10000000000, window 3600); 6000 แรก delivered; หลัง 61s ส่งได้ ~4,186; 6000 ที่สอง: RateLimitExceeded ตอนส่ง, quarantined 0, ✅", "51ddba4",
      "ตามที่คาด: ไม่มีอะไรถูกกักที่ปลายทางอีก (ต่างจาก 6.13 ที่ก้อนเดียวกันผ่านต้นทางแล้วถูกกัก)", "ผ่าน"),
     (15, 0, "export address ไปให้ potato web/indexer", "web และ indexer อยู่ใน potato-chain แต่ address อยู่ใน lz-potato: แหล่งความจริงเดียว แล้ว export",
      L, "./export-to-potato.sh",
