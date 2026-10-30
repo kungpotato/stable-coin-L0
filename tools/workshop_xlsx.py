@@ -824,6 +824,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_narration.py",
      "21 ท่อน เริ่มตรงกับตอนที่ caption บนจอเปลี่ยน (อ่านค่า SLOW จาก html); narration-th.md (บทพร้อมเวลา) + narration-th.srt (ซับ)", "e92d217",
      "ทุกท่อนพูดทันที่ 13 ตัวอักษร/วินาที (ตัดท่อนแรกที่เกิน 2 วินาที) ท่อนสุดท้ายจบที่ 3:54.0", "ผ่าน"),
+    (17, 26, "สรุปยอดเงินเป็นบาท: ถูกขโมย / ถูกแช่แข็ง / หนีไปได้", "ตอบคำถามว่าเสียหายกี่บาท ใช้ตัวเลขบนเชนที่เก็บไว้แล้ว ไม่ดึงเชนใหม่",
+     "stable-coin-L0/forensics/binance-2026-10-29", "python3 (รวม replays + balances ใน evidence.json) และ curl api.coingecko.com/api/v3/simple/price (ETH, USDT, USDC, RLUSD เป็น THB)",
+     "ยอดต่อเหรียญจาก evidence.json คูณราคา THB ณ 2026-10-30", "(commit นี้)",
+     "ขโมย ETH 200,630 + USDT 1,819.7M + USDC 823M + RLUSD 62.6M + USD1 27.8M ≈ 107,400 ล้านบาท (ไม่รวม altcoin อื่น); แช่แข็ง USDT 1,175.5M + USDC 823M ≈ 67,400 ล้านบาท; ETH ที่ผู้โจมตีถือ 436,250 ETH ≈ 32,700 ล้านบาท แช่แข็งไม่ได้ (ETH 75,035 บาท, USD 33.7 บาท)", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1018,6 +1022,7 @@ RERUN = {
     (17, 23): ("ได้", "เหมือน 17.22 ใช้เวลาราว 5 นาที"),
     (17, 24): ("ได้", "ลบแล้วสร้าง slides-7702/ ใหม่ทั้งโฟลเดอร์ ราว 10 วินาที"),
     (17, 25): ("ได้", "เขียนทับ narration-th.md/.srt ถ้าเปลี่ยน SLOW หรือความยาวฉาก ต้องแก้ DUR ใน script ให้ตรง"),
+    (17, 26): ("ได้", "อ่านอย่างเดียว ตัวเลขบาทเปลี่ยนตามราคา ETH และค่าเงินบาท ณ เวลาที่รัน"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
