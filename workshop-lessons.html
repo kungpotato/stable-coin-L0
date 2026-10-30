@@ -1745,6 +1745,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <ul>
     <li>ใน block 26300753 Binance 14 ส่ง tx ของตัวเองที่ index 133 (nonce 18914808) ก่อน tx delegation ที่ index 138</li>
     <li>ตอน delegation ทำงาน nonce ของ wallet จึงเป็น 18914809 authorization ตัวนั้นถูกใช้ ส่วนอีก 49 ตัวถูกข้าม</li>
+    <li>ใน tx รายการเรียง<b>จากมากไปน้อย</b> (18914824 → 18914775) ใบ 18914809 อยู่ตำแหน่ง 15 พอใช้แล้ว nonce กลายเป็น 18914810 ซึ่งผ่านไปแล้วที่ตำแหน่ง 14 จึงใช้ได้ใบเดียว ใบที่ nonce สูงกว่ายังเป็น<b>ใบสำรอง</b>ที่ใช้ได้อีก (ดู 17.8)</li>
   </ul>
   <div class="callout bad"><b>ความหมาย</b><p>EIP-7702 รับเฉพาะ authorization ที่ลายเซ็นตรงกับเจ้าของ wallet และ code ของ Binance 14 ก็เปลี่ยนจริง แปลว่า<b>อย่างน้อยหนึ่งรายการมีลายเซ็นจาก key ของ Binance 14</b> และรูปแบบที่ nonce เรียงกัน 50 ตัวบ่งว่าผู้โจมตีสั่งให้ระบบเซ็นได้หลายครั้งตามต้องการ ซึ่งชี้ไปทาง key หรือระบบเซ็นถูกเจาะ ไม่ใช่ bug ใน smart contract (เราไม่ได้ ecrecover ครบทั้ง 50 รายการ และสาเหตุจริงยังไม่มีการยืนยัน)</p></div>
 
@@ -1782,12 +1783,29 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <li><b>Dune</b> query ข้อมูลทั้งเชนได้เร็วกว่านี้ แต่ต้อง authorize connector ก่อน</li>
     <li><b>เฝ้าแบบ real-time:</b> ใช้โครงเดียวกับ <code>npm run alert</code> เปลี่ยนจาก event ของ LayerZero เป็น balance และ Transfer ของ address ผู้โจมตี</li>
   </ul>
+  <h3>17.8 จำลองเหตุการณ์ใน workshop</h3>
+  <p>รันกลไกเดียวกันบน anvil ในเครื่อง (<code>--hardfork prague</code>, block ละ 1 วินาที) ด้วย <code>Sweeper7702</code> (contract X) และ <code>MockUSDT</code> ใน <code>lz-potato/src/lab/</code> ระหว่างนั้นมี <code>ops.sh</code> ให้ B14 ส่ง tx ทุก block เหมือน hot wallet จริง และ <code>watch.sh</code> ตรวจ <code>eth_getCode(B14)</code> ทุกวินาที ทุกขั้นบันทึกไว้ใน runbook 17.10–17.21</p>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ขั้น</th><th>ทำอะไร</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td>เซ็นช้า</td><td>เซ็น 50 ใบที่ nonce 9..58 แต่ส่งช้า 2 นาที</td><td>nonce B14 ไปถึง 169 แล้ว tx สำเร็จ จ่าย gas 1,271,000 แต่ code ยัง <code>0x</code> ใบทั้งหมดหมดอายุ</td></tr>
+      <tr><td>เซ็นแล้วส่งทันที</td><td>เซ็น 179..228 แล้วส่งภายใน 5 วินาที</td><td>code กลายเป็น <code>0xef0100‖X</code> เงินยังไม่ขยับ B14 ยังส่ง tx เองได้ตามปกติ</td></tr>
+      <tr><td>sweep</td><td>โจรเรียก <code>B14.sweep([USDT])</code></td><td>167,462 ETH + 1.175B USDT ไป DROP ใน tx เดียว คนอื่นเรียกได้ <code>not operator</code></td></tr>
+      <tr><td>เรียงขึ้น</td><td>ใบ 50 ใบเรียง nonce จากน้อยไปมาก</td><td>ใบถูกใช้ต่อกันทั้ง 50 ใบใน tx เดียว (nonce 229 → 279) ไม่เหลือใบสำรอง</td></tr>
+      <tr><td>เรียงลงแบบของจริง</td><td>delegate → B14 revoke → โจรส่ง tx เดิมซ้ำ</td><td>ใช้ใบเดียว revoke แล้ว แต่ replay ใช้ใบ nonce 284 <b>delegate กลับได้ทันที</b></td></tr>
+      <tr><td>แก้</td><td>B14 ส่ง tx เปล่าจน nonce เลย N+49 แล้วค่อย revoke</td><td>replay ไม่มีผล code เป็น <code>0x</code> ถาวร</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout lesson"><b>บทเรียนจากการจำลอง</b><p>1) watcher จับ code ที่เปลี่ยนได้ใน block เดียวกันทุกครั้ง 2) <b>revoke อย่างเดียวไม่พอ</b> ถ้า nonce ยังอยู่ในช่วงของใบที่ถูกเซ็นไว้ ต้องเผา nonce ให้เลยช่วงก่อน (ในเคสจริง ตอน revoke 226 นาทีให้หลัง nonce ของ B14 เลยช่วงไปนานแล้ว) 3) โจรต้องลงมือภายในไม่กี่นาทีหลังได้ลายเซ็น ไม่งั้นใบหมดอายุเอง</p></div>
+  <pre><code>cd lz-potato && forge test --match-contract Sweeper7702Test   <span class="c"># 5 passed</span></code></pre>
+
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
     <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>
     <li>Binance 14 ถูกผูกด้วย EIP-7702 ผ่าน authorization ที่ใช้ nonce ติดกัน 50 ตัว แล้วถูกกวาดใน tx เดียวหลังจากนั้น 3 นาที</li>
     <li>replay ในเครื่องได้ ETH 167,464 และ token 63 ตัวตรงกับข่าว</li>
     <li>delegation ถูกถอน 226 นาทีหลังถูกกวาด ระหว่างนั้นยังมีเงินฝากใหม่เข้า wallet</li>
     <li>ต้องตรวจ code ของ EOA ที่ถือเงินว่ายังเป็น <code>0x</code> และต้องมีเพดานต่อช่วงเวลา แม้ลายเซ็นจะถูกต้อง</li>
+    <li>จำลองในเครื่องแล้ว: revoke อย่างเดียวไม่พอถ้าใบที่ nonce สูงกว่ายังใช้ได้ ต้องเผา nonce ให้เลยช่วงก่อน</li>
   </ul></div>
   <div class="quiz"><h4>คำถามทบทวน</h4>
     <details><summary>ถ้า Binance 14 มี rate limit แบบบท 6 ที่ระดับระบบเซ็น ผลจะต่างไปอย่างไร</summary><p>การกวาดเกิดใน tx เดียวที่รันโค้ดของผู้โจมตีโดยตรง rate limit ที่อยู่ในระบบเซ็นจึงไม่ช่วย เพราะหลัง delegate แล้ว การกวาดไม่ต้องใช้ลายเซ็นของ Binance อีก เพดานต้องอยู่<b>บนเชน</b> เช่นเก็บเงินใน contract ที่มี limit แทน EOA ล้วน หรือแยกเงินเป็นหลาย wallet</p></details>

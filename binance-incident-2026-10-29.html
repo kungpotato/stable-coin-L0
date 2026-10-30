@@ -141,6 +141,7 @@ footer { border-top: 1px solid var(--border); margin-top: 48px; padding: 24px 0 
     <a href="#money">เงินไปไหน</a>
     <a href="#how">เกิดขึ้นได้อย่างไร</a>
     <a href="#detect">จุดที่ตรวจจับได้</a>
+    <a href="#sim">จำลอง</a>
     <a href="#lessons">บทเรียน</a>
     <a href="#evidence">หลักฐาน</a>
     <a href="#repro">ทำซ้ำ</a>
@@ -405,6 +406,17 @@ footer { border-top: 1px solid var(--border); margin-top: 48px; padding: 24px 0 
   <div class="callout ok"><b>เทียบกับ alert ใน workshop (บท 8.9)</b><p>worker ที่ตรวจทุก 3 วินาทีจะเห็น code ที่เปลี่ยนภายใน 1–2 block และระบบที่ตอบสนองอัตโนมัติ (เช่นย้ายเงินออกด้วย key อีกชุด หรือหยุดเส้นทางฝากเงิน) ก็มีเวลามากพอ ถึงตอบสนองไม่ทัน 3 นาทีแรก การถอน delegation ทันทีก็กันเงินฝากและการกวาดซ้ำ 9 รอบหลังจากนั้นได้</p></div>
 </section>
 
+<section id="sim">
+  <h2>จำลองในเครื่อง: สิ่งที่ได้เพิ่ม</h2>
+  <p>รันกลไกเดียวกันบน anvil (Prague) ด้วย <code>lz-potato/src/lab/Sweeper7702.sol</code> ขั้นตอนและผลอยู่ใน <code>forensics/binance-2026-10-29/sim/</code> (<code>sim-steps.tsv</code>, <code>sim-alerts.log</code>) <span class="tag chain">chain</span> เฉพาะส่วนที่เทียบกับ mainnet</p>
+  <ul>
+    <li><b>ลำดับใบใน tx จริงเรียงลง</b> 18914824 → 18914775 ใบ 18914809 อยู่ตำแหน่ง 15 จึงใช้ได้ใบเดียว (nonce 18914808 → 18914810 ใน block 26300753) <span class="tag chain">chain</span></li>
+    <li>ในการจำลอง ถ้าเรียงขึ้น ใบจะถูกใช้ต่อกันทั้งชุดใน tx เดียว ถ้าเรียงลงจะเหลือใบที่ nonce สูงกว่าไว้เป็นสำรอง ซึ่ง<b>ใช้ delegate กลับได้หลัง revoke</b> ถ้า nonce ยังไม่เลยช่วง</li>
+    <li>ถ้าส่งช้าจน nonce เลยใบสุดท้าย tx ยังสำเร็จแต่ไม่มีใบไหนมีผล ผู้โจมตีจึงต้องได้ลายเซ็นไม่กี่นาทีก่อนส่ง <span class="tag infer">infer</span></li>
+    <li>watcher ที่ตรวจ <code>eth_getCode</code> ทุกวินาทีแจ้งเตือนใน block เดียวกับ delegation และ revoke ทุกครั้ง</li>
+  </ul>
+</section>
+
 <section id="lessons">
   <h2>บทเรียน</h2>
   <ol>
@@ -413,6 +425,7 @@ footer { border-top: 1px solid var(--border); margin-top: 48px; padding: 24px 0 
     <li><b>อย่าเก็บเงินหลายพันล้านไว้ใน EOA เดียว:</b> ไม่มีเพดานบนเชนเลย tx เดียวเอาออกได้ทั้งหมด ควรใช้ contract ที่มี rate limit หรือ timelock เหมือน control ใน workshop</li>
     <li><b>ลดสิทธิ์ที่ต่อกันเป็นทอด:</b> hot wallet ที่รับเงินฝากไม่ควรเป็นผู้สั่งการของ wallet อื่นที่ถือ USDC อีก 823M</li>
     <li><b>whitelist ปลายทางของการโอนจาก hot wallet:</b> และให้ address ใหม่ต้องรอ (cool-down) ก่อนใช้ได้</li>
+    <li><b>revoke ให้ครบ:</b> เผา nonce ของ wallet ให้เลย nonce สูงสุดของ authorization ที่รั่วก่อน แล้วค่อย revoke ไม่งั้นใบที่เหลือ delegate กลับได้</li>
     <li><b>stablecoin ที่แช่แข็งได้ช่วยได้จริง:</b> USDT 1.175B และ USDC 823M ใน Exploiter 2 ถูกแช่แข็งแล้ว แต่ ETH ทำไม่ได้</li>
   </ol>
 </section>

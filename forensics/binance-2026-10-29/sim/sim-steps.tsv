@@ -1,0 +1,11 @@
+S0	anvil --port 28700 --hardfork prague --block-time 1	จำลอง mainnet ที่เปิด EIP-7702 บล็อกละ 1 วินาที	chain พร้อม (chainId 31337)
+S1	forge create MockUSDT + Sweeper7702(operator=ATK, drop=DROP); anvil_setBalance B14 167464 ETH; mint 1.175B USDT	สร้างตัวละคร: B14 hot wallet, โจร, กระเป๋ารับเงิน, contract X	B14 code=0x nonce=0, X=0xCE3478A9E0167a6Bc5716DC39DbbbfAc38F27623
+S2	ops.sh (B14 ส่ง tx ทุก block) + watch.sh (eth_getCode ทุก 1s)	ทำให้ nonce B14 วิ่งเหมือนของจริง + alert ตอนโค้ด B14 เปลี่ยน	ทั้งสองรัน background
+S3	cast wallet sign-auth X --nonce N..N+49 (key B14) x50	แทนขั้นที่ระบบเซ็นของ Binance ถูกหลอกให้เซ็น ใบอนุญาต 50 ใบ	N=9 ได้ 50 ใบ (offline ยังไม่ขึ้นเชน)
+S4a	echo y | cast send ATK --auth x50 (ส่งช้า 2 นาที)	พิสูจน์ว่าถ้าโจรช้าจน nonce B14 เลย N+49 ใบอนุญาตทั้ง 50 ใบใช้ไม่ได้	tx สำเร็จแต่ B14 code ยัง 0x (ไม่มีใบไหนตรง nonce)
+S4b	sign-auth x50 ใหม่ที่ nonce N2=179 แล้ว cast send ATK --auth x50 ภายใน 5 วินาที	จำลอง tx 0xad99…298b: โจรส่งใบอนุญาตของ B14 ขึ้นเชนเอง	B14 code=0xef0100‖X, gas 1,016,800, เงิน B14 ยังไม่ขยับ
+S5	cast send B14 "sweep(address[])" [USDT] จาก ATK (และ cast call จากคนแปลกหน้า)	จำลอง sweep tx 0x53bd…e2f3: เรียก address ของ B14 -> โค้ด X รันในนาม B14	คนแปลกหน้า revert "not operator"; โจรได้ 167,462 ETH + 1.175B USDT, B14 เหลือ 0
+S6a	round 3: sign-auth x50 เรียงขึ้น -> delegate -> B14 revoke -> โจร replay	ทดสอบว่าใบที่เหลือใช้ซ้ำได้ไหม	เรียงขึ้นทำให้ทั้ง 50 ใบถูกใช้ต่อกันใน tx เดียว (nonce 229->279) replay จึงไม่มีผล
+S6b	cast rpc eth_getTransactionByHash 0xad99…298b (mainnet, drpc) + nonce B14 ที่ block 26300752-54	เช็คว่าของจริงเรียง authorizationList ยังไง	ของจริงเรียงลง 18914824->18914775; B14 tx idx133 nonce 18914808 แล้วใบ 18914809 (ตำแหน่ง 15) ถูกใช้ใบเดียว nonce 18914808->18914810
+S6c	round 4: sign-auth x50 เรียงลงแบบของจริง -> delegate -> B14 revoke -> โจรส่ง tx เดิมซ้ำ	จำลองให้ตรงของจริง แล้วดูว่า revoke พอไหม	ใช้ใบเดียว (281->282) revoke แล้ว (->284) แต่ replay ใช้ใบ 284 delegate กลับได้ทันที
+S7	cast send B14 --nonce i --async (self tx เปล่า) จนเลย N4+49 แล้ว revoke (--auth 0x0) แล้วให้โจร replay	วิธีแก้: เผา nonce ให้เลยช่วงใบอนุญาตก่อน revoke	nonce เลย 330 revoke แล้ว replay ไม่มีผล code=0x ถาวร
