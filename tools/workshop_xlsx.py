@@ -834,7 +834,7 @@ steps = [
      "ครบ 8 ขั้น เจอ 2 จุด: (ก) --constructor-args เป็น variadic กลืน flag ต้องวางท้ายสุด (ข) หลัง sweep เหยื่อ ETH=0 จ่าย gas revoke เองไม่ได้ และ self-sign+self-send revoke ไม่ติด (nonce ชน) ต้องให้ sponsor ส่ง", "ผ่าน"),
     (17, 28, "หลัง revoke สั่ง sweep ซ้ำ เกิดอะไรขึ้น", "ตรวจว่าการถอน delegate ตัดสิทธิ์โจรได้จริงหรือแค่หยุดชั่วคราว",
      "stable-coin-L0/lz-potato", "ไล่ flow ถึง revoke (code=0x) เติมเงินเหยื่อใหม่ แล้ว cast send B14 sweep(address[]) อีกครั้งโดยโจร",
-     "tx สำเร็จ status 1 ไม่ revert แต่ balance เหยื่อและโจรไม่เปลี่ยน (no-op)", "(commit นี้)",
+     "tx สำเร็จ status 1 ไม่ revert แต่ balance เหยื่อและโจรไม่เปลี่ยน (no-op)", "9dbd120",
      "code=0x เรียก sweep ที่ EOA ไม่มีโค้ด = tx เปล่า calldata ถูกเพิกเฉย เงินไม่ขยับ ยืนยัน revoke ตัดสิทธิ์ได้จริง ไม่ใช่แค่หยุดชั่วคราว", "ผ่าน"),
 ]
 RERUN = {
