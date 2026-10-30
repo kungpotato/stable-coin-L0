@@ -808,6 +808,10 @@ steps = [
      "stable-coin-L0/lz-potato", "forge test --match-contract Sweeper7702Test",
      "delegate -> code 0xef0100‖X, sweep ผ่าน address B14, คนแปลกหน้า revert, B14 ยังโอนเองได้, revoke ล้าง code", "8a9dfb2",
      "5 passed", "ผ่าน"),
+    (17, 22, "video animation ขั้นตอน EIP-7702 delegation", "อธิบายทีละขั้นตั้งแต่สร้างข้อความ เซ็น ห่อ tx type 4 เชนตรวจทีละใบ ไปจนถึง sweep และ revoke",
+     "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_video.py",
+     "eip7702-delegation.mp4 1920x1080 30fps 130 วินาที 11 ฉาก (render eip7702-anim.html ทีละเฟรมด้วย Playwright + Chrome แล้ว ffmpeg)", "(commit นี้)",
+     "ffprobe 130.0s 1920x1080; ตรวจภาพเฟรมขั้น 1, 2, 5, 6 ตัวหนังสือไทยถูก", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -998,6 +1002,7 @@ RERUN = {
     (17, 19): ("ได้", "anvil ในเครื่องเท่านั้น (test key สาธารณะ) ต้องเปิด anvil :28700 --hardfork prague ก่อน; ค่า nonce/เวลาเปลี่ยนทุกรอบ"),
     (17, 20): ("ได้", "anvil ในเครื่องเท่านั้น (test key สาธารณะ) ต้องเปิด anvil :28700 --hardfork prague ก่อน; ค่า nonce/เวลาเปลี่ยนทุกรอบ"),
     (17, 21): ("ได้", "ไม่ต้องเปิดเชน"),
+    (17, 22): ("ได้", "เขียนทับ mp4 เดิม ใช้เวลาราว 3 นาที ต้องมี Chrome, Playwright (Python) และ ffmpeg; python3 make_video.py 52 ได้ภาพ preview ที่วินาทีนั้น"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

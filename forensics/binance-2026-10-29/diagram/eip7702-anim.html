@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>EIP-7702 Delegation</title>
+<style>
+  :root { --bg:#FBFAF7; --ink:#1F1E1C; --mute:#6B6862; --line:#D9D5CC;
+          --bf:#E1F5EE; --bs:#0F6E56; --bt:#085041;
+          --af:#FAECE7; --as:#993C1D; --at:#712B13;
+          --ok:#1D9E75; --bad:#C2412D; --warn:#BA7517; --wf:#FDF3E1; }
+  * { box-sizing:border-box; margin:0; }
+  body { width:1280px; height:720px; overflow:hidden; background:var(--bg); color:var(--ink);
+         font-family:"Sukhumvit Set","Thonburi",sans-serif; }
+  .mono { font-family:Menlo,monospace; }
+  #hdr { position:absolute; left:40px; top:22px; right:40px; height:52px; display:flex; align-items:center; gap:14px; }
+  #pill { background:var(--ink); color:#fff; border-radius:999px; padding:4px 14px; font-size:17px; }
+  #title { font-size:29px; font-weight:700; }
+  #clock { margin-left:auto; font-size:17px; color:var(--mute); }
+  #bar { position:absolute; left:40px; right:40px; top:80px; height:4px; background:var(--line); border-radius:2px; }
+  #barf { height:4px; background:var(--as); border-radius:2px; }
+  #stage { position:absolute; left:40px; top:100px; width:820px; height:500px; }
+  #panel { position:absolute; left:890px; top:100px; width:350px; height:500px; border:1.5px solid var(--line);
+           border-radius:14px; background:#fff; padding:16px 18px; }
+  #cap { position:absolute; left:40px; right:40px; top:616px; height:86px; font-size:22px; line-height:1.45;
+         border-top:1.5px solid var(--line); padding-top:12px; }
+  .box { position:absolute; border-radius:12px; border:2px solid; padding:10px 14px; font-size:18px; line-height:1.4; }
+  .b { background:var(--bf); border-color:var(--bs); color:var(--bt); }
+  .a { background:var(--af); border-color:var(--as); color:var(--at); }
+  .n { background:#fff; border-color:var(--line); color:var(--ink); }
+  .w { background:var(--wf); border-color:var(--warn); color:#6B4407; }
+  .g { background:#E8F6EF; border-color:var(--ok); color:#0B5A40; }
+  .r { background:#FBE9E6; border-color:var(--bad); color:#7A2014; }
+  .box h4 { font-size:20px; margin-bottom:2px; }
+  .t { position:absolute; font-size:18px; line-height:1.4; }
+  .small { font-size:15px; color:var(--mute); }
+  .card { position:absolute; width:70px; height:40px; border-radius:7px; border:1.5px solid var(--line); background:#fff;
+          font:13px Menlo,monospace; display:flex; align-items:center; justify-content:center; }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #EEEAE2; font-size:17px; }
+  .row b { font-weight:600; }
+  .k { color:var(--mute); }
+  .hl { animation:none; }
+  svg { position:absolute; left:0; top:0; overflow:visible; }
+</style>
+</head>
+<body>
+<div id="hdr"><span id="pill"></span><span id="title"></span><span id="clock"></span></div>
+<div id="bar"><div id="barf"></div></div>
+<div id="stage"></div>
+<div id="panel"></div>
+<div id="cap"></div>
+<script>
+const FPS = 30;
+const clamp = x => Math.max(0, Math.min(1, x));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+const fmt = n => Math.round(n).toLocaleString("en-US");
+
+const B14 = "0x28C6…1d60", ATK = "0x7c86…5ca0", X = "0x63e8…6fae", EXP = "0x5227…2f8c";
+const AUTH = Array.from({length: 50}, (_, i) => 18914824 - i);   // descending, as in tx 0xad99…298b
+const USED = AUTH.indexOf(18914809);                               // position 15
+
+function box(x, y, w, h, cls, inner, op = 1, extra = "") {
+  return op <= 0 ? "" : `<div class="box ${cls}" style="left:${x}px;top:${y}px;width:${w}px;${h ? `height:${h}px;` : ""}opacity:${op};${extra}">${inner}</div>`;
+}
+function txt(x, y, w, s, cls = "", op = 1, extra = "") {
+  return op <= 0 ? "" : `<div class="t ${cls}" style="left:${x}px;top:${y}px;width:${w}px;opacity:${op};${extra}">${s}</div>`;
+}
+// arrow drawn from (x1,y1) to (x2,y2) up to fraction p, with optional label and travelling dots
+function arrow(x1, y1, x2, y2, p, color = "#993C1D", label = "", dots = 0, t = 0) {
+  if (p <= 0) return "";
+  const xe = x1 + (x2 - x1) * p, ye = y1 + (y2 - y1) * p;
+  const ang = Math.atan2(y2 - y1, x2 - x1), h = 11;
+  let s = `<line x1="${x1}" y1="${y1}" x2="${xe}" y2="${ye}" stroke="${color}" stroke-width="3"/>`;
+  if (p >= 1) s += `<polygon points="${x2},${y2} ${x2 - h * Math.cos(ang - .45)},${y2 - h * Math.sin(ang - .45)} ${x2 - h * Math.cos(ang + .45)},${y2 - h * Math.sin(ang + .45)}" fill="${color}"/>`;
+  for (let i = 0; i < dots && p >= 1; i++) {
+    const f = (t * 0.9 + i / dots) % 1;
+    s += `<circle cx="${x1 + (x2 - x1) * f}" cy="${y1 + (y2 - y1) * f}" r="7" fill="#E8A33D" stroke="#9A6510" stroke-width="1.5"/>`;
+  }
+  if (label) s += `<text x="${(x1 + x2) / 2 + 8}" y="${(y1 + y2) / 2 - 8}" font-size="15" fill="${color}" font-family="Sukhumvit Set">${label}</text>`;
+  return s;
+}
+const svg = parts => `<svg width="820" height="500">${parts.join("")}</svg>`;
+
+// ---------------------------------------------------------------- scenes
+const SCENES = [
+  { d: 8, pill: "เริ่มต้น", title: "ตัวละครบนเชน", clock: "29 ต.ค. 15:59 UTC",
+    cap: () => "Binance 14 เป็นกระเป๋าธรรมดา (EOA ไม่มีโค้ด) ส่วนโจร deploy contract X ที่มีฟังก์ชัน sweep โอนเงินทั้งหมดออก",
+    draw(p) {
+      return box(30, 40, 330, 0, "b", `<h4>Binance 14 (EOA)</h4><span class="mono">${B14}</span><br>hot wallet · ถือเงินหลายพันล้าน<br><span class="small">code = 0x · ขยับได้ด้วยลายเซ็นของ Binance เท่านั้น</span>`, ease(seg(p, 0, .2)))
+        + box(470, 40, 300, 0, "a", `<h4>โจร (EOA)</h4><span class="mono">${ATK}</span><br>ได้ค่า gas มาจาก Tornado Cash`, ease(seg(p, .25, .42)))
+        + box(470, 300, 300, 0, "a", `<h4>Contract X</h4><span class="mono">${X}</span><br><span class="mono" style="font-size:15px">sweep(to, tokens[])</span><br><span class="small">โอน ETH + token ของ "ตัวเอง" ออกหมด</span>`, ease(seg(p, .5, .68)))
+        + svg([arrow(620, 150, 620, 296, ease(seg(p, .45, .6)), "#993C1D", "deploy")]);
+    } },
+
+  { d: 11, pill: "ขั้น 1", title: "สร้างข้อความของใบอนุญาต", clock: "offline · ยังไม่ขึ้นเชน",
+    cap: p => p < .55 ? "ใบอนุญาต 1 ใบมีแค่ 3 ช่อง: เชนไหน, ให้ใช้โค้ดของ contract ไหน, และ nonce ของกระเป๋าตอนที่ใบจะถูกใช้"
+                      : "เอา 3 ช่องมาเข้ารหัส RLP ใส่ prefix 0x05 (ใช้เฉพาะ EIP-7702) แล้ว hash ด้วย keccak256 ได้ข้อความ 32 byte ที่จะเซ็น",
+    draw(p) {
+      const f = [["chainId", "1", "Ethereum mainnet"], ["address", X, "contract X ที่จะให้ใช้โค้ด"], ["nonce", "18914809", "nonce ของ Binance 14 ตอนใบถูกใช้"]];
+      let s = f.map(([k, v, d], i) => box(30, 30 + i * 82, 430, 0, "n", `<span class="k">${k}</span> = <b class="mono">${v}</b><br><span class="small">${d}</span>`, ease(seg(p, .05 + i * .12, .15 + i * .12)))).join("");
+      s += box(520, 60, 270, 0, "n", `<span class="mono" style="font-size:17px"><b style="color:#993C1D">0x05</b> ‖ rlp([1, ${X.slice(0, 6)}…, 18914809])</span>`, ease(seg(p, .5, .62)));
+      s += box(520, 210, 270, 0, "n", `<b>keccak256</b> → hash 32 byte<br><span class="small">นี่คือสิ่งที่ key ต้องเซ็น</span>`, ease(seg(p, .66, .78)));
+      s += box(30, 300, 760, 0, "r", `<b>ไม่มีช่อง:</b> วงเงิน · วันหมดอายุ · ใครเป็นคนส่ง · จำกัด function → ให้สิทธิ์เต็มแบบเดียวกับเจ้าของกระเป๋า`, ease(seg(p, .84, .95)));
+      return s + svg([arrow(460, 150, 516, 100, ease(seg(p, .45, .52))), arrow(655, 118, 655, 206, ease(seg(p, .62, .68)))]);
+    } },
+
+  { d: 11, pill: "ขั้น 2", title: "key ของ Binance 14 เซ็น 50 ใบ", clock: "ราว 20:17 UTC (อนุมานจาก nonce)",
+    cap: p => p < .45 ? "ระบบเซ็นที่ถือ key ของ Binance 14 เซ็น hash นั้น ได้ลายเซ็น (yParity, r, s) ติดไปกับใบ"
+                      : p < .85 ? "เซ็นแยกทีละใบ 50 ครั้ง nonce 18914775–18914824 ครอบ nonce ที่ Binance 14 จะไปถึงในอีกไม่กี่นาที"
+                                : "ทั้งหมดยังอยู่นอกเชน ส่วนว่าโจรทำให้ระบบเซ็นยอมเซ็นได้ยังไง ยังไม่มีใครรู้",
+    draw(p) {
+      let s = box(30, 20, 250, 0, "n", `hash 32 byte<br><span class="small">จากขั้น 1</span>`, 1 - seg(p, .45, .5));
+      s += box(30, 130, 250, 0, "b", `<h4>🔑 key ของ B14</h4><span class="small">อยู่ในระบบเซ็นของ Binance</span>`, (1 - seg(p, .45, .5)) * ease(seg(p, .03, .13)));
+      s += box(400, 70, 380, 0, "g", `<h4>ใบอนุญาต (signed)</h4><span class="mono" style="font-size:15px">chainId 1 · ${X} · nonce 18914809<br>yParity · r · s</span>`, (1 - seg(p, .45, .5)) * ease(seg(p, .2, .32)));
+      s += svg([arrow(282, 90, 396, 115, (1 - seg(p, .45, .5)) > 0 ? ease(seg(p, .1, .2)) : 0, "#0F6E56", "เซ็น")]);
+      AUTH.forEach((n, i) => {
+        const r = Math.floor(i / 10), c = i % 10, a = seg(p, .48 + i * .006, .52 + i * .006);
+        s += a > 0 ? `<div class="card" style="left:${30 + c * 78}px;top:${20 + r * 52}px;opacity:${a}">…${String(n).slice(-4)}</div>` : "";
+      });
+      s += txt(30, 290, 760, `เรียงจาก nonce มากไปน้อย: 18914824 → 18914775 (ลำดับเดียวกับใน tx จริง)`, "small", seg(p, .78, .84));
+      s += box(30, 340, 760, 0, "w", `❓ ขั้นนี้คือจุดที่ระบบของ Binance ถูกเจาะหรือถูกหลอก ส่วนบนเชนเห็นแค่ว่าลายเซ็นมาจาก key จริงของ B14 ทั้ง 50 ใบ`, ease(seg(p, .86, .95)));
+      return s;
+    } },
+
+  { d: 10, pill: "ขั้น 3", title: "โจรห่อใบอนุญาตเป็น tx type 4", clock: "20:20:59 UTC",
+    cap: () => "คนส่ง tx ไม่ต้องเป็นเจ้าของกระเป๋า โจรเป็นคนส่งและจ่าย gas เอง เชนสนใจแค่ว่าลายเซ็นในใบถูกต้อง",
+    draw(p) {
+      const rows = [["type", "0x04 (set-code tx)"], ["from", `${ATK} (โจร · จ่าย gas)`], ["to", X], ["priority fee", "5 gwei (สูงกว่าปกติ ให้เข้า block ไว)"],
+                    ["authorizationList", "[ 50 ใบ ]"], ["gas ของใบ", "50 × 25,000 = 1,250,000"]];
+      let inner = `<h4>tx 0xad99…298b</h4>` + rows.map(([k, v], i) => `<div class="row" style="opacity:${seg(p, .08 + i * .09, .14 + i * .09)}"><span class="k">${k}</span><b class="mono" style="font-size:15px">${v}</b></div>`).join("");
+      let s = box(30, 10, 560, 0, "a", inner, ease(seg(p, 0, .08)));
+      for (let i = 0; i < 6; i++) s += `<div class="card" style="left:${640 + i * 6}px;top:${210 + i * 6}px;opacity:${seg(p, .5, .6)};background:#E8F6EF;border-color:#1D9E75">ใบ</div>`;
+      s += txt(620, 290, 190, "50 ใบที่ B14 เซ็น", "small", seg(p, .55, .62));
+      s += box(30, 380, 760, 0, "n", `ส่งขึ้น mempool → builder (Titan) ใส่เข้า block`, ease(seg(p, .78, .88)));
+      return s;
+    } },
+
+  { d: 10, pill: "ขั้น 4", title: "เข้า block 26300753", clock: "20:20:59 UTC",
+    cap: p => p < .55 ? "tx ใน block ทำงานตามลำดับ: Binance 14 ส่ง tx ของตัวเองก่อนที่ idx 133 nonce จึงขยับจาก 18914808 เป็น 18914809"
+                      : "แล้วถึงคิว tx ของโจรที่ idx 138 ตอนนี้ nonce ของ Binance 14 คือ 18914809 พอดีกับใบหนึ่งใน 50 ใบ",
+    draw(p) {
+      const rows = [["…", "", "n"], ["idx 133", "Binance 14 → ลูกค้า (tx ปกติ) · nonce 18914808", "b"], ["idx 134–137", "tx ของคนอื่น", "n"], ["idx 138", "โจร → type 4 พร้อมใบ 50 ใบ", "a"], ["…", "", "n"]];
+      let s = box(30, 10, 600, 0, "n", `<h4>block 26300753</h4>`, 1);
+      const cur = p < .3 ? -1 : p < .55 ? 1 : p < .7 ? 2 : 3;
+      rows.forEach(([k, v, c], i) => {
+        s += box(50, 70 + i * 74, 560, 60, i === cur ? c : "n", `<b class="mono">${k}</b> &nbsp; ${v}`, seg(p, .02 + i * .04, .08 + i * .04), i === cur ? "box-shadow:0 0 0 4px rgba(186,117,23,.35)" : "");
+      });
+      s += txt(650, 150, 160, "▶ กำลังรัน", "", cur >= 0 ? 1 : 0, `top:${92 + Math.max(cur, 0) * 74}px;color:#BA7517;font-weight:700`);
+      return s;
+    } },
+
+  { d: 20, pill: "ขั้น 5", title: "เชนตรวจใบทีละใบ", clock: "20:20:59 UTC · ใน tx เดียว",
+    cap: p => p < .45 ? "ใบที่ nonce ไม่ตรงกับ nonce ปัจจุบัน (18914809) ไม่ผ่านข้อ 4 → แค่ข้ามไป tx ไม่ revert"
+             : p < .66 ? "ใบ 18914809 ผ่านครบ 4 ข้อ → เขียน code ของ Binance 14 = 0xef0100 ‖ X และเพิ่ม nonce เป็น 18914810"
+             : p < .9 ? "ใบที่เหลือ nonce ต่ำกว่า → ข้ามหมด ส่วนใบ 18914810 ถูกตรวจไปก่อนหน้านี้แล้ว จึงไม่ถูกใช้"
+                      : "ผลคือใช้ไปใบเดียว ใบ 18914810–18914824 ยังเป็นใบสำรองที่ใช้ได้ ถ้า nonce ของ B14 ไปถึงค่านั้น",
+    draw(p) {
+      // card index under inspection
+      let idx;
+      if (p < .08) idx = -1;
+      else if (p < .42) idx = Math.floor(seg(p, .08, .42) * USED);
+      else if (p < .64) idx = USED;
+      else if (p < .9) idx = USED + 1 + Math.floor(seg(p, .64, .9) * (49 - USED));
+      else idx = 50;
+      let s = "";
+      AUTH.forEach((n, i) => {
+        const r = Math.floor(i / 10), c = i % 10;
+        let st = "", lab = "…" + String(n).slice(-4);
+        if (i < idx || (i === idx && i !== USED && false)) st = i === USED ? "g" : "r";
+        if (i === USED && (idx > USED || (idx === USED && p > .56))) st = "g";
+        const spare = p >= .9 && i < USED;
+        const style = st === "g" ? "background:#E8F6EF;border-color:#1D9E75;color:#0B5A40;font-weight:700"
+                    : spare ? "background:#FDF3E1;border-color:#BA7517;color:#6B4407"
+                    : st === "r" ? "background:#FBE9E6;border-color:#C2412D;color:#7A2014" : "";
+        const ring = i === idx ? "box-shadow:0 0 0 4px rgba(186,117,23,.55);" : "";
+        s += `<div class="card" style="left:${10 + c * 78}px;top:${10 + r * 50}px;${style};${ring}">${lab}</div>`;
+      });
+      // checklist for the current card
+      const n = idx >= 0 && idx < 50 ? AUTH[idx] : null;
+      const cur = p < .64 ? 18914809 : 18914810;
+      const isUsed = idx === USED;
+      const ck = (k, ok, show) => `<div class="row" style="opacity:${show ? 1 : .3}"><span>${k}</span><b style="color:${ok ? "#1D9E75" : "#C2412D"}">${show ? (ok ? "✓" : "✗") : ""}</b></div>`;
+      const step = isUsed ? seg(p, .44, .56) : 1;
+      if (n !== null) {
+        s += box(10, 268, 520, 0, "n",
+          `<b>ตรวจใบ nonce <span class="mono">${n}</span></b>` +
+          ck("1. chainId = 0 หรือ 1", true, step > .1) +
+          ck("2. กู้ผู้เซ็นจาก (r, s) ได้ = Binance 14", true, step > .35) +
+          ck("3. code ของ B14 ว่าง หรือเป็น delegation เดิม", true, step > .6) +
+          ck(`4. nonce ในใบ = nonce ของ B14 (${cur})`, n === cur, step > .85));
+      }
+      s += box(560, 268, 230, 0, idx === USED && p > .56 ? "g" : "n",
+        `<span class="small">nonce ของ B14 ตอนนี้</span><br><b class="mono" style="font-size:24px">${cur}</b><br><span class="small">ผ่านแล้ว ${p > .56 ? 1 : 0} ใบ · ข้าม ${Math.max(0, Math.min(idx, 50) - (p > .56 && idx > USED ? 1 : 0))} ใบ</span>`, 1);
+      if (p >= .9) s += txt(560, 410, 240, "🟧 = ใบสำรอง (ยังใช้ได้ภายหลัง)", "small", seg(p, .9, .94));
+      return s;
+    } },
+
+  { d: 9, pill: "ผลลัพธ์", title: "Binance 14 ชี้ไปที่โค้ดของ X แล้ว", clock: "20:20:59 UTC",
+    cap: () => "delegate เสร็จ แต่ยังไม่มีเงินขยับ Binance 14 แค่ \"ชี้\" ไปที่โค้ดของ X ไว้ รอให้มีคนเรียก",
+    draw(p) {
+      return box(30, 20, 760, 0, "a", `<span class="small">eth_getCode(Binance 14)</span><br><b class="mono" style="font-size:30px"><span style="color:#0F6E56">0xef0100</span>63e8…6fae</b>`, ease(seg(p, 0, .15)))
+        + box(30, 150, 360, 0, "n", `<b class="mono" style="color:#0F6E56">0xef0100</b><br>เครื่องหมายว่า "ไปใช้โค้ดที่ address นี้"`, ease(seg(p, .2, .35)))
+        + box(430, 150, 360, 0, "n", `<b class="mono" style="color:#993C1D">63e8…6fae</b><br>address ของ contract X`, ease(seg(p, .3, .45)))
+        + box(30, 290, 240, 0, "g", `เงินใน B14<br><b>ไม่ขยับเลย</b>`, ease(seg(p, .5, .62)))
+        + box(290, 290, 240, 0, "n", `nonce B14<br><b class="mono">18914810</b>`, ease(seg(p, .58, .7)))
+        + box(550, 290, 240, 0, "n", `gas ที่โจรจ่าย<br><b class="mono">1,258,562</b>`, ease(seg(p, .66, .78)));
+    } },
+
+  { d: 9, pill: "ระหว่างนั้น", title: "B14 ส่ง tx เองยังปกติ", clock: "20:21 – 20:24 UTC",
+    cap: () => "tx ที่ Binance 14 ส่งเองเป็นแค่การโอน โค้ดของ X ไม่ได้รัน ทีม Binance จึงไม่เห็นอะไรผิดปกติอยู่ 3 นาที 24 วินาที",
+    draw(p, t) {
+      return box(30, 40, 300, 0, "b", `<h4>Binance 14</h4><span class="small">ระบบเซ็นของ Binance เซ็น tx ให้</span>`, 1)
+        + box(500, 40, 290, 0, "n", `<h4>ลูกค้า</h4>ถอนเงินตามปกติ`, ease(seg(p, .05, .15)))
+        + box(500, 290, 290, 0, "a", `<h4>Contract X</h4><b style="color:#7A2014">ไม่ได้รัน</b>`, .55 * ease(seg(p, .3, .45)))
+        + box(30, 290, 300, 0, "n", `เงินฝากใหม่ยังเข้ามา<br><span class="small">USDT 1,609.8M → 1,615.4M</span>`, ease(seg(p, .5, .62)))
+        + svg([arrow(332, 80, 496, 80, ease(seg(p, .1, .25)), "#0F6E56", "โอนปกติ", 2, t),
+               `<line x1="180" y1="150" x2="500" y2="320" stroke="#C2412D" stroke-width="2" stroke-dasharray="6 6" opacity="${seg(p, .3, .45)}"/>`]);
+    } },
+
+  { d: 16, pill: "ขั้น 6", title: "โจรเรียก address ของ B14 → โค้ด X รัน", clock: "20:24:23 UTC",
+    cap: p => p < .2 ? "โจรส่ง tx ธรรมดาไปที่ address ของ Binance 14 เรียกฟังก์ชัน sweep (ไม่ได้เรียก X ตรงๆ)"
+             : p < .55 ? "EVM โหลด code ของ B14 เจอ 0xef0100… จึงไปดึงโค้ดของ X มารัน โดยให้ address(this) = Binance 14"
+                       : "โค้ดใช้เงินและสิทธิ์ของ B14 โอนทุกอย่างออกใน tx เดียว โดยไม่ต้องใช้ลายเซ็นของ Binance อีกเลย",
+    draw(p, t) {
+      let s = box(30, 10, 260, 0, "a", `<h4>โจร</h4><span class="mono" style="font-size:15px">${ATK}</span>`, 1)
+        + box(30, 200, 260, 0, "b", `<h4>Binance 14</h4><span class="mono" style="font-size:15px">code → X</span>`, 1)
+        + box(330, 10, 460, 0, "n", `<b>EVM</b>` +
+            `<div class="row" style="opacity:${seg(p, .2, .26)}"><span>① โหลด code ของ B14</span><b class="mono">0xef0100…</b></div>` +
+            `<div class="row" style="opacity:${seg(p, .3, .36)}"><span>② ไปดึงโค้ดจาก X</span><b class="mono">${X}</b></div>` +
+            `<div class="row" style="opacity:${seg(p, .4, .46)}"><span>③ รันโดย address(this)</span><b>= Binance 14</b></div>`, ease(seg(p, .15, .22)))
+        + box(530, 330, 260, 0, "a", `<h4>Exploiter 2</h4><span class="mono" style="font-size:15px">${EXP}</span>`, ease(seg(p, .5, .58)))
+        + txt(30, 330, 480, `<span class="mono" style="font-size:15px">B14.sweep(${EXP.slice(0, 6)}…, [ETH, USDT, … 65 asset])</span>`, "", seg(p, .05, .15));
+      return s + svg([arrow(160, 80, 160, 196, ease(seg(p, .02, .15)), "#993C1D", "call"),
+                      arrow(292, 250, 526, 360, ease(seg(p, .55, .65)), "#C2412D", "167,464 ETH + 63 token", 4, t)]);
+    } },
+
+  { d: 14, pill: "ยกเลิก", title: "revoke: delegate ไปที่ 0x0", clock: "30 ต.ค. 00:10:35 UTC (226 นาทีต่อมา)",
+    cap: p => p < .45 ? "Binance 14 เซ็นใบใหม่ที่ address = 0x0000… แล้วส่ง type 4 เอง code กลับเป็น 0x โจรกดเรียกไม่ได้อีก"
+                      : "แต่ถ้า nonce ยังไม่เลยช่วง โจรเอาใบสำรองส่งซ้ำแล้ว delegate กลับได้ทันที ต้องเผา nonce ให้เลยใบสุดท้ายก่อน (พิสูจน์แล้วใน lab)",
+    draw(p) {
+      return box(30, 20, 360, 0, "b", `<h4>ใบอนุญาตใหม่</h4><span class="mono" style="font-size:15px">address = 0x0000…0000</span><br><span class="small">เซ็นและส่งโดย Binance 14 เอง</span>`, ease(seg(p, 0, .12)))
+        + box(450, 20, 340, 0, p > .3 ? "g" : "a", `<span class="small">eth_getCode(B14)</span><br><b class="mono" style="font-size:24px">${p > .3 ? "0x" : "0xef0100 63e8…"}</b>`, ease(seg(p, .1, .2)))
+        + box(30, 200, 760, 0, "w", `<h4>⚠ กับดักของใบสำรอง</h4>ใบที่ nonce สูงกว่า nonce ปัจจุบันยังใช้ได้ → revoke แล้วโจรส่ง tx เดิมซ้ำ ก็ delegate กลับได้<br>` +
+            `<b>วิธีถูก:</b> ส่ง tx เปล่าจน nonce เลยใบสุดท้าย (18914824) แล้วค่อย revoke<br><span class="small">ในเคสจริง ตอน revoke nonce ของ B14 เลยช่วงไปนานแล้ว ใบสำรองจึงหมดอายุไปเอง</span>`, ease(seg(p, .48, .6)))
+        + svg([arrow(392, 70, 446, 70, ease(seg(p, .12, .22)), "#0F6E56")]);
+    } },
+
+  { d: 12, pill: "สรุป", title: "ขั้นตอน delegate กระเป๋าไปที่ contract", clock: "",
+    cap: () => "ใบอนุญาตไม่มีวงเงิน ไม่มีวันหมดอายุ ไม่ระบุคนส่ง ข้อจำกัดเดียวคือ nonce ดังนั้นต้องเฝ้า eth_getCode ของกระเป๋าที่ถือเงินทุก block",
+    draw(p) {
+      const L = ["1. สร้างข้อความ: 0x05 ‖ rlp(chainId, contract, nonce) → keccak256",
+                 "2. key ของเจ้าของกระเป๋าเซ็น (offline) ได้ใบอนุญาต",
+                 "3. ใครก็ได้ห่อใบใส่ tx type 4 แล้วจ่าย gas ส่งขึ้นเชน",
+                 "4. เชนตรวจทีละใบ: chainId · ผู้เซ็น · code · nonce",
+                 "5. ใบที่ผ่าน: code = 0xef0100 ‖ contract, nonce + 1",
+                 "6. ใครเรียก address กระเป๋า → รันโค้ด contract ในนามกระเป๋า",
+                 "7. ยกเลิก: เผา nonce ให้เลยใบที่รั่ว แล้ว delegate ไป 0x0"];
+      return L.map((l, i) => box(30, 10 + i * 68, 760, 56, i === 5 ? "a" : i === 6 ? "w" : "n", l, ease(seg(p, i * .08, .06 + i * .08)))).join("");
+    } },
+];
+
+// ---------------------------------------------------------------- global chain state (right panel)
+const START = []; let acc = 0; for (const s of SCENES) { START.push(acc); acc += s.d; }
+const TOTAL = acc;
+function at(name) { return START[SCENES.findIndex(s => s.pill === name)]; }
+function state(t) {
+  const tBlock = at("ขั้น 4"), tVal = at("ขั้น 5"), tSweep = at("ขั้น 6"), tRev = at("ยกเลิก");
+  const dV = SCENES[5].d, dS = SCENES[8].d, dR = SCENES[9].d;
+  let nonce = t < tBlock + .55 * 10 ? "18914808" : t < tVal + .56 * dV ? "18914809" : "18914810";
+  if (t >= tRev) nonce = "> 18914824";
+  let code = t >= tVal + .56 * dV && !(t >= tRev + .3 * dR) ? "0xef0100 63e8…6fae" : "0x";
+  const f = ease(seg(t, tSweep + .62 * dS, tSweep + .95 * dS));
+  const eth = 167465 - f * 167464, usdt = 1615.4 - f * 1615.4;
+  return { nonce, code, eth, usdt };
+}
+
+function render(t) {
+  let i = 0; while (i < SCENES.length - 1 && t >= START[i + 1]) i++;
+  const sc = SCENES[i], p = clamp((t - START[i]) / sc.d);
+  document.getElementById("pill").textContent = sc.pill;
+  document.getElementById("title").textContent = sc.title;
+  document.getElementById("clock").textContent = sc.clock;
+  document.getElementById("barf").style.width = (100 * t / TOTAL) + "%";
+  document.getElementById("stage").innerHTML = sc.draw(p, t);
+  document.getElementById("cap").textContent = sc.cap(p);
+  const s = state(t), dlg = s.code !== "0x";
+  document.getElementById("panel").innerHTML =
+    `<div style="font-size:15px;color:#6B6862">สถานะบนเชน</div><div style="font-size:22px;font-weight:700;margin-bottom:6px">Binance 14</div>` +
+    `<div class="mono" style="font-size:14px;color:#6B6862;margin-bottom:8px">0x28C6c06298…E5743bf21d60</div>` +
+    `<div class="row"><span class="k">nonce</span><b class="mono">${s.nonce}</b></div>` +
+    `<div class="row"><span class="k">code</span><b class="mono" style="color:${dlg ? "#C2412D" : "#1D9E75"}">${s.code}</b></div>` +
+    `<div class="row"><span class="k">ETH</span><b class="mono">${fmt(s.eth)}</b></div>` +
+    `<div class="row"><span class="k">USDT</span><b class="mono">${s.usdt.toFixed(1)}M</b></div>` +
+    `<div style="margin-top:14px;font-size:16px;line-height:1.5"><b>ใครสั่งได้</b><br>✅ ระบบเซ็นของ Binance (ส่ง tx เอง)` +
+    (dlg ? `<br><span style="color:#C2412D">⚠ ใครก็ได้ที่เรียก address นี้ → รันโค้ด X<br>(X ยอมให้แค่โจร)</span>` : "") + `</div>`;
+}
+window.TOTAL = TOTAL; window.FPS = FPS; window.render = render;
+
+// play live when opened directly; make_video.py sets ?capture to drive frames itself
+if (!location.search.includes("capture")) {
+  const t0 = performance.now();
+  const tick = () => { render(((performance.now() - t0) / 1000) % TOTAL); requestAnimationFrame(tick); };
+  tick();
+}
+</script>
+</body>
+</html>
