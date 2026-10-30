@@ -758,7 +758,7 @@ steps = [
      "ตรงกับเนื้อหาเดิมทุกตัวเลข; เจอเพิ่ม: Binance 14 เองถูก Tether/Circle ขึ้น blacklist; 375px ไม่มี horizontal scroll หลังแก้ hash ยาว", "ผ่าน"),
     (17, 9, "export ภาพทีละขั้นของการ delegate + sweep เป็น PNG", "อธิบายกลไก EIP-7702 ให้เข้าใจด้วยภาพ ใช้แชร์หรือใส่สไลด์ได้",
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_png.py",
-     "step-1.png .. step-8.png และ all-steps.png (headless Chrome, scale 2x, ฟอนต์ Sukhumvit Set)", "(commit นี้)",
+     "step-1.png .. step-8.png และ all-steps.png (headless Chrome, scale 2x, ฟอนต์ Sukhumvit Set)", "9fce574",
      "ภาพครบ 9 ไฟล์ ตัวหนังสือไทยแสดงถูก", "ผ่าน"),
 ]
 RERUN = {
