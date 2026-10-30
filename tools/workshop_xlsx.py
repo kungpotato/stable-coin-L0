@@ -818,7 +818,7 @@ steps = [
      "render ผ่าน 7,020 เฟรม", "ผ่าน"),
     (17, 24, "export แต่ละขั้นของวิดีโอเป็น PNG สำหรับ slide carousel", "ผู้ใช้จะเอาไปทำภาพ slide เลื่อนๆ",
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_slides.py",
-     "slides-7702/slide-01..21.png 1920x1080 หนึ่งภาพต่อหนึ่ง caption (ฉากที่มีหลาย caption แตกเป็นหลายภาพ) จับเฟรมหลังทุกกล่อง fade ครบ", "(commit นี้)",
+     "slides-7702/slide-01..21.png 1920x1080 หนึ่งภาพต่อหนึ่ง caption (ฉากที่มีหลาย caption แตกเป็นหลายภาพ) จับเฟรมหลังทุกกล่อง fade ครบ", "2dd27fb",
      "ตรวจ contact sheet ครบ 21 ภาพ ไม่มีกล่องจาง", "ผ่าน"),
 ]
 RERUN = {
