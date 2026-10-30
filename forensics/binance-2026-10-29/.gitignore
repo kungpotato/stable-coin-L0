@@ -3,3 +3,4 @@ __pycache__/
 flows.jsonl
 watched.json
 follow.log
+evidence.log

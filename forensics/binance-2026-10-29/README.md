@@ -17,6 +17,10 @@ Write-up: [binance-incident-2026-10-29.html](../../binance-incident-2026-10-29.h
 | `follow.py` + `summarise.py` | every tx the exploiter addresses sent after the sweep (~10 min scan) |
 | `inflows.py <addr>` | where an address's ETH came from, one hop back |
 | `usdt_trail.py` | the 700M USDT that left before Tether froze it |
+| `evidence.py` | collects ALL of the above into `evidence.json` (~15 min, needs `flows.jsonl` from follow.py) |
+| `render_evidence.py` | renders `evidence.json` into the evidence appendix (E1–E8) of the write-up, no hand-copied numbers |
+
+`evidence.json` is committed: it is the evidence snapshot the write-up was rendered from.
 
 Facts from the chain are reproducible here; how the signatures were obtained, attribution and the total loss
 were unconfirmed when this was written (2026-10-30).
