@@ -408,7 +408,7 @@ footer { border-top: 1px solid var(--border); margin-top: 48px; padding: 24px 0 
 
 <section id="sim">
   <h2>จำลองในเครื่อง: สิ่งที่ได้เพิ่ม</h2>
-  <p>วิดีโออธิบายขั้นตอน delegate ทีละขั้น: <a href="forensics/binance-2026-10-29/diagram/eip7702-delegation.mp4">eip7702-delegation.mp4</a> (3:54 นาที) และเป็นภาพทีละขั้น 21 ภาพใน <code>diagram/slides-7702/</code></p>
+  <p>วิดีโออธิบายขั้นตอน delegate ทีละขั้น: <a href="forensics/binance-2026-10-29/diagram/eip7702-delegation.mp4">eip7702-delegation.mp4</a> (3:54 นาที มีบทบรรยาย <code>diagram/narration-th.md</code> และซับ <code>.srt</code>) และเป็นภาพทีละขั้น 21 ภาพใน <code>diagram/slides-7702/</code></p>
   <p>รันกลไกเดียวกันบน anvil (Prague) ด้วย <code>lz-potato/src/lab/Sweeper7702.sol</code> ขั้นตอนและผลอยู่ใน <code>forensics/binance-2026-10-29/sim/</code> (<code>sim-steps.tsv</code>, <code>sim-alerts.log</code>) <span class="tag chain">chain</span> เฉพาะส่วนที่เทียบกับ mainnet</p>
   <ul>
     <li><b>ลำดับใบใน tx จริงเรียงลง</b> 18914824 → 18914775 ใบ 18914809 อยู่ตำแหน่ง 15 จึงใช้ได้ใบเดียว (nonce 18914808 → 18914810 ใน block 26300753) <span class="tag chain">chain</span></li>

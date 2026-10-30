@@ -820,6 +820,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_slides.py",
      "slides-7702/slide-01..21.png 1920x1080 หนึ่งภาพต่อหนึ่ง caption (ฉากที่มีหลาย caption แตกเป็นหลายภาพ) จับเฟรมหลังทุกกล่อง fade ครบ", "2dd27fb",
      "ตรวจ contact sheet ครบ 21 ภาพ ไม่มีกล่องจาง", "ผ่าน"),
+    (17, 25, "บทบรรยายภาษาไทยของวิดีโอ ให้จบพร้อมคลิป", "ใช้พากย์หรือใส่ซับวิดีโอ 3:54 นาที",
+     "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_narration.py",
+     "21 ท่อน เริ่มตรงกับตอนที่ caption บนจอเปลี่ยน (อ่านค่า SLOW จาก html); narration-th.md (บทพร้อมเวลา) + narration-th.srt (ซับ)", "(commit นี้)",
+     "ทุกท่อนพูดทันที่ 13 ตัวอักษร/วินาที (ตัดท่อนแรกที่เกิน 2 วินาที) ท่อนสุดท้ายจบที่ 3:54.0", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1013,6 +1017,7 @@ RERUN = {
     (17, 22): ("ได้", "เขียนทับ mp4 เดิม ใช้เวลาราว 3 นาที ต้องมี Chrome, Playwright (Python) และ ffmpeg; python3 make_video.py 52 ได้ภาพ preview ที่วินาทีนั้น"),
     (17, 23): ("ได้", "เหมือน 17.22 ใช้เวลาราว 5 นาที"),
     (17, 24): ("ได้", "ลบแล้วสร้าง slides-7702/ ใหม่ทั้งโฟลเดอร์ ราว 10 วินาที"),
+    (17, 25): ("ได้", "เขียนทับ narration-th.md/.srt ถ้าเปลี่ยน SLOW หรือความยาวฉาก ต้องแก้ DUR ใน script ให้ตรง"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
