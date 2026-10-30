@@ -810,7 +810,7 @@ steps = [
      "5 passed", "ผ่าน"),
     (17, 22, "video animation ขั้นตอน EIP-7702 delegation", "อธิบายทีละขั้นตั้งแต่สร้างข้อความ เซ็น ห่อ tx type 4 เชนตรวจทีละใบ ไปจนถึง sweep และ revoke",
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_video.py",
-     "eip7702-delegation.mp4 1920x1080 30fps 130 วินาที 11 ฉาก (render eip7702-anim.html ทีละเฟรมด้วย Playwright + Chrome แล้ว ffmpeg)", "(commit นี้)",
+     "eip7702-delegation.mp4 1920x1080 30fps 130 วินาที 11 ฉาก (render eip7702-anim.html ทีละเฟรมด้วย Playwright + Chrome แล้ว ffmpeg)", "865c1c3",
      "ffprobe 130.0s 1920x1080; ตรวจภาพเฟรมขั้น 1, 2, 5, 6 ตัวหนังสือไทยถูก", "ผ่าน"),
 ]
 RERUN = {
