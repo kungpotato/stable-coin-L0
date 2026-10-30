@@ -830,7 +830,7 @@ steps = [
      "ขโมย ETH 200,630 + USDT 1,819.7M + USDC 823M + RLUSD 62.6M + USD1 27.8M ≈ 107,400 ล้านบาท (ไม่รวม altcoin อื่น); แช่แข็ง USDT 1,175.5M + USDC 823M ≈ 67,400 ล้านบาท; ETH ที่ผู้โจมตีถือ 436,250 ETH ≈ 32,700 ล้านบาท แช่แข็งไม่ได้ (ETH 75,035 บาท, USD 33.7 บาท)", "ผ่าน"),
     (17, 27, "รันซ้ำสด: delegate + sweep + revoke บน anvil ในเครื่อง", "ผู้ใช้ขอให้รันจริงให้ดู ตรวจว่า command ในคู่มือใช้ได้จริง",
      "stable-coin-L0/lz-potato", "anvil --hardfork prague; forge create MockUSDT และ Sweeper7702 (--constructor-args ไว้ท้ายสุด); mint; cast wallet sign-auth + cast send --auth (โจรส่ง); cast send sweep([USDT]); revoke โดย sponsor ส่ง",
-     "delegate: code B14 = 0xef0100+sweeper; sweep: USDT 1,000,000 และ ETH ทั้งหมดไป DROP ใน tx เดียว; revoke: code กลับเป็น 0x", "(commit นี้)",
+     "delegate: code B14 = 0xef0100+sweeper; sweep: USDT 1,000,000 และ ETH ทั้งหมดไป DROP ใน tx เดียว; revoke: code กลับเป็น 0x", "5042b04",
      "ครบ 8 ขั้น เจอ 2 จุด: (ก) --constructor-args เป็น variadic กลืน flag ต้องวางท้ายสุด (ข) หลัง sweep เหยื่อ ETH=0 จ่าย gas revoke เองไม่ได้ และ self-sign+self-send revoke ไม่ติด (nonce ชน) ต้องให้ sponsor ส่ง", "ผ่าน"),
 ]
 RERUN = {
