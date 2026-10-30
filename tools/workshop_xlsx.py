@@ -846,7 +846,7 @@ steps = [
      "cast send --auth ใส่ซ้ำได้จริง (nonce 0->2 ยืนยัน 2 ใบใน 1 tx); ตรงกับโมเดล 17.8: เรียงลงใช้ใบเดียวเหลือสำรอง = ต้องเผา nonce ก่อน revoke", "ผ่าน"),
     (17, 31, "เรียงลง → revoke → หยิบใบสำรอง re-delegate และวิธีแก้ด้วยการเผา nonce", "พิสูจน์ว่าทำไมเรียงลงเป็นช่องโหว่ และ revoke อย่างเดียวไม่พอ ต้องเผา nonce เลยใบสูงสุดก่อน",
      "stable-coin-L0/lz-potato", "สองเส้นบน anvil: (ช่องโหว่) delegate เรียงลง S4..S0 ใช้ S2, revoke, แล้วส่ง S4 ซ้ำ; (แก้) delegate, ส่ง tx เปล่าจน nonce เลย 4, revoke, แล้วส่ง F4 ซ้ำ",
-     "ช่องโหว่: หลัง revoke (nonce 4) ส่ง S4 (nonce 4) ได้ code กลับเป็น DELEGATED; แก้: เผา nonce ไป 5 ก่อน revoke แล้ว F4 (nonce 4) เก่า ส่งซ้ำไม่ติด code คง 0x", "(commit นี้)",
+     "ช่องโหว่: หลัง revoke (nonce 4) ส่ง S4 (nonce 4) ได้ code กลับเป็น DELEGATED; แก้: เผา nonce ไป 5 ก่อน revoke แล้ว F4 (nonce 4) เก่า ส่งซ้ำไม่ติด code คง 0x", "2d509b2",
      "ยืนยันโมเดล 17.8 ด้วย tx จริง: ใบสำรอง nonce สูงกว่าที่ยังไม่ถูกใช้ = re-delegate หลัง revoke ได้; เผา nonce ให้เลยใบสุดท้ายทำให้ทุกใบเก่าพร้อมกัน", "ผ่าน"),
 ]
 RERUN = {
