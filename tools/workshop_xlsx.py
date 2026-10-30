@@ -756,6 +756,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29", "python3 evidence.py && python3 render_evidence.py",
      "evidence.json: tx ผู้โจมตี 23, authorization 50 (signer = Binance 14, used nonce 18914809), replay 16 tx (การกวาดหลัก ETH 167,464.25 + Transfer 63), เส้นทางเงิน, ยอดและ blacklist 14 address; html มีภาคผนวก E1–E8 พร้อมลิงก์ Etherscan", "3ab5a64",
      "ตรงกับเนื้อหาเดิมทุกตัวเลข; เจอเพิ่ม: Binance 14 เองถูก Tether/Circle ขึ้น blacklist; 375px ไม่มี horizontal scroll หลังแก้ hash ยาว", "ผ่าน"),
+    (17, 9, "export ภาพทีละขั้นของการ delegate + sweep เป็น PNG", "อธิบายกลไก EIP-7702 ให้เข้าใจด้วยภาพ ใช้แชร์หรือใส่สไลด์ได้",
+     "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_png.py",
+     "step-1.png .. step-8.png และ all-steps.png (headless Chrome, scale 2x, ฟอนต์ Sukhumvit Set)", "(commit นี้)",
+     "ภาพครบ 9 ไฟล์ ตัวหนังสือไทยแสดงถูก", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -933,6 +937,7 @@ RERUN = {
     (17, 6): ("ได้", "อ่านอย่างเดียว แต่ใช้เวลาราว 10 นาทีและหนัก RPC; ผลเปลี่ยนตาม block ล่าสุด"),
     (17, 7): ("ได้", "เปิดอ่านอย่างเดียว"),
     (17, 8): ("ได้", "อ่านอย่างเดียว แต่ยอดคงเหลือเปลี่ยนตาม block ล่าสุด (เขียนทับ evidence.json และภาคผนวกใน html)"),
+    (17, 9): ("ได้", "เขียนทับ PNG เดิม ต้องมี Google Chrome ในเครื่อง"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
