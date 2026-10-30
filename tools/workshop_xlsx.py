@@ -848,6 +848,10 @@ steps = [
      "stable-coin-L0/lz-potato", "สองเส้นบน anvil: (ช่องโหว่) delegate เรียงลง S4..S0 ใช้ S2, revoke, แล้วส่ง S4 ซ้ำ; (แก้) delegate, ส่ง tx เปล่าจน nonce เลย 4, revoke, แล้วส่ง F4 ซ้ำ",
      "ช่องโหว่: หลัง revoke (nonce 4) ส่ง S4 (nonce 4) ได้ code กลับเป็น DELEGATED; แก้: เผา nonce ไป 5 ก่อน revoke แล้ว F4 (nonce 4) เก่า ส่งซ้ำไม่ติด code คง 0x", "2d509b2",
      "ยืนยันโมเดล 17.8 ด้วย tx จริง: ใบสำรอง nonce สูงกว่าที่ยังไม่ถูกใช้ = re-delegate หลัง revoke ได้; เผา nonce ให้เลยใบสุดท้ายทำให้ทุกใบเก่าพร้อมกัน", "ผ่าน"),
+    (17, 32, "เพิ่ม sh script deploy MockUSDT + Sweeper7702", "ให้ deploy ซ้ำได้โดยไม่ต้องก๊อป และฝังจุดแก้ (--constructor-args ท้ายสุด) ไว้ในไฟล์",
+     "stable-coin-L0/lz-potato", "เขียน script/deploy-sim-7702.sh; ทดสอบทั้ง source (zsh) และ ./ (bash) บน anvil",
+     "source แล้ว export USDT และ SWEEP เข้า shell; sweeper มี bytecode จริง; รองรับทั้ง zsh/bash ไม่ไปแก้ option ของ shell", "(commit นี้)",
+     "แก้จาก snippet เดิม: --constructor-args ต้องท้ายสุด; ใช้ BASH_SOURCE หรือ $0 หา root; ไม่ใช้ set -e กันค้างใน shell ตอน source; ดึง ATK_PK จาก ANVIL_LOG ได้", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1048,6 +1052,7 @@ RERUN = {
     (17, 29): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้องกำหนด --nonce ของ 2 ลายเซ็นให้ไม่ชน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 30): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง bump nonce เหยื่อก่อนให้ใบบางใบ 'ไม่ตรง'; --auth ใส่ซ้ำได้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 31): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ใช้ 2 wallet แยกเส้นช่องโหว่/เส้นแก้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
+    (17, 32): ("ได้", "source script/deploy-sim-7702.sh ซ้ำได้; ต้องเปิด anvil และตั้ง ATK_PK (หรือ ANVIL_LOG) ก่อน"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
