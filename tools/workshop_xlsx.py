@@ -754,7 +754,7 @@ steps = [
      "แสดงถูกทั้ง desktop และ mobile (375px ไม่มี horizontal scroll)", "ผ่าน"),
     (17, 8, "ใส่หลักฐานทั้งหมดลงใน html (generated)", "ทุก hash, address และตัวเลขต้องตรวจย้อนได้ และต้องไม่มีตัวเลขที่พิมพ์ด้วยมือ",
      "stable-coin-L0/forensics/binance-2026-10-29", "python3 evidence.py && python3 render_evidence.py",
-     "evidence.json: tx ผู้โจมตี 23, authorization 50 (signer = Binance 14, used nonce 18914809), replay 16 tx (การกวาดหลัก ETH 167,464.25 + Transfer 63), เส้นทางเงิน, ยอดและ blacklist 14 address; html มีภาคผนวก E1–E8 พร้อมลิงก์ Etherscan", "(commit นี้)",
+     "evidence.json: tx ผู้โจมตี 23, authorization 50 (signer = Binance 14, used nonce 18914809), replay 16 tx (การกวาดหลัก ETH 167,464.25 + Transfer 63), เส้นทางเงิน, ยอดและ blacklist 14 address; html มีภาคผนวก E1–E8 พร้อมลิงก์ Etherscan", "3ab5a64",
      "ตรงกับเนื้อหาเดิมทุกตัวเลข; เจอเพิ่ม: Binance 14 เองถูก Tether/Circle ขึ้น blacklist; 375px ไม่มี horizontal scroll หลังแก้ hash ยาว", "ผ่าน"),
 ]
 RERUN = {
