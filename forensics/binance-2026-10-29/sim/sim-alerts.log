@@ -1,0 +1,8 @@
+14:11:55 block 220  ALERT B14 code changed: 0x -> 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623
+14:12:42 block 267  ALERT B14 code changed: 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623 -> 0x
+14:13:36 block 321  ALERT B14 code changed: 0x -> 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623
+14:13:37 block 322  ALERT B14 code changed: 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623 -> 0x
+14:13:38 block 323  ALERT B14 code changed: 0x -> 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623
+14:13:56 block 341  ALERT B14 code changed: 0xef0100ce3478a9e0167a6bc5716dc39dbbbfac38f27623 -> 0x
+
+[exited with code 144]
