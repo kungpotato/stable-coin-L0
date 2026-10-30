@@ -214,6 +214,10 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <li><a href="#ch15"><span class="n">15</span>Frontend และ indexer</a></li>
     <li><a href="#ch16"><span class="n">16</span>IBC กับทางไป production</a></li>
   </ol>
+  <div class="part">กรณีศึกษา</div>
+  <ol>
+    <li><a href="#case-binance"><span class="n">17</span>ตามรอย Binance hack บน mainnet</a></li>
+  </ol>
   <div class="part">ภาคผนวก</div>
   <ol>
     <li><a href="#apx-a"><span class="n">A</span>บทเรียนรวม 20 ข้อ</a></li>
@@ -239,6 +243,8 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <a href="#ch9">9 · ความพร้อมของเชน</a><a href="#ch10">10 · เชนคู่และ topology</a><a href="#ch11">11 · Deploy protocol เอง</a>
     <a href="#ch12">12 · DVN และ Executor</a><a href="#ch13">13 · Bridge POTATO</a><a href="#ch14">14 · Bridge USDC</a>
     <a href="#ch15">15 · Frontend และ indexer</a><a href="#ch16">16 · IBC กับ production</a>
+    <div class="part">กรณีศึกษา</div>
+    <a href="#case-binance">17 · ตามรอย Binance hack</a>
     <div class="part">ภาคผนวก</div>
     <a href="#apx-a">A · บทเรียนรวม</a><a href="#apx-b">B · แคตตาล็อก bug</a><a href="#apx-c">C · Checklist</a>
     <a href="#apx-d">D · คำสั่ง</a><a href="#apx-e">E · อภิธานศัพท์</a><a href="#apx-f">F · ไฟล์อ้างอิง</a>
@@ -252,8 +258,8 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <h1>LayerZero ฉบับลงมือทำ</h1>
   <p class="subtitle">จาก messaging protocol สู่ bridge ของ native coin และ stablecoin บนเชนของเราเอง พร้อมบทเรียนจากการโจมตีที่ซ้อมจริง</p>
   <div class="meta">
-    <div><b>16</b><span>บท ตาม 16 topics</span></div>
-    <div><b>166</b><span>step ใน runbook</span></div>
+    <div><b>17</b><span>บท (16 topics + กรณีศึกษา)</span></div>
+    <div><b>170</b><span>step ใน runbook</span></div>
     <div><b>110+</b><span>commit แบบ small batch</span></div>
     <div><b>4</b><span>เชน: potato, anvil, Sepolia, Arbitrum Sepolia</span></div>
     <div><b>8</b><span>ADR</span></div>
@@ -302,7 +308,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
 ├── workers/src/        <span class="c"># dvn.ts, executor.ts, audit.ts, snapshot.ts (viem)</span>
 ├── testnet/            <span class="c"># config ทางการ, ping/read/safe scripts, devtools/</span>
 ├── docs/               <span class="c"># ADR 0001–0005, runbook, postmortem, เอกสารเปรียบเทียบ</span>
-└── workshop-layerzero.xlsx  <span class="c"># runbook 166 step</span></code></pre>
+└── workshop-layerzero.xlsx  <span class="c"># runbook 170 step</span></code></pre>
 
   <h3>สัญลักษณ์ในเล่ม</h3>
   <div class="callout note"><b>หมายเหตุ</b><p>ข้อมูลประกอบหรือบริบทเพิ่มเติม</p></div>
@@ -1677,6 +1683,116 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   </ul></div>
 </section>
 
+
+<!-- ===================== กรณีศึกษา ===================== -->
+<section class="chapter tabpanel" id="case-binance">
+  <div class="ch-num">บทที่ 17 · กรณีศึกษา</div>
+  <h2>ตามรอย Binance hack บน mainnet ด้วยเครื่องมือของเราเอง</h2>
+  <p class="lead">29 ต.ค. 2026 hot wallet "Binance 14" ถูกกวาดเงินหลายพันล้านดอลลาร์ใน tx เดียว บทนี้ไม่ได้เล่าข่าวซ้ำ แต่ใช้ <code>cast</code>, Python และ anvil fork ที่ใช้มาตลอดเล่ม อ่านหลักฐานจาก Ethereum mainnet โดยตรง แล้ว replay การกวาดเงินในเครื่อง</p>
+  <div class="goalbox">
+    <div><b>เป้าหมาย</b>ตาม incident จริงจากข้อมูลบนเชนเอง ไม่ต้องพึ่งข่าวหรือ dashboard อย่างเดียว</div>
+    <div><b>ต้องเตรียม</b>RPC ที่ให้ state ย้อนหลัง (archive), Foundry, Python 3</div>
+    <div><b>ผลลัพธ์</b>timeline ระดับ block, กลไก EIP-7702, replay ที่ตรงกับข่าว และ script ใน <code>forensics/binance-2026-10-29/</code></div>
+  </div>
+  <div class="callout warn"><b>ขอบเขตของข้อมูล</b><p>เขียนเมื่อ 30 ต.ค. 2026 ทุกอย่างที่มาจากเชนในบทนี้รันซ้ำได้และให้ผลเดิม แต่เรื่องอื่น ได้แก่ ผู้โจมตีได้ลายเซ็นมาอย่างไร ใครอยู่เบื้องหลัง และยอดเสียหายรวม (ประมาณการอยู่ระหว่าง $2.5B ถึง $5.9B) ยังไม่มีใครยืนยัน</p></div>
+
+  <h3>17.1 เลือก RPC: ข้อจำกัดที่เจอจริง</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>ทางเลือก</th><th>ผล</th></tr></thead>
+    <tbody>
+      <tr><td>Etherscan API</td><td>ไม่มี key ใน <code>.env</code> (ยาว 0) จึงใช้ไม่ได้</td></tr>
+      <tr><td>publicnode</td><td>อ่าน state ปัจจุบันได้ แต่ <code>eth_getLogs</code> ต้องระบุ address และ state ย้อนหลังต้องใช้ token</td></tr>
+      <tr><td>1rpc, llamarpc, cloudflare</td><td>ขอ token หรือ error</td></tr>
+      <tr><td><b>eth.drpc.org, rpc.mevblocker.io</b></td><td>ให้ state ย้อนหลังได้ จึงใช้ตัวนี้</td></tr>
+    </tbody>
+  </table></div>
+  <p>เมื่อหา Transfer log ทั้งเชนไม่ได้ เราจึงเริ่มจาก<b>เวลาในข่าว</b> ใช้ <code>cast find-block</code> แปลงเวลาเป็นเลข block (20:20:59 → 26300753, 20:24:23 → 26300770) แล้วไล่ดู tx ในแต่ละ block ที่เกี่ยวกับ Binance 14 หรือเป็น type 4 (EIP-7702)</p>
+
+  <h3>17.2 EIP-7702 ทำอะไรกับ wallet ธรรมดา</h3>
+  <p>EIP-7702 (เริ่มใช้ใน hardfork Pectra/Prague ตัวเดียวกับที่เรา pin ให้ potato) ให้ EOA เซ็น <b>authorization</b> ว่า "ให้บัญชีของฉันรันโค้ดของ contract X" เมื่อ tx type 4 ที่มี authorization นั้นถูก include ไปแล้ว code ของ EOA จะกลายเป็น <code>0xef0100 || X</code> และใครก็ตามที่เรียก address นั้นจะไปรันโค้ดของ X <b>ในบริบทของ wallet</b> ด้วยเงินทั้งหมดของ wallet</p>
+  <figure>
+    <svg viewBox="0 0 720 210" role="img" aria-label="ลำดับการ delegate และ sweep ของ Binance 14">
+      <defs><marker id="m17" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      <marker id="m17b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-bad"/></marker></defs>
+      <rect x="15" y="40" width="160" height="70" rx="8" class="box-bad"/><text x="95" y="64" text-anchor="middle" class="t-b">ผู้โจมตี 0x7c86…5ca0</text><text x="95" y="84" text-anchor="middle" class="t-s">เงินตั้งต้น 0.1 ETH</text><text x="95" y="100" text-anchor="middle" class="t-s">จาก Tornado (ตามข่าว)</text>
+      <rect x="275" y="40" width="170" height="70" rx="8" class="box"/><text x="360" y="64" text-anchor="middle" class="t-b">Binance 14 (EOA)</text><text x="360" y="84" text-anchor="middle" class="t-s">code: 0x → 0xef0100‖0x63e8…</text><text x="360" y="100" text-anchor="middle" class="t-s">167,465 ETH · 1.615B USDT</text>
+      <rect x="545" y="40" width="160" height="70" rx="8" class="box-bad"/><text x="625" y="64" text-anchor="middle" class="t-b">Exploiter 2</text><text x="625" y="84" text-anchor="middle" class="t-s">0x5227…2f8c</text>
+      <path d="M175,60 L273,60" class="ln-bad" marker-end="url(#m17b)"/><text x="224" y="52" text-anchor="middle" class="t-s">① 20:20:59 type 4</text>
+      <path d="M175,92 L273,92" class="ln-bad" marker-end="url(#m17b)"/><text x="224" y="124" text-anchor="middle" class="t-s">② 20:24:23 sweep()</text>
+      <path d="M445,76 L543,76" class="ln-bad" marker-end="url(#m17b)"/><text x="494" y="68" text-anchor="middle" class="t-s">ETH + 63 token</text>
+      <rect x="275" y="140" width="170" height="44" rx="8" class="box-info"/><text x="360" y="160" text-anchor="middle">contract 0x63e8…6fae</text><text x="360" y="176" text-anchor="middle" class="t-s">sweep(address,address[])</text>
+      <path d="M360,140 L360,112" class="ln" marker-end="url(#m17)"/>
+      <text x="625" y="160" text-anchor="middle" class="t-s">③ 00:10:35 (+226 นาที)</text><text x="625" y="176" text-anchor="middle" class="t-s">Binance ถอน delegation</text>
+    </svg>
+    <figcaption>รูป 17.1 · ลายเซ็นครั้งเดียวทำให้ EOA ที่ถือเงินหลายพันล้านกลายเป็น contract ของผู้โจมตี</figcaption>
+  </figure>
+
+  <h3>17.3 timeline จากเชน</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>block</th><th>เวลา (UTC)</th><th>หลักฐาน</th></tr></thead>
+    <tbody>
+      <tr><td class="num">26300752</td><td class="num">20:20:47</td><td>Binance 14 ยังเป็น EOA ปกติ (code <code>0x</code>) ถือ 167,445 ETH และ 1,609.8M USDT</td></tr>
+      <tr><td class="num">26300753</td><td class="num">20:20:59</td><td>tx <code>0xad99…298b</code> type 4 จาก <code>0x7c86…5ca0</code> มี <b>authorization 50 รายการ</b> ทุกรายการชี้ไป <code>0x63e8…6fae</code> หลัง block นี้ code กลายเป็น <code>0xef0100…63e8…6fae</code></td></tr>
+      <tr><td class="num">753–769</td><td class="num">~3 นาที</td><td>Binance ยังใช้ wallet ตามปกติโดยไม่รู้ตัว ยังมีเงินฝากเข้า (USDT 1,609.8M → 1,615.4M)</td></tr>
+      <tr><td class="num">26300770</td><td class="num">20:24:23</td><td>tx <code>0x53bd…e2f3</code> เรียก <code>sweep(0x5227…2f8c, [65 asset])</code> ที่ Binance 14 เหลือ ETH 1.00 และ USDT 0</td></tr>
+      <tr><td class="num">26300800</td><td class="num">20:30:23</td><td>ยังถูก delegate อยู่ แต่มีเงินฝากใหม่เข้ามาแล้ว 414.67 ETH และ 2.25M USDT</td></tr>
+      <tr><td class="num">26301896</td><td class="num">00:10:35 (30 ต.ค.)</td><td>Binance 14 ส่ง type 4 ของตัวเองให้ authorization ชี้ไป <code>0x0</code> ถอน delegation <b>226 นาทีหลังถูกกวาด</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>17.4 ทำไมต้องมี 50 authorization</h3>
+  <p>authorization ของ EIP-7702 ผูกกับ nonce ของ wallet ณ ตอนที่ tx ถูก process ถ้า nonce ไม่ตรง authorization นั้นจะถูกข้ามเฉยๆ ส่วน Binance 14 ส่ง tx แทบทุก block (nonce เกิน 18.9 ล้าน) ผู้โจมตีจึงเตรียม authorization สำหรับ <b>nonce 18914775 ถึง 18914824 เรียงติดกัน</b> เผื่อไว้ทั้งช่วง</p>
+  <ul>
+    <li>ใน block 26300753 Binance 14 ส่ง tx ของตัวเองที่ index 133 (nonce 18914808) ก่อน tx delegation ที่ index 138</li>
+    <li>ตอน delegation ทำงาน nonce ของ wallet จึงเป็น 18914809 authorization ตัวนั้นถูกใช้ ส่วนอีก 49 ตัวถูกข้าม</li>
+  </ul>
+  <div class="callout bad"><b>ความหมาย</b><p>EIP-7702 รับเฉพาะ authorization ที่ลายเซ็นตรงกับเจ้าของ wallet และ code ของ Binance 14 ก็เปลี่ยนจริง แปลว่า<b>อย่างน้อยหนึ่งรายการมีลายเซ็นจาก key ของ Binance 14</b> และรูปแบบที่ nonce เรียงกัน 50 ตัวบ่งว่าผู้โจมตีสั่งให้ระบบเซ็นได้หลายครั้งตามต้องการ ซึ่งชี้ไปทาง key หรือระบบเซ็นถูกเจาะ ไม่ใช่ bug ใน smart contract (เราไม่ได้ ecrecover ครบทั้ง 50 รายการ และสาเหตุจริงยังไม่มีการยืนยัน)</p></div>
+
+  <h3>17.5 replay การกวาดเงินในเครื่อง</h3>
+  <p><code>cast run</code> fork mainnet ณ block ก่อนหน้าแล้วรัน tx ซ้ำพร้อม trace เต็ม เหมือนที่เราใช้ anvil fork ใน lab</p>
+  <pre><code>cd forensics/binance-2026-10-29
+./replay.sh
+<span class="c"># selector: sweep(address,address[])</span>
+<span class="c"># [2707605] 0x28C6…1d60::sweep(0x5227f603…2f8c, [0x0000…0000, 0xdAC17F95…(USDT), ...])</span>
+<span class="c">#   ├─ 0x5227…2f8c::receive{value: 167464247916859978935945}()     ← 167,464.25 ETH</span>
+<span class="c">#   ├─ USDT::balanceOf(Binance 14) → 1615409498973240                ← อ่านยอดก่อนแล้วโอนทั้งหมด</span>
+<span class="c">#   ├─ USDT::transfer(0x5227…2f8c, 1615409498973240)</span>
+<span class="c"># ERC-20 Transfer events out of Binance 14: 63</span>
+<span class="c"># Transaction successfully executed. Gas used: 2455349</span></code></pre>
+  <p>ผลตรงกับข่าวทุกจุด: <b>ETH 167,464 และ token 63 ตัว</b> ใน tx เดียว ใช้ gas 2.46M โค้ดของผู้โจมตีสั้นมาก (1,674 byte, 5 function) แค่อ่านยอดของแต่ละ token แล้วโอนออกทั้งหมด</p>
+
+  <h3>17.6 เทียบกับสิ่งที่เราสร้างใน workshop</h3>
+  <div class="table-wrap"><table class="wide">
+    <thead><tr><th>เกิดอะไรขึ้น</th><th>หลักการใน workshop</th><th>บท</th></tr></thead>
+    <tbody>
+      <tr><td>key หรือ signer ตัวเดียวคุมเงินหลายพันล้าน</td><td>ผู้ยืนยันหลายรายที่อิสระต่อกัน (DVN 2 ตัว), owner เป็น Safe 2-of-3</td><td>3, 8</td></tr>
+      <tr><td>tx เดียวเอาเงินออกไปได้ทั้ง wallet</td><td>rate limit และ inbound cap จำกัดยอดต่อชั่วโมง ไม่ว่าลายเซ็นจะถูกต้องแค่ไหน</td><td>6, 13</td></tr>
+      <tr><td>Tether/Circle แช่แข็งได้ราว $2.4B แต่ ETH แช่แข็งไม่ได้</td><td>blacklist และ quarantine ใน USDC.lz ส่วน POTATO ซึ่งเป็น native coin ไม่มี</td><td>6</td></tr>
+      <tr><td>wallet ยังรันโค้ดของผู้โจมตีอยู่ 226 นาที และมีเงินฝากใหม่เข้าไป</td><td>alert แบบ real-time และสวิตช์หยุดที่ใช้ได้ทันที</td><td>8.9</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout lesson"><b>บทเรียนใหม่สำหรับ alert ของเรา</b><p>ตรวจ <code>eth_getCode</code> ของทุก EOA ที่ถือเงิน (hot wallet, owner, deployer) ทุก block ถ้า code ไม่ใช่ <code>0x</code> แปลว่ามี EIP-7702 delegation เกิดขึ้น ต้องแจ้งระดับ critical ทันที ในเคสนี้มีเวลา <b>3 นาที 24 วินาที</b> ระหว่าง delegate กับการกวาดเงิน ซึ่งพอให้ alert ที่ตรวจทุก 3 วินาทีแจ้งได้ทัน เพราะผู้โจมตีแยก delegate กับ sweep เป็นสอง tx</p></div>
+
+  <h3>17.7 วิธีตามต่อ</h3>
+  <ul>
+    <li><b>เงินไปไหนต่อ:</b> ดึง Transfer log ของ token หลักโดยกรองด้วย <code>to</code>/<code>from</code> = <code>0x5227…2f8c</code> (publicnode ยอมเมื่อระบุ address ของ token) เพื่อตามไป DEX, การกู้, bridge และ Tornado</li>
+    <li><b>Tron และ Bitcoin</b> ที่ข่าวพูดถึง ต้องใช้ TronGrid และ mempool.space และยังไม่ชัดว่าเกี่ยวกับการโจมตีครั้งนี้</li>
+    <li><b>Dune</b> query ข้อมูลทั้งเชนได้เร็วกว่านี้ แต่ต้อง authorize connector ก่อน</li>
+    <li><b>เฝ้าแบบ real-time:</b> ใช้โครงเดียวกับ <code>npm run alert</code> เปลี่ยนจาก event ของ LayerZero เป็น balance และ Transfer ของ address ผู้โจมตี</li>
+  </ul>
+  <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
+    <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>
+    <li>Binance 14 ถูกผูกด้วย EIP-7702 ผ่าน authorization ที่ใช้ nonce ติดกัน 50 ตัว แล้วถูกกวาดใน tx เดียวหลังจากนั้น 3 นาที</li>
+    <li>replay ในเครื่องได้ ETH 167,464 และ token 63 ตัวตรงกับข่าว</li>
+    <li>delegation ถูกถอน 226 นาทีหลังถูกกวาด ระหว่างนั้นยังมีเงินฝากใหม่เข้า wallet</li>
+    <li>ต้องตรวจ code ของ EOA ที่ถือเงินว่ายังเป็น <code>0x</code> และต้องมีเพดานต่อช่วงเวลา แม้ลายเซ็นจะถูกต้อง</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ถ้า Binance 14 มี rate limit แบบบท 6 ที่ระดับระบบเซ็น ผลจะต่างไปอย่างไร</summary><p>การกวาดเกิดใน tx เดียวที่รันโค้ดของผู้โจมตีโดยตรง rate limit ที่อยู่ในระบบเซ็นจึงไม่ช่วย เพราะหลัง delegate แล้ว การกวาดไม่ต้องใช้ลายเซ็นของ Binance อีก เพดานต้องอยู่<b>บนเชน</b> เช่นเก็บเงินใน contract ที่มี limit แทน EOA ล้วน หรือแยกเงินเป็นหลาย wallet</p></details>
+    <details><summary>ทำไม alert ที่ตรวจ code ของ EOA ถึงทันในเคสนี้ แต่อาจไม่ทันในเคสอื่น</summary><p>ผู้โจมตีส่ง delegate กับ sweep เป็นสอง tx ห่างกัน 17 block ถ้ารวมไว้ใน tx เดียว (type 4 ที่ทั้ง delegate และเรียก sweep) alert จะมาหลังเงินออกไปแล้ว ตอนนั้นสิ่งที่ช่วยได้มีแค่เพดานบนเชนและการแช่แข็งของ issuer</p></details>
+  </div>
+</section>
+
 <!-- ===================== ภาคผนวก ===================== -->
 <section class="appendix tabpanel" id="apx-a">
   <div class="ch-num">ภาคผนวก A</div>
@@ -1860,7 +1976,7 @@ make smoke-ibc</code></pre>
   <h2>ไฟล์และเอกสารอ้างอิง</h2>
   <h3>ใน repo นี้</h3>
   <ul>
-    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 166 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
+    <li><a href="workshop-layerzero.xlsx">workshop-layerzero.xlsx</a>: runbook 170 step พร้อมคำสั่ง, ผลที่คาด, commit, ผลจริง และรันซ้ำได้หรือไม่</li>
     <li><a href="docs/topic1-layerzero-overview.md">docs/topic1-layerzero-overview.md</a>: บทบาทและเคส bridge hack</li>
     <li><a href="docs/ibc-vs-layerzero.md">docs/ibc-vs-layerzero.md</a> และ <a href="docs/production-path.md">docs/production-path.md</a></li>
     <li><a href="docs/runbooks/bridge-incident.md">docs/runbooks/bridge-incident.md</a>: playbook 5 ขั้น</li>
@@ -1880,6 +1996,7 @@ make smoke-ibc</code></pre>
     <li>LayerZero docs: integration checklist, deployed contracts, DVN/executor config (docs.layerzero.network)</li>
     <li>Ronin: Halborn, ForkLog · Wormhole: CertiK, Ackee · Nomad: Immunefi, Coinbase</li>
     <li>Cysic bridge exploit 2026-10-17: The Block, FinanceFeeds, Crypto Briefing (ข้อมูลเบื้องต้น)</li>
+    <li>Binance hack 2026-10-29: The Block, TechCrunch, CoinDesk, Bitcoin.com, Cryptonews (ข้อมูลเบื้องต้น) และ script ใน <code>forensics/binance-2026-10-29/</code></li>
     <li>Circle ปิด USDC บน Noble และ native USDC บน Injective (ข้อมูล ณ 2026-10-15 ควรตรวจซ้ำก่อนตัดสินใจ)</li>
   </ul>
   <footer class="colophon">

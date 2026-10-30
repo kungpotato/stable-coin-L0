@@ -96,6 +96,7 @@ topics = [
     (14, "Bridge stablecoin (USDC)", "bridge USDC ถูก model + supply invariant + controls", "home chain decision, รายการ contract ที่ผูก USDC เดิม, ผ่าน topic 6", "เสร็จ"),
     (15, "Frontend + indexer + explorer", "ผู้ใช้กด bridge จาก web/ และเห็นสถานะ message", "web/ (wagmi/viem), indexer/ (Ponder), address จาก 11–14", "เสร็จ"),
     (16, "IBC vs LayerZero และทางไป production", "ตัดสินใจ asset ไหนใช้ IBC/LayerZero และรู้ขั้นตอน integration ทางการ", "ประสบการณ์ IBC bridge, แผนเปิด public network", "เสร็จ"),
+    (17, "กรณีศึกษา: ตามรอย Binance hack บน mainnet", "ตาม incident จริงจากข้อมูลบนเชนเอง (EIP-7702 delegation + sweep) แล้ว replay ในเครื่อง", "Foundry (cast run), Python 3, RPC ที่ให้ state ย้อนหลัง (eth.drpc.org)", "เสร็จ"),
 ]
 rows = []
 for i, (n, name, goal, prep, status) in enumerate(topics, start=2):
@@ -719,6 +720,22 @@ steps = [
      S, "open workshop-lessons.html",
      "ไฟล์เดียว 23 tab: หน้าแรก/คำนำ, บทที่ 1–16 (เป้าหมาย, แนวคิด, คำสั่ง, ผลจริง, บทเรียน, สรุป, คำถามทบทวน), ภาคผนวก A–F; มีสารบัญด้านข้าง, ปุ่มบทก่อน/ถัดไป, ไดอะแกรม 7 รูป", "a7f4c66",
      "สลับ tab ได้ทั้งคลิกและปุ่มลูกศร, 375px ไม่มี horizontal scroll ทุก tab, มี dark mode", "ผ่าน"),
+    (17, 0, "เลือก RPC และหา block จากเวลาในข่าว", "ไม่มี Etherscan key; publicnode ขอ address ใน getLogs และ token สำหรับ state ย้อนหลัง จึงเริ่มจากเวลาแปลงเป็น block",
+     S, "cast find-block $(TZ=UTC date -j -f '%Y-%m-%d %H:%M:%S' '2026-10-29 20:20:59' +%s) --rpc-url https://ethereum-rpc.publicnode.com",
+     "20:20:59 → 26300753, 20:24:23 → 26300770; eth.drpc.org / rpc.mevblocker.io ตอบ state ย้อนหลังได้", "(commit นี้)",
+     "ตามที่คาด; publicnode/1rpc: Archive requests require a personal token", "ผ่าน"),
+    (17, 1, "timeline + EIP-7702 delegation ของ Binance 14", "หลักฐานระดับ block ว่า wallet ถูกผูกให้รันโค้ดผู้โจมตีเมื่อไหร่ และทำไมมี 50 authorization",
+     "stable-coin-L0/forensics/binance-2026-10-29", "python3 timeline.py",
+     "type 4 จาก 0x7c86…5ca0, 50 authorizations → 0x63e8…6fae, nonce 18914775..18914824 ติดกัน; code 0x → 0xef0100…; block 26300770 ETH 167,465 → 1, USDT 1.615B → 0", "(commit นี้)",
+     "Binance 14 ส่ง tx ตัวเองที่ index 133 (nonce 18914808) ก่อน delegation index 138 → authorization nonce 18914809 ถูกใช้; หลังกวาดยังมีเงินฝากเข้า (414.67 ETH ที่ 20:30)", "ผ่าน"),
+    (17, 2, "replay การกวาดเงินในเครื่อง (cast run)", "ดูกลไกจริงทีละ call โดยไม่ต้องเชื่อข่าว",
+     "stable-coin-L0/forensics/binance-2026-10-29", "./replay.sh",
+     "selector sweep(address,address[]) → 0x5227…2f8c; receive 167464.2479 ETH; USDT transfer 1,615,409,498.97; Transfer events 63; Gas used 2455349", "(commit นี้)",
+     "ตรงกับข่าว (ETH + 63 token); contract ผู้โจมตี 1,674 byte 5 function", "ผ่าน"),
+    (17, 3, "หาเวลาที่ Binance ถอน delegation", "วัดเวลาตอบสนอง: wallet รันโค้ดผู้โจมตีอยู่นานแค่ไหน",
+     "stable-coin-L0/forensics/binance-2026-10-29", "python3 revoke.py",
+     "cleared in block 26301896 at 2026-10-30 00:10:35 UTC, 226.2 min after the sweep; by 0xafbf…c7209 authorizations -> [0x0]", "(commit นี้)",
+     "ตามนั้น: Binance ส่ง type 4 ของตัวเองชี้ 0x0 หลังกวาด 226 นาที", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -887,6 +904,10 @@ RERUN = {
     (16, 5): ("ได้", "client Active อยู่แล้ว → nothing to do; ถ้าหมดอายุอีกจะสร้าง substitute + proposal ใหม่ (gov proposal id เพิ่มขึ้น)"),
     (16, 6): ("ได้ (มีผลข้างเคียง)", "โอน POTATO จริงบน localnet ทุกครั้ง (1 กลับมา, 2 ไปค้างเป็น voucher บน gaia) และใช้ค่า fee"),
     (16, 7): ("ได้", "เปิดอ่านอย่างเดียว (จำ tab ล่าสุดและธีมไว้ใน browser)"),
+    (17, 0): ("ได้", "อ่านอย่างเดียว"),
+    (17, 1): ("ได้", "อ่านอย่างเดียว (ต้องใช้ RPC ที่ให้ state ย้อนหลัง)"),
+    (17, 2): ("ได้", "fork ในเครื่องผ่าน cast run ไม่ส่ง tx; เขียน sweep-trace.txt (gitignored)"),
+    (17, 3): ("ได้", "อ่านอย่างเดียว"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
