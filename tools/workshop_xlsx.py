@@ -836,6 +836,10 @@ steps = [
      "stable-coin-L0/lz-potato", "ไล่ flow ถึง revoke (code=0x) เติมเงินเหยื่อใหม่ แล้ว cast send B14 sweep(address[]) อีกครั้งโดยโจร",
      "tx สำเร็จ status 1 ไม่ revert แต่ balance เหยื่อและโจรไม่เปลี่ยน (no-op)", "9dbd120",
      "code=0x เรียก sweep ที่ EOA ไม่มีโค้ด = tx เปล่า calldata ถูกเพิกเฉย เงินไม่ขยับ ยืนยัน revoke ตัดสิทธิ์ได้จริง ไม่ใช่แค่หยุดชั่วคราว", "ผ่าน"),
+    (17, 29, "จำลอง 'ระบบเซ็นถูกคุม': เซ็น off-chain แล้วให้ relayer ส่ง", "แสดงว่าโจรไม่ต้องถือ private key แค่สั่งให้ hot wallet เซ็นได้ก็พอ ตรงกับอนุมานในเคสจริง",
+     "stable-coin-L0/lz-potato", "cast mktx (เซ็น raw tx โอน ETH, --nonce 0) + cast wallet sign-auth (เซ็น 7702 auth, --nonce 1) โดยไม่ส่ง; แล้ว cast publish และ cast send --auth โดยโจรเป็นคน broadcast/จ่าย gas",
+     "เหยื่อเสีย 5 ETH (จาก raw tx ที่เซ็นไว้) และถูก delegate (จาก auth) โดยโจรเป็นผู้ส่งทั้งคู่", "(commit นี้)",
+     "ลายเซ็น 2 ใบผลิต off-chain แยกจากการส่ง; relayer ส่งเองจ่าย gas เอง; ต้องเรียง nonce ให้ไม่ชน (tx โอน nonce 0, auth nonce 1); ยืนยันว่า 'ความสามารถในการเซ็น' = เท่ากับคุม wallet ได้ ไม่ต้องมี key ดิบในมือตอนส่ง", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1033,6 +1037,7 @@ RERUN = {
     (17, 26): ("ได้", "อ่านอย่างเดียว ตัวเลขบาทเปลี่ยนตามราคา ETH และค่าเงินบาท ณ เวลาที่รัน"),
     (17, 27): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง anvil --hardfork prague; key ทดสอบของ anvil ล้วน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 28): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต่อจาก 17.27 ในสถานะ revoke แล้ว; ปิด anvil และล้าง scratchpad เมื่อจบ"),
+    (17, 29): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้องกำหนด --nonce ของ 2 ลายเซ็นให้ไม่ชน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
