@@ -816,6 +816,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_video.py",
      "เพิ่ม SLOW = 1.8 คูณเวลาทุกฉาก, เหรียญที่วิ่งในลูกศรช้าลง; วิดีโอ 234 วินาที 6.5 MB", "f61c4f4",
      "render ผ่าน 7,020 เฟรม", "ผ่าน"),
+    (17, 24, "export แต่ละขั้นของวิดีโอเป็น PNG สำหรับ slide carousel", "ผู้ใช้จะเอาไปทำภาพ slide เลื่อนๆ",
+     "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_slides.py",
+     "slides-7702/slide-01..21.png 1920x1080 หนึ่งภาพต่อหนึ่ง caption (ฉากที่มีหลาย caption แตกเป็นหลายภาพ) จับเฟรมหลังทุกกล่อง fade ครบ", "(commit นี้)",
+     "ตรวจ contact sheet ครบ 21 ภาพ ไม่มีกล่องจาง", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1008,6 +1012,7 @@ RERUN = {
     (17, 21): ("ได้", "ไม่ต้องเปิดเชน"),
     (17, 22): ("ได้", "เขียนทับ mp4 เดิม ใช้เวลาราว 3 นาที ต้องมี Chrome, Playwright (Python) และ ffmpeg; python3 make_video.py 52 ได้ภาพ preview ที่วินาทีนั้น"),
     (17, 23): ("ได้", "เหมือน 17.22 ใช้เวลาราว 5 นาที"),
+    (17, 24): ("ได้", "ลบแล้วสร้าง slides-7702/ ใหม่ทั้งโฟลเดอร์ ราว 10 วินาที"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
