@@ -812,6 +812,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_video.py",
      "eip7702-delegation.mp4 1920x1080 30fps 130 วินาที 11 ฉาก (render eip7702-anim.html ทีละเฟรมด้วย Playwright + Chrome แล้ว ffmpeg)", "865c1c3",
      "ffprobe 130.0s 1920x1080; ตรวจภาพเฟรมขั้น 1, 2, 5, 6 ตัวหนังสือไทยถูก", "ผ่าน"),
+    (17, 23, "ทำวิดีโอให้ช้าลง 1.8 เท่า", "ผู้ใช้บอกว่าเร็วเกิน อ่าน caption ไม่ทัน",
+     "stable-coin-L0/forensics/binance-2026-10-29/diagram", "python3 make_video.py",
+     "เพิ่ม SLOW = 1.8 คูณเวลาทุกฉาก, เหรียญที่วิ่งในลูกศรช้าลง; วิดีโอ 234 วินาที 6.5 MB", "(commit นี้)",
+     "render ผ่าน 7,020 เฟรม", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1003,6 +1007,7 @@ RERUN = {
     (17, 20): ("ได้", "anvil ในเครื่องเท่านั้น (test key สาธารณะ) ต้องเปิด anvil :28700 --hardfork prague ก่อน; ค่า nonce/เวลาเปลี่ยนทุกรอบ"),
     (17, 21): ("ได้", "ไม่ต้องเปิดเชน"),
     (17, 22): ("ได้", "เขียนทับ mp4 เดิม ใช้เวลาราว 3 นาที ต้องมี Chrome, Playwright (Python) และ ffmpeg; python3 make_video.py 52 ได้ภาพ preview ที่วินาทีนั้น"),
+    (17, 23): ("ได้", "เหมือน 17.22 ใช้เวลาราว 5 นาที"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

@@ -1797,7 +1797,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     </tbody>
   </table></div>
   <div class="callout lesson"><b>บทเรียนจากการจำลอง</b><p>1) watcher จับ code ที่เปลี่ยนได้ใน block เดียวกันทุกครั้ง 2) <b>revoke อย่างเดียวไม่พอ</b> ถ้า nonce ยังอยู่ในช่วงของใบที่ถูกเซ็นไว้ ต้องเผา nonce ให้เลยช่วงก่อน (ในเคสจริง ตอน revoke 226 นาทีให้หลัง nonce ของ B14 เลยช่วงไปนานแล้ว) 3) โจรต้องลงมือภายในไม่กี่นาทีหลังได้ลายเซ็น ไม่งั้นใบหมดอายุเอง</p></div>
-  <p>ดูขั้นตอนเป็นวิดีโอ: <a href="forensics/binance-2026-10-29/diagram/eip7702-delegation.mp4">eip7702-delegation.mp4</a> (2:10 นาที) สร้างจาก <code>diagram/make_video.py</code></p>
+  <p>ดูขั้นตอนเป็นวิดีโอ: <a href="forensics/binance-2026-10-29/diagram/eip7702-delegation.mp4">eip7702-delegation.mp4</a> (3:54 นาที) สร้างจาก <code>diagram/make_video.py</code></p>
   <pre><code>cd lz-potato && forge test --match-contract Sweeper7702Test   <span class="c"># 5 passed</span></code></pre>
 
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>

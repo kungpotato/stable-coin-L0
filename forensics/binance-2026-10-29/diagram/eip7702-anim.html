@@ -73,7 +73,7 @@ function arrow(x1, y1, x2, y2, p, color = "#993C1D", label = "", dots = 0, t = 0
   let s = `<line x1="${x1}" y1="${y1}" x2="${xe}" y2="${ye}" stroke="${color}" stroke-width="3"/>`;
   if (p >= 1) s += `<polygon points="${x2},${y2} ${x2 - h * Math.cos(ang - .45)},${y2 - h * Math.sin(ang - .45)} ${x2 - h * Math.cos(ang + .45)},${y2 - h * Math.sin(ang + .45)}" fill="${color}"/>`;
   for (let i = 0; i < dots && p >= 1; i++) {
-    const f = (t * 0.9 + i / dots) % 1;
+    const f = (t * 0.5 + i / dots) % 1;
     s += `<circle cx="${x1 + (x2 - x1) * f}" cy="${y1 + (y2 - y1) * f}" r="7" fill="#E8A33D" stroke="#9A6510" stroke-width="1.5"/>`;
   }
   if (label) s += `<text x="${(x1 + x2) / 2 + 8}" y="${(y1 + y2) / 2 - 8}" font-size="15" fill="${color}" font-family="Sukhumvit Set">${label}</text>`;
@@ -259,6 +259,10 @@ const SCENES = [
     } },
 ];
 
+// slow enough to read every caption (feedback: 1x was too fast)
+const SLOW = 1.8;
+SCENES.forEach(s => s.d *= SLOW);
+
 // ---------------------------------------------------------------- global chain state (right panel)
 const START = []; let acc = 0; for (const s of SCENES) { START.push(acc); acc += s.d; }
 const TOTAL = acc;
@@ -266,7 +270,7 @@ function at(name) { return START[SCENES.findIndex(s => s.pill === name)]; }
 function state(t) {
   const tBlock = at("ขั้น 4"), tVal = at("ขั้น 5"), tSweep = at("ขั้น 6"), tRev = at("ยกเลิก");
   const dV = SCENES[5].d, dS = SCENES[8].d, dR = SCENES[9].d;
-  let nonce = t < tBlock + .55 * 10 ? "18914808" : t < tVal + .56 * dV ? "18914809" : "18914810";
+  let nonce = t < tBlock + .55 * SCENES[4].d ? "18914808" : t < tVal + .56 * dV ? "18914809" : "18914810";
   if (t >= tRev) nonce = "> 18914824";
   let code = t >= tVal + .56 * dV && !(t >= tRev + .3 * dR) ? "0xef0100 63e8…6fae" : "0x";
   const f = ease(seg(t, tSweep + .62 * dS, tSweep + .95 * dS));
