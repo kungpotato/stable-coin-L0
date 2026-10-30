@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binance Hot Wallet Sweep</title>
+<meta name="description" content="ลำดับเหตุการณ์ทางเทคนิคของการกวาดเงินจาก hot wallet ของ Binance เมื่อ 29 ต.ค. 2026 สร้างจากข้อมูลบน Ethereum mainnet: EIP-7702 delegation, การซ้อม, การกวาด, การยกระดับสิทธิ์ และเส้นทางของเงิน">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f6f1; --surface: #ffffff; --surface-2: #f1eee6; --text: #1f1d1a; --muted: #6b675e; --border: #e3dfd4;
+  --accent: #b0501d; --accent-soft: #f7e6da; --ok: #2e7a4a; --ok-soft: #e2f1e7; --warn: #946500; --warn-soft: #f8eed0;
+  --bad: #a83232; --bad-soft: #f7dfdf; --info: #2a5f9e; --info-soft: #e3edf8; --code-bg: #f3f0e8;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151412; --surface: #1d1c19; --surface-2: #26241f; --text: #ebe7df; --muted: #a39f95; --border: #35322c;
+    --accent: #f08a4b; --accent-soft: #3a2618; --ok: #6cc28c; --ok-soft: #1b2d21; --warn: #e0b44b; --warn-soft: #32290f;
+    --bad: #ec7d7d; --bad-soft: #3a1c1c; --info: #7fb0ea; --info-soft: #1a2738; --code-bg: #23211d; --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151412; --surface: #1d1c19; --surface-2: #26241f; --text: #ebe7df; --muted: #a39f95; --border: #35322c;
+  --accent: #f08a4b; --accent-soft: #3a2618; --ok: #6cc28c; --ok-soft: #1b2d21; --warn: #e0b44b; --warn-soft: #32290f;
+  --bad: #ec7d7d; --bad-soft: #3a1c1c; --info: #7fb0ea; --info-soft: #1a2738; --code-bg: #23211d; --shadow: none;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 64px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16.5px/1.8 "IBM Plex Sans Thai", system-ui, sans-serif; }
+a { color: var(--accent); }
+code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .84em; }
+code { background: var(--code-bg); padding: .06em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: .78rem; line-height: 1.6; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+pre .c { color: var(--muted); }
+h1, h2, h3 { font-family: "Noto Serif Thai", "IBM Plex Sans Thai", serif; line-height: 1.3; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+header.top { padding: 48px 0 24px; border-bottom: 1px solid var(--border); }
+.kicker { color: var(--accent); font-weight: 600; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); margin: .25em 0 .35em; }
+.lead { color: var(--muted); font-size: 1.08rem; margin: 0; }
+nav.jump { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
+nav.jump .wrap { display: flex; gap: 4px; overflow-x: auto; padding-top: 8px; padding-bottom: 8px; scrollbar-width: none; align-items: center; }
+nav.jump a { white-space: nowrap; text-decoration: none; color: var(--muted); font-size: .85rem; padding: 3px 10px; border-radius: 999px; }
+nav.jump a:hover { background: var(--surface-2); color: var(--text); }
+#theme { margin-left: auto; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 3px 12px; font: inherit; font-size: .8rem; cursor: pointer; white-space: nowrap; }
+section { padding: 40px 0 8px; }
+h2 { font-size: 1.5rem; margin: 0 0 .5em; }
+h3 { font-size: 1.15rem; margin: 1.6em 0 .4em; }
+p { margin: 0 0 1em; }
+ul, ol { padding-left: 1.3em; }
+li { margin: .25em 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; font-size: .85rem; }
+.tag { display: inline-block; font-size: .72rem; font-weight: 600; padding: 0 8px; border-radius: 999px; white-space: nowrap; line-height: 1.75; vertical-align: 1px; }
+.tag.chain { background: var(--ok-soft); color: var(--ok); }
+.tag.news { background: var(--info-soft); color: var(--info); }
+.tag.infer { background: var(--warn-soft); color: var(--warn); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.answer { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow); }
+.answer ol { margin: 0; }
+.answer li { margin: .45em 0; }
+.callout { border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-size: .95rem; border: 1px solid transparent; }
+.callout > b:first-child { display: block; margin-bottom: 2px; }
+.callout p:last-child { margin: 0; }
+.callout.warn { background: var(--warn-soft); } .callout.warn > b:first-child { color: var(--warn); }
+.callout.bad { background: var(--bad-soft); } .callout.bad > b:first-child { color: var(--bad); }
+.callout.note { background: var(--info-soft); } .callout.note > b:first-child { color: var(--info); }
+.callout.ok { background: var(--ok-soft); } .callout.ok > b:first-child { color: var(--ok); }
+.phase { margin: 22px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.phase-head { display: flex; gap: 12px; align-items: baseline; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.phase-head .n { font-family: "JetBrains Mono", monospace; font-weight: 600; color: var(--accent); font-size: .85rem; }
+.phase-head h3 { margin: 0; font-size: 1.05rem; }
+.phase-head .when { margin-left: auto; color: var(--muted); font-size: .82rem; font-family: "JetBrains Mono", monospace; }
+.phase-body { padding: 12px 16px 4px; }
+.events { list-style: none; padding: 0; margin: 0 0 12px; border-left: 2px solid var(--border); }
+.events li { position: relative; padding: 0 0 10px 18px; margin: 0; }
+.events li::before { content: ""; position: absolute; left: -6px; top: 9px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.events li.bad::before { border-color: var(--bad); background: var(--bad-soft); }
+.events li.ok::before { border-color: var(--ok); background: var(--ok-soft); }
+.events .t { font-family: "JetBrains Mono", monospace; font-size: .78rem; color: var(--muted); display: block; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); margin: 12px 0 18px; }
+table { width: 100%; border-collapse: collapse; font-size: .86rem; line-height: 1.55; min-width: 600px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 11px; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); color: var(--muted); font-size: .76rem; font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.num, .num { font-family: "JetBrains Mono", monospace; font-size: .82em; white-space: nowrap; }
+figure { margin: 18px 0 22px; }
+figure svg { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+figcaption { color: var(--muted); font-size: .82rem; text-align: center; margin-top: 6px; }
+svg text { fill: var(--text); font-family: "IBM Plex Sans Thai", sans-serif; font-size: 12.5px; }
+svg .s { font-size: 10.5px; fill: var(--muted); } svg .b { font-weight: 600; }
+svg .box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+svg .bad { fill: var(--bad-soft); stroke: var(--bad); stroke-width: 1.5; }
+svg .info { fill: var(--info-soft); stroke: var(--info); stroke-width: 1.5; }
+svg .okb { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+svg .ln { stroke: var(--muted); stroke-width: 1.6; fill: none; } svg .lnb { stroke: var(--bad); stroke-width: 1.8; fill: none; }
+svg .ah { fill: var(--muted); } svg .ahb { fill: var(--bad); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+.card h4 { margin: 0 0 6px; font-size: .98rem; }
+.card p, .card ul { font-size: .9rem; margin: 0; }
+footer { border-top: 1px solid var(--border); margin-top: 48px; padding: 24px 0 40px; color: var(--muted); font-size: .85rem; }
+@media (max-width: 560px) { body { font-size: 15.5px; } .phase-head .when { margin-left: 0; width: 100%; } }
+@media print { nav.jump { display: none; } .phase, .table-wrap, figure { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Incident forensics · Ethereum mainnet · ข้อมูล ณ 30 ต.ค. 2026</div>
+    <h1>Binance hot wallet ถูกกวาดได้อย่างไร</h1>
+    <p class="lead">ลำดับเหตุการณ์ทางเทคนิคของเหตุการณ์ 29 ต.ค. 2026 สร้างจากข้อมูลบนเชนที่อ่านและ replay เองทั้งหมด ตั้งแต่ผู้โจมตีรับเงินตั้งต้นจาก Tornado Cash ไปจนถึงการแช่แข็งเงิน</p>
+    <div class="legend">
+      <span><span class="tag chain">เชน</span> ยืนยันจากข้อมูลบนเชน รันซ้ำได้ด้วย script</span>
+      <span><span class="tag news">ข่าว</span> มาจากรายงานข่าว ยังไม่ได้ตรวจเอง</span>
+      <span><span class="tag infer">อนุมาน</span> ข้อสรุปจากหลักฐาน ยังไม่มีการยืนยัน</span>
+    </div>
+  </div>
+</header>
+
+<nav class="jump" aria-label="หัวข้อ">
+  <div class="wrap">
+    <a href="#answer">คำตอบสั้น</a>
+    <a href="#background">พื้นฐาน EIP-7702</a>
+    <a href="#actors">ผู้เกี่ยวข้อง</a>
+    <a href="#timeline">ลำดับเหตุการณ์</a>
+    <a href="#money">เงินไปไหน</a>
+    <a href="#how">เกิดขึ้นได้อย่างไร</a>
+    <a href="#detect">จุดที่ตรวจจับได้</a>
+    <a href="#lessons">บทเรียน</a>
+    <a href="#repro">ทำซ้ำ</a>
+    <button id="theme" type="button">ธีม</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="answer">
+  <h2>คำตอบสั้น: เกิดขึ้นได้อย่างไร</h2>
+  <div class="answer">
+    <ol>
+      <li><span class="tag chain">เชน</span> ผู้โจมตี<b>ได้ลายเซ็นจริงจาก key ของ hot wallet "Binance 14" ไป 50 ครั้ง</b> เป็น authorization ของ EIP-7702 สำหรับ nonce 50 ค่าที่เรียงติดกัน (ตรวจด้วย <code>cast recover-authority</code> แล้ว ทั้ง 50 ตัวกู้กลับเป็น address ของ Binance 14)</li>
+      <li><span class="tag chain">เชน</span> authorization ตัวที่ nonce ตรงทำให้ Binance 14 ซึ่งเป็น EOA ธรรมดา <b>กลายเป็นบัญชีที่รันโค้ดของผู้โจมตี</b> (code เปลี่ยนจาก <code>0x</code> เป็น <code>0xef0100‖0x63e8…6fae</code>)</li>
+      <li><span class="tag chain">เชน</span> 3 นาที 24 วินาทีต่อมา tx เดียวเรียก <code>sweep()</code> ที่ Binance 14 <b>กวาด 167,464 ETH และ token 63 ตัว</b> โดยไม่ต้องใช้ลายเซ็นของ Binance อีกเลย</li>
+      <li><span class="tag chain">เชน</span> เพราะ Binance 14 เป็นผู้สั่งการของ smart wallet อีกตัว (<code>0xEe7a…4055</code>) ผู้โจมตีจึง<b>ได้สิทธิ์นั้นไปด้วย</b> และดึง USDC ออกไป 823M</li>
+      <li><span class="tag chain">เชน</span> <b>Binance 16 (wallet อีกตัวที่ไม่ได้ถูก delegate) เซ็นและส่ง 28,005.6 ETH ไปให้ผู้โจมตีเอง</b> 24 วินาทีหลังการกวาด</li>
+      <li><span class="tag chain">เชน</span> delegation ยังอยู่อีก <b>226 นาที</b> ผู้โจมตีกลับมากวาดเงินฝากใหม่อีก 9 รอบ ก่อนที่ Binance จะถอน delegation</li>
+      <li><span class="tag infer">อนุมาน</span> การที่ wallet สองตัวเซ็นให้ผู้โจมตีด้วย payload คนละแบบ (authorization 7702 และการโอน ETH ปกติ) ชี้ไปที่<b>ระบบที่ขอให้ hot wallet เซ็น (signing pipeline) ถูกควบคุม</b> มากกว่าการที่ smart contract มี bug ส่วนกลไกจริงว่าเข้าถึงระบบเซ็นได้อย่างไร Binance ยังไม่ได้เปิดเผย</li>
+    </ol>
+  </div>
+</section>
+
+<section id="background">
+  <h2>พื้นฐานที่ต้องรู้: EIP-7702 เปลี่ยน EOA อย่างไร</h2>
+  <p>ก่อน hardfork Pectra (พ.ค. 2025) บัญชี Ethereum มีสองแบบชัดเจน: <b>EOA</b> ซึ่งไม่มีโค้ดและทำอะไรได้เฉพาะเมื่อ private key เซ็น tx กับ <b>contract</b> ซึ่งมีโค้ดแต่ไม่มี key EIP-7702 เพิ่ม tx แบบใหม่ (type 4) ที่มี <code>authorizationList</code></p>
+  <ul>
+    <li>authorization คือข้อความ <code>(chainId, address, nonce)</code> ที่เจ้าของ EOA เซ็นด้วย key ว่า "ให้บัญชีของฉันรันโค้ดของ <code>address</code>"</li>
+    <li><b>ใครก็ได้</b>ส่ง tx type 4 ที่มี authorization นั้น ไม่จำเป็นต้องเป็นเจ้าของ EOA (ในเคสนี้ผู้โจมตีเป็นคนส่งและจ่ายค่า gas เอง)</li>
+    <li>authorization จะใช้ได้เฉพาะเมื่อ <code>nonce</code> ตรงกับ nonce ปัจจุบันของ EOA ตอน tx ถูก process ถ้าไม่ตรงจะถูกข้ามเฉยๆ ไม่ทำให้ tx ล้ม</li>
+    <li>เมื่อใช้ได้ code ของ EOA จะเป็น <code>0xef0100 ‖ address</code> (delegation designator) และ<b>อยู่ไปจนกว่าเจ้าของจะเซ็น authorization ใหม่</b>มาเปลี่ยน ใครเรียก EOA นั้นจะไปรันโค้ดของ <code>address</code> โดยมี <code>address(this)</code> เป็น EOA และใช้เงินของ EOA</li>
+  </ul>
+  <div class="callout warn"><b>ผลด้านความปลอดภัย</b><p>ลายเซ็นของ authorization ไม่ใช่ลายเซ็นของ tx ระบบเซ็นที่ตรวจเฉพาะ "tx โอนเงินไปที่ไหน เท่าไหร่" อาจไม่รู้ว่าข้อความ <code>keccak256(0x05 ‖ rlp(chainId, address, nonce))</code> ที่ถูกขอให้เซ็นมีความหมายว่า "ยกบัญชีทั้งบัญชีให้ contract นี้"</p></div>
+</section>
+
+<section id="actors">
+  <h2>ผู้เกี่ยวข้องบนเชน</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>address</th><th>บทบาท</th><th>หลักฐาน</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0x28C6…1d60</td><td><b>Binance 14</b> hot wallet (EOA) nonce เกิน 18.9 ล้าน ส่ง tx แทบทุก block</td><td><span class="tag chain">เชน</span> <span class="tag news">ข่าว</span> label</td></tr>
+      <tr><td class="num">0xDFd5…963d</td><td><b>Binance 16</b> hot wallet (EOA)</td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0xEe7a…4055</td><td>smart wallet ของ Binance (proxy 209 byte → <code>0xD206…9eC8</code>) รับคำสั่ง <code>execute()</code> จาก Binance 14 ถือ USDC</td><td><span class="tag chain">เชน</span> trace</td></tr>
+      <tr><td class="num">0x7c86…5ca0</td><td><b>EOA ของผู้โจมตี</b> ใช้ deploy, delegate และสั่งกวาด</td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0x19be…f2bf</td><td>contract กวาดเงินตัวทดสอบ</td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0x63e8…6fae</td><td>contract กวาดเงินตัวจริง (1,674 byte) มี <code>sweep(address,address[])</code>, <code>callExecute(…)</code>, <code>withdrawETH(…)</code></td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0x8378…FBc3, 0x9C29…bB6B, 0x43AE…04BD</td><td>EOA ที่ใช้ซ้อม delegate และกวาด (ยอดเล็ก)</td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0x24A4…a4dE, 0xe4F9…74cd</td><td>ปลายทางของการซ้อม</td><td><span class="tag chain">เชน</span></td></tr>
+      <tr><td class="num">0x5227…2f8c</td><td><b>Exploiter 2</b> ปลายทางหลักของเงิน</td><td><span class="tag chain">เชน</span> <span class="tag news">ข่าว</span> label ของ Etherscan</td></tr>
+      <tr><td class="num">0xA97b…8d10</td><td>ปลายทางของการกวาดรอบหลังๆ</td><td><span class="tag chain">เชน</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="timeline">
+  <h2>ลำดับเหตุการณ์ (เวลาเป็น UTC)</h2>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 0</span><h3>เงินตั้งต้นที่ตามรอยไม่ได้</h3><span class="when">28 ต.ค. 07:39</span></div>
+    <div class="phase-body"><ul class="events">
+      <li><span class="t">block 26289786 · tx 0xd9e5…9008</span><span class="tag chain">เชน</span> EOA ผู้โจมตีได้ <b>0.0982 ETH</b> ผ่าน tx ที่ relayer ส่งไปที่ <code>0xd90e…f31b</code> (Tornado Cash Router) ด้วย selector <code>0xb438689f</code> คือการถอนจาก pool 0.1 ETH แล้วหักค่า relayer จึงเชื่อมย้อนกลับไปหาผู้ฝากไม่ได้</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 1</span><h3>สร้างเครื่องมือและซ้อมสองรอบ</h3><span class="when">29 ต.ค. 02:28 – 16:47</span></div>
+    <div class="phase-body">
+      <ul class="events">
+        <li><span class="t">02:28:59 · nonce 0</span><span class="tag chain">เชน</span> deploy contract กวาดเงินตัวทดสอบ <code>0x19be…f2bf</code></li>
+        <li><span class="t">13:51:35 / 13:51:59 · nonce 1–2 (type 4)</span><span class="tag chain">เชน</span> delegate EOA <code>0x8378…</code> (2 authorization) และ <code>0x9C29…</code> (3 authorization) ไปที่ contract ทดสอบ <b>เป็นการซ้อมเทคนิคเตรียม authorization หลายตัวเผื่อ nonce</b></li>
+        <li><span class="t">14:19:59 / 14:24:11 · nonce 3–4</span><span class="tag chain">เชน</span> เรียก <code>sweep()</code> ที่สอง EOA นั้น โอน USDT 6 และ 3 และ USDC 1 กับ 1 ไปที่ <code>0x24A4…a4dE</code></li>
+        <li><span class="t">15:59:11 · nonce 5</span><span class="tag chain">เชน</span> deploy contract ตัวจริง <code>0x63e8…6fae</code> <b>4 ชั่วโมง 21 นาทีก่อนลงมือ</b></li>
+        <li><span class="t">16:20:47 – 16:47:23 · nonce 6–9</span><span class="tag chain">เชน</span> ซ้อมกับ contract ตัวจริงบน EOA <code>0x43AE…</code> ได้แก่ delegate 2 รอบ, <code>sweep()</code> (0.01 ETH + USDT 2.54) และ <code>withdrawETH(0xe4F9…, 1 ETH)</code></li>
+      </ul>
+      <div class="callout note"><b>อ่านอย่างไร</b><p>ทั้งหมดเกิดบน mainnet แบบเปิดเผย การซ้อมใช้ยอดเล็กและ EOA ที่ไม่มีประวัติ <span class="tag infer">อนุมาน</span> EOA ที่ใช้ซ้อมน่าจะเป็นของผู้โจมตีเอง เพราะผู้โจมตีมีลายเซ็นของ EOA เหล่านั้นด้วย</p></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 2</span><h3>ได้ลายเซ็น 50 ตัวจาก key ของ Binance 14</h3><span class="when">ก่อน 20:20:59 (ไม่ทราบเวลาที่เซ็น)</span></div>
+    <div class="phase-body"><ul class="events">
+      <li class="bad"><span class="t">authorizationList ของ tx 0xad99…298b</span><span class="tag chain">เชน</span> authorization 50 ตัว ทุกตัวมี <code>chainId=1</code>, <code>address=0x63e8…6fae</code> และ nonce <b>18914775 ถึง 18914824 เรียงติดกัน</b> <code>cast recover-authority</code> กู้ผู้เซ็นได้เป็น <b>Binance 14 ทั้ง 50 ตัว</b></li>
+      <li><span class="tag infer">อนุมาน</span> Binance 14 ส่ง tx แทบทุก block ผู้โจมตีจึงเดา nonce ณ เวลาที่ tx จะถูก include ไม่ได้ และต้องเตรียม 50 ตัวครอบทั้งช่วง เรื่องนี้แปลว่าผู้โจมตี<b>ขอลายเซ็นได้เป็นจำนวนมากตามต้องการ</b></li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 3</span><h3>Delegation: Binance 14 กลายเป็น contract ของผู้โจมตี</h3><span class="when">20:20:59</span></div>
+    <div class="phase-body"><ul class="events">
+      <li><span class="t">block 26300753 · idx 133</span><span class="tag chain">เชน</span> Binance 14 ส่ง tx ของตัวเองตามปกติ (nonce 18914808) nonce จึงขยับเป็น 18914809</li>
+      <li class="bad"><span class="t">block 26300753 · idx 138 · tx 0xad99…298b · type 4 · priority fee 5 gwei · builder Titan</span><span class="tag chain">เชน</span> ผู้โจมตีส่ง authorization 50 ตัว <b>ตัวที่ nonce 18914809 ถูกใช้</b> code ของ Binance 14 กลายเป็น <code>0xef010063e8…6fae</code> (gas 1,258,562) ส่วน priority fee 5 gwei สูงกว่า tx อื่นของผู้โจมตี (0.0002–2 gwei) อย่างชัดเจน เพื่อให้เข้า block เร็วที่สุด</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 4</span><h3>3 นาที 24 วินาทีที่ไม่มีใครรู้</h3><span class="when">20:20:59 – 20:24:23</span></div>
+    <div class="phase-body"><ul class="events">
+      <li><span class="tag chain">เชน</span> ใน 17 block นี้ Binance 14 ยังส่ง tx และรับเงินฝากตามปกติ USDT เพิ่มจาก 1,609.8M เป็น 1,615.4M และ ETH จาก 167,445 เป็น 167,465 ตามไปด้วย</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 5</span><h3>Sweep: กวาดหลายพันล้านใน tx เดียว</h3><span class="when">20:24:23</span></div>
+    <div class="phase-body">
+      <ul class="events">
+        <li class="bad"><span class="t">block 26300770 · tx 0x53bd…e2f3 · nonce 11 · gas 2,455,349</span><span class="tag chain">เชน</span> <code>Binance14.sweep(0x5227…2f8c, [65 asset])</code> สิ่งที่ทำงานคือโค้ดของ <code>0x63e8…</code> ในบริบทของ Binance 14 ส่ง <b>167,464.25 ETH</b> แล้วเรียก <code>balanceOf</code> และ <code>transfer</code> ทีละ token มี event Transfer ออกจาก Binance 14 <b>63 ครั้ง</b> ในนั้นมี <b>USDT 1,615,409,498.97</b></li>
+      </ul>
+      <pre><code><span class="c"># cast run 0x53bd…e2f3 (replay บน fork ในเครื่อง)</span>
+[2707605] 0x28C6…1d60::sweep(0x5227…2f8c, [0x0000…0000, 0xdAC1…1ec7(USDT), …])
+  ├─ 0x5227…2f8c::receive{value: 167464247916859978935945}()
+  ├─ USDT::balanceOf(0x28C6…1d60) → 1615409498973240
+  ├─ USDT::transfer(0x5227…2f8c, 1615409498973240)
+  …  (63 Transfer events)</code></pre>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 6</span><h3>Binance 16 ส่งเงินให้ผู้โจมตีเอง</h3><span class="when">20:24:47</span></div>
+    <div class="phase-body"><ul class="events">
+      <li class="bad"><span class="t">block 26300772 · tx 0x51f2…d39f · type 2 · จาก Binance 16</span><span class="tag chain">เชน</span> <b>Binance 16 เซ็น tx โอน 28,005.6 ETH ไปที่ <code>0x5227…2f8c</code> เอง</b> เป็น tx โอนธรรมดา ไม่มี delegation (code ของ Binance 16 ยังเป็น <code>0x</code>) ยอดใน wallet ลดจาก 29,459 เหลือ 849 ETH</li>
+      <li><span class="tag infer">อนุมาน</span> แปลว่าผู้โจมตี<b>ทำให้ระบบของ Binance ออกคำสั่งโอนปกติไปที่ address ของผู้โจมตีได้</b> เช่นผ่านระบบ rebalance หรือ whitelist ปลายทาง ซึ่งเป็นช่องทางคนละแบบกับ Binance 14</li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 7</span><h3>ใช้สิทธิ์ของ Binance 14 ต่อ: ดึง USDC จาก smart wallet</h3><span class="when">20:41:23 และ 20:59:47</span></div>
+    <div class="phase-body">
+      <ul class="events">
+        <li class="bad"><span class="t">tx 0xdc10…7481 · nonce 12</span><span class="tag chain">เชน</span> <code>Binance14.callExecute(0xEe7a…4055, USDC, 0, transfer(0x5227…, 780,000,000 USDC))</code> → <code>0xEe7a.execute()</code> เห็นผู้เรียกเป็น Binance 14 ซึ่งได้รับอนุญาต จึงโอน <b>USDC 780M</b></li>
+        <li class="bad"><span class="t">tx 0x3b96…9ca7 · nonce 13</span><span class="tag chain">เชน</span> ทำซ้ำอีก <b>USDC 43M</b></li>
+      </ul>
+      <pre><code>0x28C6…1d60::callExecute(0xEe7a…4055, USDC, 0, 0xa9059cbb…)
+  └─ 0xEe7a…4055::execute(USDC, 0, transfer(0x5227…, 780000000000000))
+       └─ 0xD206…9eC8::execute(…) [ผ่าน proxy]
+            └─ USDC::transfer → emit Transfer(from: 0xEe7a…4055, to: 0x5227…2f8c, 780,000,000)</code></pre>
+      <div class="callout bad"><b>ทำไมสำคัญ</b><p>ความเสียหายไม่ได้จำกัดอยู่ที่เงินใน Binance 14 แต่รวม<b>ทุกสิทธิ์ที่ Binance 14 ถืออยู่</b> เช่นการเป็นผู้สั่งการของ smart wallet อื่น เมื่อ EOA ถูก delegate สิทธิ์ทั้งหมดของมันก็ตกไปอยู่กับโค้ดของผู้โจมตีด้วย</p></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 8</span><h3>กลับมากวาดเงินฝากใหม่ซ้ำ</h3><span class="when">21:04 – 23:56</span></div>
+    <div class="phase-body"><ul class="events">
+      <li><span class="t">nonce 14–22 · 9 tx</span><span class="tag chain">เชน</span> ระหว่างที่ delegation ยังอยู่ ผู้โจมตีเรียก <code>sweep()</code> อีก 9 ครั้ง เช่นรอบ 21:04 ได้ ETH 1,699.9 USDT 3.9M และ token อีก 23 ตัว ส่วนรอบ 23:56 ส่ง ETH 2,961.9 ไปที่ address ใหม่ <code>0xA97b…8d10</code></li>
+    </ul></div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-head"><span class="n">PHASE 9</span><h3>Binance ถอน delegation</h3><span class="when">30 ต.ค. 00:10:35</span></div>
+    <div class="phase-body"><ul class="events">
+      <li class="ok"><span class="t">block 26301896 · tx 0xafbf…c7209 · type 4 จาก Binance 14 เอง</span><span class="tag chain">เชน</span> authorization ชี้ไป <code>0x0000…0000</code> ทำให้ code กลับเป็น <code>0x</code> ห่างจากการกวาดครั้งแรก <b>226 นาที</b></li>
+      <li><span class="tag news">ข่าว</span> ระหว่างนั้น Binance หยุดการถอนบนหลายเครือข่าย และ Tether, Circle, Ripple, WLFI และ Arbitrum Security Council แช่แข็งเงินที่เกี่ยวข้อง</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="money">
+  <h2>เงินไปไหนหลังเข้า Exploiter 2</h2>
+  <p>ไล่ทุก block ตั้งแต่การกวาด (block 26300770) ถึง block 26302759 (~03:04 UTC 30 ต.ค.) เก็บทุก tx ที่ address ของผู้โจมตีส่ง (Exploiter 2 ส่ง 558 tx และ <code>0xA97b</code> ส่ง 486 tx) แล้วตาม ETH และ USDT ไปทีละทอด ยอดคงเหลืออ่านเมื่อ 30 ต.ค. <span class="tag chain">เชน</span></p>
+  <figure>
+    <svg viewBox="0 0 780 360" role="img" aria-label="เส้นทางของเงินจาก Exploiter 2">
+      <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect x="10" y="150" width="170" height="70" rx="8" class="bad"/><text x="95" y="174" text-anchor="middle" class="b">Exploiter 2</text><text x="95" y="192" text-anchor="middle" class="s">0x5227…2f8c</text><text x="95" y="208" text-anchor="middle" class="s">ยังเหลือ 16,069 ETH</text>
+      <rect x="250" y="10" width="200" height="50" rx="8" class="box"/><text x="350" y="31" text-anchor="middle" class="b">0x8532…43d4</text><text x="350" y="48" text-anchor="middle" class="s">197,460 ETH · nonce 0</text>
+      <rect x="250" y="80" width="200" height="50" rx="8" class="okb"/><text x="350" y="101" text-anchor="middle" class="b">แช่แข็งใน Exploiter 2</text><text x="350" y="118" text-anchor="middle" class="s">USDT 1.175B · USDC 823M</text>
+      <rect x="250" y="150" width="200" height="50" rx="8" class="info"/><text x="350" y="171" text-anchor="middle" class="b">hop A 0x9749…c762</text><text x="350" y="188" text-anchor="middle" class="s">USDT 500M (20:30)</text>
+      <rect x="250" y="220" width="200" height="50" rx="8" class="info"/><text x="350" y="241" text-anchor="middle" class="b">hop B 0x0ddf…697e</text><text x="350" y="258" text-anchor="middle" class="s">USDT 200M (20:33)</text>
+      <rect x="250" y="290" width="200" height="50" rx="8" class="box"/><text x="350" y="311" text-anchor="middle" class="b">Uniswap · 400+ tx</text><text x="350" y="328" text-anchor="middle" class="s">ขาย altcoin เป็น ETH</text>
+      <rect x="540" y="120" width="230" height="50" rx="8" class="box"/><text x="655" y="141" text-anchor="middle" class="b">0xc887…286a</text><text x="655" y="158" text-anchor="middle" class="s">137,602 ETH · nonce 0</text>
+      <rect x="540" y="185" width="230" height="40" rx="8" class="box"/><text x="655" y="210" text-anchor="middle" class="s">175M USDT → 0x811f…e84c → ต่อ</text>
+      <rect x="540" y="245" width="230" height="58" rx="8" class="box"/><text x="655" y="266" text-anchor="middle" class="b">0x897c…8df3</text><text x="655" y="283" text-anchor="middle" class="s">78,415 ETH · nonce 0</text><text x="655" y="297" text-anchor="middle" class="s">ผ่าน 0x8d53 → EOA อีก 4 ทอด</text>
+      <path d="M180,165 L248,35" class="ln" marker-end="url(#m)"/><path d="M180,175 L248,105" class="ln" marker-end="url(#m)"/>
+      <path d="M180,185 L248,175" class="ln" marker-end="url(#m)"/><path d="M180,195 L248,245" class="ln" marker-end="url(#m)"/><path d="M180,205 L248,315" class="ln" marker-end="url(#m)"/>
+      <path d="M450,170 L538,145" class="ln" marker-end="url(#m)"/><path d="M450,180 L538,205" class="ln" marker-end="url(#m)"/>
+      <path d="M450,245 L538,270" class="ln" marker-end="url(#m)"/><path d="M450,315 L538,285" class="ln" marker-end="url(#m)"/>
+    </svg>
+    <figcaption>เส้นทางหลักของเงิน ณ ~03:04 UTC 30 ต.ค. (ตัวเลขปัดเศษ)</figcaption>
+  </figure>
+
+  <h3>ETH</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>เวลา</th><th>จาก → ไป</th><th>ยอด</th><th>สถานะตอนนี้</th></tr></thead>
+    <tbody>
+      <tr><td class="num">20:38:47</td><td>Exploiter 2 → <code>0x8532…43d4</code></td><td class="num">195,460 ETH</td><td>รวมกับอีก 2,000 ETH (01:14) เป็น <b>197,460 ETH</b> ยังไม่เคยส่ง tx ออก</td></tr>
+      <tr><td class="num">21:47:47</td><td>hop A → <code>0xc887…286a</code></td><td class="num">122,310 ETH</td><td>ตอนนี้ <b>137,602 ETH</b> ยังไม่เคยส่ง tx ออก</td></tr>
+      <tr><td class="num">21:02 – 23:24</td><td>hop B → <code>0x8d53</code> → <code>0x77ed</code> → <code>0x7aa4</code> → <code>0xccbe</code> → <code>0xb171</code> → <code>0x897c…8df3</code> และ <code>0x42cd</code> → <code>0x897c</code></td><td class="num">57,892 + 17,584 + 2,939 ETH</td><td><b>78,415 ETH</b> ยังไม่เคยส่ง tx ออก บาง EOA ระหว่างทาง (<code>0x77ed</code>, <code>0x7aa4</code>) ถูก delegate ไปที่ implementation เดียวกัน <code>0x63c0…e32b</code></td></tr>
+      <tr><td class="num">01:17:47</td><td><code>0xA97b</code> → <code>0xc209…850a</code></td><td class="num">3,000 ETH</td><td>ยังไม่เคยส่ง tx ออก</td></tr>
+      <tr><td class="num">—</td><td>คงอยู่ใน Exploiter 2 และ <code>0xA97b</code></td><td class="num">16,069 + 3,063 ETH</td><td>ยังเคลื่อนไหวต่อหลัง block ที่สแกน</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><b>ETH แช่แข็งไม่ได้</b><p>ETH รวมกันราว <b>436,000 ETH</b> (~$1.0B ที่ราว $2,372) ถูกพักไว้ใน EOA ใหม่ที่ยังไม่เคยส่ง tx ออก ลักษณะนี้เป็นการรอจังหวะก่อนฟอกเงินต่อ ทุก address ถูกจับตาได้แต่ไม่มีใครหยุดได้</p></div>
+
+  <h3>Stablecoin: ส่วนที่หนีออกไปก่อนถูกแช่แข็ง</h3>
+  <ul>
+    <li><span class="tag chain">เชน</span> <b>ถูกแช่แข็งใน Exploiter 2:</b> USDT 1,175M (Tether <code>isBlackListed = true</code>) และ USDC 823M (Circle <code>isBlacklisted = true</code>)</li>
+    <li><span class="tag chain">เชน</span> <b>หนีออกไปก่อน:</b> USDT 700M ถูกย้ายออกที่ 20:30–20:33 <b>6–9 นาทีหลังการกวาด</b> ไปที่ hop A (500M) และ hop B (200M) ภายหลังทั้งสองถูก Tether ขึ้น blacklist แต่ยอดเหลือ 0 แล้ว
+      <ul>
+        <li><b>hop A:</b> มีแค่ tx <code>approve</code> แต่ได้ ETH ออกมา 122,310 <span class="tag infer">อนุมาน</span> น่าจะขายผ่านคำสั่งแบบ off-chain ที่ solver เป็นคนส่ง tx และส่ง 175M USDT ต่อไปที่ <code>0x811f…e84c</code> (ไม่ถูก blacklist และยอดเป็น 0 แล้ว ยังไม่ได้ตามต่อ)</li>
+        <li><b>hop B:</b> ขายตรงกับ pool ราว 10M (Uniswap V2/V3/V4) แล้วส่ง 190M ไปที่ <code>0x8d53</code> (ถูก blacklist ภายหลัง ยอดเป็น 0) ซึ่งเป็นต้นสายของ ETH ที่ไปลงที่ <code>0x897c</code></li>
+      </ul>
+    </li>
+    <li><span class="tag chain">เชน</span> <b>RLUSD 88.5M</b> ไปที่ <code>0x5c23…a4fc</code> ตอน 21:22 (address นี้ได้ ETH ค่า gas จาก hop A) ตอนนี้ยอดเป็น 0</li>
+    <li><span class="tag chain">เชน</span> <b>altcoin 63 ตัว:</b> เทขายผ่าน Uniswap router เป็นหลัก (Exploiter 2 ส่ง SwapRouter02 281 tx, UniswapV2Router02 105 tx) เช่น PEPE, SHIB, ENA, RSR, ONDO และ <code>0xA97b</code> ขาย ANKR, GRT, JASMY, STRK ฯลฯ</li>
+  </ul>
+  <div class="callout ok"><b>บทเรียนเรื่องเวลา</b><p>stablecoin ที่ยังอยู่ใน Exploiter 2 ถูกแช่แข็งได้เกือบ $2B แต่ 700M ที่ย้ายออกภายใน 9 นาทีหนีไปได้เกือบทั้งหมดก่อนที่ปลายทางจะถูกขึ้น blacklist ความเร็วของการแช่แข็งสำคัญพอๆ กับการแช่แข็งได้หรือไม่ได้ (เหมือนเคส Cysic ที่ blacklist มาถึงหลังเงินออกไปแล้ว 41 นาที)</p></div>
+</section>
+
+
+<section id="how">
+  <h2>เกิดขึ้นได้อย่างไร: แยกสิ่งที่รู้กับสิ่งที่อนุมาน</h2>
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-label="ห่วงโซ่สาเหตุของเหตุการณ์">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ahb"/></marker></defs>
+      <rect x="12" y="20" width="200" height="66" rx="8" class="info"/><text x="112" y="44" text-anchor="middle" class="b">ระบบเซ็นของ hot wallet</text><text x="112" y="62" text-anchor="middle" class="s">ถูกใช้ขอลายเซ็นตามต้องการ</text><text x="112" y="78" text-anchor="middle" class="s">(อนุมาน)</text>
+      <rect x="280" y="10" width="210" height="52" rx="8" class="bad"/><text x="385" y="32" text-anchor="middle" class="b">50 authorization (7702)</text><text x="385" y="50" text-anchor="middle" class="s">เซ็นโดย key ของ Binance 14 (เชน)</text>
+      <rect x="280" y="80" width="210" height="52" rx="8" class="bad"/><text x="385" y="102" text-anchor="middle" class="b">Binance 16 โอน 28,005.6 ETH</text><text x="385" y="120" text-anchor="middle" class="s">tx ปกติ เซ็นโดย Binance 16 (เชน)</text>
+      <rect x="555" y="10" width="195" height="52" rx="8" class="bad"/><text x="652" y="32" text-anchor="middle" class="b">B14 รันโค้ดผู้โจมตี</text><text x="652" y="50" text-anchor="middle" class="s">226 นาที</text>
+      <rect x="555" y="96" width="195" height="52" rx="8" class="bad"/><text x="652" y="118" text-anchor="middle" class="b">sweep × 10</text><text x="652" y="136" text-anchor="middle" class="s">ETH + 63 token + เงินฝากใหม่</text>
+      <rect x="555" y="166" width="195" height="52" rx="8" class="bad"/><text x="652" y="188" text-anchor="middle" class="b">ใช้สิทธิ์ของ B14</text><text x="652" y="206" text-anchor="middle" class="s">0xEe7a.execute → USDC 823M</text>
+      <rect x="280" y="226" width="210" height="58" rx="8" class="okb"/><text x="385" y="248" text-anchor="middle" class="b">ไม่มีเพดานบนเชน</text><text x="385" y="266" text-anchor="middle" class="s">tx เดียวเอาเงินออกได้ทั้งหมด</text>
+      <path d="M212,46 L278,36" class="lnb" marker-end="url(#a)"/><path d="M212,64 L278,104" class="lnb" marker-end="url(#a)"/>
+      <path d="M490,36 L553,36" class="lnb" marker-end="url(#a)"/><path d="M652,62 L652,94" class="lnb" marker-end="url(#a)"/><path d="M640,62 C600,120 600,150 600,164" class="lnb" marker-end="url(#a)"/>
+      <path d="M490,106 L553,118" class="lnb" marker-end="url(#a)"/>
+      <path d="M490,255 C560,255 600,240 620,220" class="ln"/><text x="560" y="276" class="s">ทำให้ขนาดความเสียหายไม่มีขีดจำกัด</text>
+    </svg>
+    <figcaption>ห่วงโซ่สาเหตุ: จุดเริ่มต้นอยู่ที่การได้ลายเซ็น ส่วนความรุนแรงมาจากการไม่มีเพดานและสิทธิ์ที่ต่อกันเป็นทอดๆ</figcaption>
+  </figure>
+
+  <div class="grid2">
+    <div class="card"><h4><span class="tag chain">เชน</span> รู้แน่</h4><ul>
+      <li>key ของ Binance 14 เซ็น authorization 50 ตัวให้ contract ของผู้โจมตี</li>
+      <li>Binance 16 เซ็นการโอน 28,005.6 ETH ไปที่ address ของผู้โจมตี</li>
+      <li>ไม่มี smart contract ของ Binance ถูกหลอกด้วย bug ทุกอย่างผ่านการตรวจลายเซ็นและสิทธิ์ตามปกติ</li>
+      <li>ผู้โจมตีเตรียมตัวราว 37 ชั่วโมงนับจากได้เงินตั้งต้น และซ้อมบน mainnet สองรอบ</li>
+    </ul></div>
+    <div class="card"><h4><span class="tag infer">อนุมาน</span> น่าจะเป็น</h4><ul>
+      <li>ผู้โจมตีควบคุมช่องทางที่ส่งคำขอให้ระบบเซ็นของ hot wallet ได้ เพราะได้ลายเซ็นจาก wallet สองตัว คนละรูปแบบ และจำนวนมาก</li>
+      <li>ระบบเซ็นไม่ได้แยกหรือบล็อก payload แบบ authorization ของ EIP-7702 ซึ่งมีความหมายต่างจาก tx โอนเงินโดยสิ้นเชิง</li>
+    </ul></div>
+    <div class="card"><h4>ยังไม่รู้</h4><ul>
+      <li>ผู้โจมตีเข้าถึงระบบเซ็นได้อย่างไร (สิทธิ์ภายใน, ช่องโหว่ของซอฟต์แวร์, key หลุด หรือ supply chain)</li>
+      <li>authorization ถูกเซ็นเมื่อไหร่ และ key ของ wallet อื่นได้รับผลกระทบหรือไม่</li>
+      <li>ผู้อยู่เบื้องหลัง (มีนักวิจัยบางรายพูดถึงเกาหลีเหนือ แต่ไม่มีการยืนยันอย่างเป็นทางการ)</li>
+    </ul></div>
+  </div>
+  <div class="callout note"><b>สมมติฐานที่หลักฐานไม่สนับสนุน</b><p><b>"bug ใน smart contract"</b>: ไม่มี contract ไหนทำงานผิดสเปก <b>"key หลุดดอกเดียว"</b>: อธิบายได้ยากว่าทำไม Binance 16 ซึ่งไม่ได้ถูก delegate ก็ส่งเงินให้ผู้โจมตีด้วย ยกเว้นว่า key หลุดหลายดอก</p></div>
+</section>
+
+<section id="detect">
+  <h2>จุดที่ตรวจจับได้ก่อนเงินออก</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>เวลา</th><th>สัญญาณบนเชน</th><th>มีเวลาก่อนกวาด</th></tr></thead>
+    <tbody>
+      <tr><td class="num">28 ต.ค. 07:39</td><td>address ใหม่รับเงินจาก Tornado Cash แล้วต่อมา deploy contract ที่มี <code>sweep(address,address[])</code></td><td class="num">~37 ชม.</td></tr>
+      <tr><td class="num">29 ต.ค. 13:51</td><td>address เดียวกันส่ง type 4 พร้อม authorization หลายตัว (การซ้อมเทคนิค)</td><td class="num">~6.5 ชม.</td></tr>
+      <tr><td class="num">20:20:59</td><td><b>code ของ hot wallet เปลี่ยนจาก <code>0x</code></b> ซึ่งเป็นสัญญาณที่ชัดที่สุดและไม่ควรเกิดขึ้นเลย</td><td class="num"><b>3 นาที 24 วินาที</b></td></tr>
+      <tr><td class="num">20:24:23</td><td>ยอดใน hot wallet ลดเกือบเป็นศูนย์ใน block เดียว</td><td class="num">0 (แต่ยังกันเงินฝากต่อจากนี้ได้อีก 226 นาที)</td></tr>
+      <tr><td class="num">20:24:47</td><td>Binance 16 โอนไปที่ address ที่ไม่เคยเป็นปลายทางมาก่อน</td><td class="num">กันรอบต่อๆ ไปได้</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout ok"><b>เทียบกับ alert ใน workshop (บท 8.9)</b><p>worker ที่ตรวจทุก 3 วินาทีจะเห็น code ที่เปลี่ยนภายใน 1–2 block และระบบที่ตอบสนองอัตโนมัติ (เช่นย้ายเงินออกด้วย key อีกชุด หรือหยุดเส้นทางฝากเงิน) ก็มีเวลามากพอ ถึงตอบสนองไม่ทัน 3 นาทีแรก การถอน delegation ทันทีก็กันเงินฝากและการกวาดซ้ำ 9 รอบหลังจากนั้นได้</p></div>
+</section>
+
+<section id="lessons">
+  <h2>บทเรียน</h2>
+  <ol>
+    <li><b>ระบบเซ็นต้องเข้าใจสิ่งที่เซ็น:</b> ปฏิเสธ payload แบบ EIP-7702 authorization (prefix <code>0x05</code>) จาก hot wallet เสมอ ยกเว้นผ่านขั้นตอนพิเศษ</li>
+    <li><b>ตรวจ <code>eth_getCode</code> ของทุก EOA ที่ถือเงินทุก block:</b> ถ้าไม่ใช่ <code>0x</code> ให้แจ้ง critical และถอน delegation ทันที</li>
+    <li><b>อย่าเก็บเงินหลายพันล้านไว้ใน EOA เดียว:</b> ไม่มีเพดานบนเชนเลย tx เดียวเอาออกได้ทั้งหมด ควรใช้ contract ที่มี rate limit หรือ timelock เหมือน control ใน workshop</li>
+    <li><b>ลดสิทธิ์ที่ต่อกันเป็นทอด:</b> hot wallet ที่รับเงินฝากไม่ควรเป็นผู้สั่งการของ wallet อื่นที่ถือ USDC อีก 823M</li>
+    <li><b>whitelist ปลายทางของการโอนจาก hot wallet:</b> และให้ address ใหม่ต้องรอ (cool-down) ก่อนใช้ได้</li>
+    <li><b>stablecoin ที่แช่แข็งได้ช่วยได้จริง:</b> USDT 1.175B และ USDC 823M ใน Exploiter 2 ถูกแช่แข็งแล้ว แต่ ETH ทำไม่ได้</li>
+  </ol>
+</section>
+
+<section id="repro">
+  <h2>ทำซ้ำ</h2>
+  <p>script อ่านอย่างเดียวทั้งหมดอยู่ใน <code>forensics/binance-2026-10-29/</code> และต้องใช้ RPC ที่ให้ state ย้อนหลังได้ (ค่าเริ่มต้นคือ eth.drpc.org ตั้งเองได้ด้วย <code>RPC_URL</code>)</p>
+  <pre><code>cd forensics/binance-2026-10-29
+python3 timeline.py        <span class="c"># delegation, authorization 50 ตัว, สถานะ wallet ทีละ block</span>
+python3 authorities.py     <span class="c"># กู้ผู้เซ็นของ authorization ทั้ง 50 ตัว</span>
+python3 prep.py            <span class="c"># เงินตั้งต้นจาก Tornado และการ deploy contract</span>
+python3 attacker_txs.py    <span class="c"># ทุก tx ของผู้โจมตี (การซ้อม → delegate → กวาด → กวาดซ้ำ)</span>
+python3 b16.py             <span class="c"># Binance 16 โอนเงินเอง</span>
+python3 flows.py &lt;tx&gt;...  <span class="c"># replay tx ด้วย cast run แล้วสรุปการโอน</span>
+./replay.sh                <span class="c"># replay การกวาดหลักแบบ trace เต็ม</span>
+python3 revoke.py          <span class="c"># เวลาที่ถอน delegation</span>
+python3 follow.py &amp;&amp; python3 summarise.py   <span class="c"># ทุก tx ของ address ผู้โจมตีหลังการกวาด (~10 นาที)</span>
+python3 inflows.py &lt;address&gt;  <span class="c"># ETH ของ address หนึ่งมาจากไหน (ไล่ย้อนทีละทอด)</span>
+python3 usdt_trail.py      <span class="c"># USDT 700M ที่หนีออกไปก่อนถูกแช่แข็ง</span></code></pre>
+</section>
+
+<footer>
+  ข้อมูลบนเชนอ่านเมื่อ 30 ต.ค. 2026 ผ่าน eth.drpc.org ส่วนที่มาจากข่าว: The Block, TechCrunch, CoinDesk, Bitcoin.com, Cryptonews, Cointelegraph (ดูลิงก์ใน workshop-lessons.html บทที่ 17) เอกสารนี้ไม่ได้ระบุตัวผู้กระทำ และควรตรวจซ้ำเมื่อ Binance เผยแพร่ postmortem
+</footer>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('theme');
+  function cur() { return root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+  function label() { btn.textContent = cur() === 'dark' ? 'ธีมสว่าง' : 'ธีมมืด'; }
+  try { var t = localStorage.getItem('binance-incident-theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  label();
+  btn.addEventListener('click', function () {
+    var n = cur() === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', n);
+    try { localStorage.setItem('binance-incident-theme', n); } catch (e) {}
+    label();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,2 +1,5 @@
 sweep-trace.txt
 __pycache__/
+flows.jsonl
+watched.json
+follow.log

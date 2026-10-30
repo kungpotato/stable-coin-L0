@@ -1773,6 +1773,8 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   </table></div>
   <div class="callout lesson"><b>บทเรียนใหม่สำหรับ alert ของเรา</b><p>ตรวจ <code>eth_getCode</code> ของทุก EOA ที่ถือเงิน (hot wallet, owner, deployer) ทุก block ถ้า code ไม่ใช่ <code>0x</code> แปลว่ามี EIP-7702 delegation เกิดขึ้น ต้องแจ้งระดับ critical ทันที ในเคสนี้มีเวลา <b>3 นาที 24 วินาที</b> ระหว่าง delegate กับการกวาดเงิน ซึ่งพอให้ alert ที่ตรวจทุก 3 วินาทีแจ้งได้ทัน เพราะผู้โจมตีแยก delegate กับ sweep เป็นสอง tx</p></div>
 
+  <div class="callout note"><b>ลำดับเหตุการณ์ฉบับเต็ม</b><p>รายละเอียดทุก phase อยู่ในเอกสารแยก <a href="binance-incident-2026-10-29.html">binance-incident-2026-10-29.html</a> ได้แก่ ลายเซ็นทั้ง 50 ตัวกู้กลับเป็น Binance 14, การซ้อมสองรอบบน mainnet, Binance 16 เซ็นโอน 28,005.6 ETH ให้ผู้โจมตีเอง, การใช้สิทธิ์ของ Binance 14 ดึง USDC 823M จาก smart wallet อีกตัว, การกวาดซ้ำ 9 รอบ และเส้นทางของเงินจนถึง EOA ที่พัก ETH ไว้ราว 436,000 ETH</p></div>
+
   <h3>17.7 วิธีตามต่อ</h3>
   <ul>
     <li><b>เงินไปไหนต่อ:</b> ดึง Transfer log ของ token หลักโดยกรองด้วย <code>to</code>/<code>from</code> = <code>0x5227…2f8c</code> (publicnode ยอมเมื่อระบุ address ของ token) เพื่อตามไป DEX, การกู้, bridge และ Tornado</li>
