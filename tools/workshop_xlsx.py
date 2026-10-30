@@ -850,7 +850,7 @@ steps = [
      "ยืนยันโมเดล 17.8 ด้วย tx จริง: ใบสำรอง nonce สูงกว่าที่ยังไม่ถูกใช้ = re-delegate หลัง revoke ได้; เผา nonce ให้เลยใบสุดท้ายทำให้ทุกใบเก่าพร้อมกัน", "ผ่าน"),
     (17, 32, "เพิ่ม sh script deploy MockUSDT + Sweeper7702", "ให้ deploy ซ้ำได้โดยไม่ต้องก๊อป และฝังจุดแก้ (--constructor-args ท้ายสุด) ไว้ในไฟล์",
      "stable-coin-L0/lz-potato", "เขียน script/deploy-sim-7702.sh; ทดสอบทั้ง source (zsh) และ ./ (bash) บน anvil",
-     "source แล้ว export USDT และ SWEEP เข้า shell; sweeper มี bytecode จริง; รองรับทั้ง zsh/bash ไม่ไปแก้ option ของ shell", "(commit นี้)",
+     "source แล้ว export USDT และ SWEEP เข้า shell; sweeper มี bytecode จริง; รองรับทั้ง zsh/bash ไม่ไปแก้ option ของ shell", "5fe5be4",
      "แก้จาก snippet เดิม: --constructor-args ต้องท้ายสุด; ใช้ BASH_SOURCE หรือ $0 หา root; ไม่ใช้ set -e กันค้างใน shell ตอน source; ดึง ATK_PK จาก ANVIL_LOG ได้", "ผ่าน"),
 ]
 RERUN = {
