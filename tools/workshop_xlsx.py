@@ -840,6 +840,10 @@ steps = [
      "stable-coin-L0/lz-potato", "cast mktx (เซ็น raw tx โอน ETH, --nonce 0) + cast wallet sign-auth (เซ็น 7702 auth, --nonce 1) โดยไม่ส่ง; แล้ว cast publish และ cast send --auth โดยโจรเป็นคน broadcast/จ่าย gas",
      "เหยื่อเสีย 5 ETH (จาก raw tx ที่เซ็นไว้) และถูก delegate (จาก auth) โดยโจรเป็นผู้ส่งทั้งคู่", "0dc4cd3",
      "ลายเซ็น 2 ใบผลิต off-chain แยกจากการส่ง; relayer ส่งเองจ่าย gas เอง; ต้องเรียง nonce ให้ไม่ชน (tx โอน nonce 0, auth nonce 1); ยืนยันว่า 'ความสามารถในการเซ็น' = เท่ากับคุม wallet ได้ ไม่ต้องมี key ดิบในมือตอนส่ง", "ผ่าน"),
+    (17, 30, "ใส่ 5 authorization ใน type-4 tx เดียว จำลอง nonce ตรง/ไม่ตรง", "แสดงว่าทำไมโจรต้องเซ็นหลายใบ (เคสจริง 50 ใบ) และเชนเลือกใบที่ nonce ตรงอย่างไร",
+     "stable-coin-L0/lz-potato", "ส่ง --auth ซ้ำหลายครั้งใน cast send เดียว (รองรับ): เซ็น 5 ใบ nonce 0..4 ตั้ง nonce เหยื่อไว้ที่ 2 แล้วลองทั้งเรียงขึ้นและเรียงลง ดู nonce/code ก่อนหลัง",
+     "เรียงขึ้น: ใช้ใบ 2,3,4 ต่อกัน (nonce 2->5) ข้าม 0,1; เรียงลง: ใช้ใบเดียว (nonce 2->3) ข้าม 4,3 สูงไป และ 1,0 ต่ำไป เหลือ 3,4 เป็นใบสำรอง", "(commit นี้)",
+     "cast send --auth ใส่ซ้ำได้จริง (nonce 0->2 ยืนยัน 2 ใบใน 1 tx); ตรงกับโมเดล 17.8: เรียงลงใช้ใบเดียวเหลือสำรอง = ต้องเผา nonce ก่อน revoke", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1038,6 +1042,7 @@ RERUN = {
     (17, 27): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง anvil --hardfork prague; key ทดสอบของ anvil ล้วน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 28): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต่อจาก 17.27 ในสถานะ revoke แล้ว; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 29): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้องกำหนด --nonce ของ 2 ลายเซ็นให้ไม่ชน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
+    (17, 30): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง bump nonce เหยื่อก่อนให้ใบบางใบ 'ไม่ตรง'; --auth ใส่ซ้ำได้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
