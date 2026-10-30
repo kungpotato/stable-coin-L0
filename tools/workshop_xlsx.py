@@ -832,6 +832,10 @@ steps = [
      "stable-coin-L0/lz-potato", "anvil --hardfork prague; forge create MockUSDT และ Sweeper7702 (--constructor-args ไว้ท้ายสุด); mint; cast wallet sign-auth + cast send --auth (โจรส่ง); cast send sweep([USDT]); revoke โดย sponsor ส่ง",
      "delegate: code B14 = 0xef0100+sweeper; sweep: USDT 1,000,000 และ ETH ทั้งหมดไป DROP ใน tx เดียว; revoke: code กลับเป็น 0x", "5042b04",
      "ครบ 8 ขั้น เจอ 2 จุด: (ก) --constructor-args เป็น variadic กลืน flag ต้องวางท้ายสุด (ข) หลัง sweep เหยื่อ ETH=0 จ่าย gas revoke เองไม่ได้ และ self-sign+self-send revoke ไม่ติด (nonce ชน) ต้องให้ sponsor ส่ง", "ผ่าน"),
+    (17, 28, "หลัง revoke สั่ง sweep ซ้ำ เกิดอะไรขึ้น", "ตรวจว่าการถอน delegate ตัดสิทธิ์โจรได้จริงหรือแค่หยุดชั่วคราว",
+     "stable-coin-L0/lz-potato", "ไล่ flow ถึง revoke (code=0x) เติมเงินเหยื่อใหม่ แล้ว cast send B14 sweep(address[]) อีกครั้งโดยโจร",
+     "tx สำเร็จ status 1 ไม่ revert แต่ balance เหยื่อและโจรไม่เปลี่ยน (no-op)", "(commit นี้)",
+     "code=0x เรียก sweep ที่ EOA ไม่มีโค้ด = tx เปล่า calldata ถูกเพิกเฉย เงินไม่ขยับ ยืนยัน revoke ตัดสิทธิ์ได้จริง ไม่ใช่แค่หยุดชั่วคราว", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1028,6 +1032,7 @@ RERUN = {
     (17, 25): ("ได้", "เขียนทับ narration-th.md/.srt ถ้าเปลี่ยน SLOW หรือความยาวฉาก ต้องแก้ DUR ใน script ให้ตรง"),
     (17, 26): ("ได้", "อ่านอย่างเดียว ตัวเลขบาทเปลี่ยนตามราคา ETH และค่าเงินบาท ณ เวลาที่รัน"),
     (17, 27): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง anvil --hardfork prague; key ทดสอบของ anvil ล้วน; ปิด anvil และล้าง scratchpad เมื่อจบ"),
+    (17, 28): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต่อจาก 17.27 ในสถานะ revoke แล้ว; ปิด anvil และล้าง scratchpad เมื่อจบ"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
