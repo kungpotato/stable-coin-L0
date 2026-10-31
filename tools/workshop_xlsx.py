@@ -852,6 +852,10 @@ steps = [
      "stable-coin-L0/lz-potato", "เขียน script/deploy-sim-7702.sh; ทดสอบทั้ง source (zsh) และ ./ (bash) บน anvil",
      "source แล้ว export USDT และ SWEEP เข้า shell; sweeper มี bytecode จริง; รองรับทั้ง zsh/bash ไม่ไปแก้ option ของ shell", "5fe5be4",
      "แก้จาก snippet เดิม: --constructor-args ต้องท้ายสุด; ใช้ BASH_SOURCE หรือ $0 หา root; ไม่ใช้ set -e กันค้างใน shell ตอน source; ดึง ATK_PK จาก ANVIL_LOG ได้", "ผ่าน"),
+    (17, 32, "จำลอง HSM/signing service: โจรขอลายเซ็นได้แต่ไม่รู้ PK", "ทำให้เหมือนเคสจริงที่ key อยู่ในระบบเซ็น โจรยืมปากกาเซ็นไม่ได้เห็น key และโชว์ว่า policy บล็อกโอนตรงแต่ปล่อย 7702",
+     "stable-coin-L0/forensics/binance-2026-10-29/sim", "python3 signer.py (ถือ SIGNER_KEY ในโปรเซสเดียว เปิด /sign-auth และ /sign-transfer ที่มี policy); ฝั่งโจร unset HOT_PK แล้ว curl ขอลายเซ็น; เอา SIG ไป cast send --auth + sweep",
+     "sign-transfer -> HTTP 403 DENY; sign-auth -> คืน SIG; โจรที่ไม่มี HOT_PK delegate + sweep จนเหยื่อ USDT=0 ได้", "(commit นี้)",
+     "แยก trust boundary ด้วยโปรเซส: key อยู่ใน env ของ signer เท่านั้น shell โจร HOT_PK ว่าง; พิสูจน์จุดบอด policy ที่ 7702 payload ไม่เข้าข่าย 'โอนเงิน' เลยถูกเซ็นให้", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
