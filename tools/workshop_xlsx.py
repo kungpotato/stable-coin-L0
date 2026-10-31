@@ -856,6 +856,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/sim", "python3 signer.py (ถือ SIGNER_KEY ในโปรเซสเดียว เปิด /sign-auth และ /sign-transfer ที่มี policy); ฝั่งโจร unset HOT_PK แล้ว curl ขอลายเซ็น; เอา SIG ไป cast send --auth + sweep",
      "sign-transfer -> HTTP 403 DENY; sign-auth -> คืน SIG; โจรที่ไม่มี HOT_PK delegate + sweep จนเหยื่อ USDT=0 ได้", "65a1c0a",
      "แยก trust boundary ด้วยโปรเซส: key อยู่ใน env ของ signer เท่านั้น shell โจร HOT_PK ว่าง; พิสูจน์จุดบอด policy ที่ 7702 payload ไม่เข้าข่าย 'โอนเงิน' เลยถูกเซ็นให้", "ผ่าน"),
+    (17, 33, "ทำสไลด์ presentation EIP-7702 สำหรับคนทั่วไป", "ให้คนไม่สาย tech เข้าใจเหตุการณ์ ใช้เปรียบเทียบตู้เซฟ/หุ่นยนต์/ใบมอบอำนาจ/บัตรคิว ไม่ลง command",
+     "stable-coin-L0/forensics/binance-2026-10-29", "เขียน present-7702.html (สไลด์ self-contained 11 หน้า เลื่อนด้วยลูกศร/แตะ/ปุ่ม นับหน้า+progress bar รองรับมือถือและ dark)",
+     "ไฟล์ HTML เปิดในเบราว์เซอร์ได้ ไม่ต้องพึ่ง lib ภายนอก", "(commit นี้)",
+     "11 สไลด์: ปัญหา -> 7702 คืออะไร -> ระบบเซ็นถูกยืมมือ -> 4 ก้าว -> nonce=บัตรคิว -> ยอดเสียหาย -> revoke ต้องครบ -> ป้องกันต้นเหตุ -> สรุป; built-in browser เปิด file:// ไม่ได้ เลยส่งไฟล์ให้ผู้ใช้โดยตรง", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),

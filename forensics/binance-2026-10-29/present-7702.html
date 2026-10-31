@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เงินหายในคลิกเดียว</title>
+<meta name="description" content="เล่าเหตุการณ์กระเป๋าเงิน exchange ถูกดูดด้วยเทคนิค EIP-7702 แบบเข้าใจง่าย ไม่ต้องรู้เรื่องเทคนิค">
+<style>
+:root{
+  --bg:#0b1020; --card:#141b33; --ink:#eef2ff; --muted:#9aa7c7;
+  --accent:#6ea8fe; --good:#49d6a0; --bad:#ff6b7a; --warn:#ffcf5c;
+  --line:#26314f; --shadow:0 20px 60px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:radial-gradient(1200px 700px at 70% -10%, #1a2b4d 0, transparent 60%),var(--bg);
+  color:var(--ink); font-family:"Noto Sans Thai","Segoe UI",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+#stage{height:100vh;display:flex;align-items:center;justify-content:center;padding:clamp(16px,4vw,48px)}
+.slide{
+  display:none; width:min(960px,100%); max-height:88vh; overflow:auto;
+  background:linear-gradient(180deg,#161e38,#111830); border:1px solid var(--line);
+  border-radius:24px; box-shadow:var(--shadow); padding:clamp(24px,5vw,56px); animation:in .45s ease;
+}
+.slide.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
+.kicker{display:inline-block;font-size:14px;letter-spacing:.12em;color:var(--accent);
+  background:rgba(110,168,254,.12);border:1px solid rgba(110,168,254,.3);padding:5px 12px;border-radius:999px;margin-bottom:20px}
+h1{font-size:clamp(30px,6vw,56px);line-height:1.1;margin:.1em 0 .35em;font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(24px,4.4vw,40px);line-height:1.15;margin:.1em 0 .5em;font-weight:800}
+p{font-size:clamp(17px,2.4vw,22px);line-height:1.6;color:var(--ink);margin:.4em 0}
+.muted{color:var(--muted)}
+.big{font-size:clamp(20px,3vw,26px)}
+.lead{font-size:clamp(19px,2.6vw,24px);color:var(--muted)}
+ul{margin:.6em 0;padding-left:0;list-style:none}
+li{font-size:clamp(17px,2.4vw,22px);line-height:1.55;margin:.55em 0;padding-left:1.9em;position:relative}
+li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px;background:var(--accent)}
+li.good::before{background:var(--good)} li.bad::before{background:var(--bad)} li.warn::before{background:var(--warn)}
+.steps{display:grid;gap:14px;margin-top:14px}
+.step{display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:start;
+  background:#0f1730;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.num{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:22px;
+  background:linear-gradient(180deg,#2a3a63,#1d2a4d);color:var(--accent);border:1px solid #33467a}
+.step h3{margin:.1em 0 .2em;font-size:clamp(18px,2.6vw,22px)}
+.step p{margin:0;font-size:clamp(15px,2.2vw,18px);color:var(--muted)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+@media(max-width:640px){.cmp{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:#0f1730}
+.box.ok{border-color:rgba(73,214,160,.4)} .box.no{border-color:rgba(255,107,122,.4)}
+.box h3{margin:.1em 0 .4em;font-size:20px}
+.tag{font-size:13px;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:999px}
+.tag.ok{color:#071;background:rgba(73,214,160,.18);color:var(--good)}
+.tag.no{color:var(--bad);background:rgba(255,107,122,.15)}
+.fig{font-size:clamp(40px,9vw,84px);font-weight:800;letter-spacing:-.02em;line-height:1}
+.fig.bad{color:var(--bad)} .fig.good{color:var(--good)} .fig.warn{color:var(--warn)}
+.row{display:flex;gap:28px;flex-wrap:wrap;margin-top:10px}
+.stat{flex:1;min-width:150px;background:#0f1730;border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.stat .n{font-size:clamp(26px,4.5vw,38px);font-weight:800}
+.stat .l{color:var(--muted);font-size:15px;margin-top:4px}
+.analogy{display:flex;gap:16px;align-items:center;background:rgba(255,207,92,.08);
+  border:1px solid rgba(255,207,92,.28);border-radius:16px;padding:16px 20px;margin-top:16px}
+.analogy .ic{font-size:34px}
+.analogy p{margin:0;font-size:clamp(16px,2.3vw,19px)}
+.center{text-align:center}
+/* chrome */
+#bar{position:fixed;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--good));width:0;transition:width .35s;z-index:5}
+#nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;z-index:5}
+.btn{appearance:none;border:1px solid var(--line);background:#141d38;color:var(--ink);
+  width:46px;height:46px;border-radius:12px;font-size:20px;cursor:pointer;display:grid;place-items:center}
+.btn:hover{border-color:var(--accent)} .btn:disabled{opacity:.35;cursor:default}
+#count{color:var(--muted);font-variant-numeric:tabular-nums;min-width:58px;text-align:center}
+.hint{position:fixed;bottom:22px;right:22px;color:var(--muted);font-size:13px;z-index:5}
+@media(max-width:640px){.hint{display:none}}
+:root:not([data-theme="light"]) body{} /* dark is default */
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+  <section class="slide on center">
+    <span class="kicker">เหตุการณ์จริง · 29 ต.ค. 2026</span>
+    <h1>เงินหมื่นล้าน<br>หายในคลิกเดียว</h1>
+    <p class="lead">กระเป๋าเงินของ exchange ใหญ่ถูกดูดเกลี้ยงด้วยเทคนิคใหม่<br>เรื่องนี้เล่าแบบไม่ต้องรู้เรื่องเทคนิค</p>
+    <div class="analogy"><div class="ic">🔑</div><p>ไม่ใช่การเดารหัสผ่าน ไม่ใช่การแฮ็กรหัส แต่เป็นการ <b>“ยืมลายเซ็น”</b> ของเจ้าของไปใช้</p></div>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">ตั้งต้น</span>
+    <h2>กระเป๋าเงินคริปโตคืออะไร</h2>
+    <p>นึกถึง <b>ตู้เซฟ</b> ที่เปิดได้ด้วย <b>ลายเซ็นของเจ้าของเท่านั้น</b> เงินจะขยับก็ต่อเมื่อเจ้าของเซ็นอนุมัติ</p>
+    <div class="analogy"><div class="ic">🏦</div><p>Exchange เก็บเงินลูกค้ารวมไว้ในตู้เซฟไม่กี่ใบ ใบนึงมีเงิน <b>หลายหมื่นล้านบาท</b> — ยิ่งรวมไว้เยอะ ยิ่งเป็นเป้า</p></div>
+    <p class="muted">ปกติตู้เซฟแบบนี้ “ไม่มีสมอง” ของตัวเอง ทำได้แค่สิ่งที่เจ้าของเซ็นสั่งทีละครั้ง</p>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">เทคโนโลยีใหม่</span>
+    <h2>กฎใหม่: ตู้เซฟติด “หุ่นยนต์ผู้ช่วย” ได้</h2>
+    <p>ปี 2025 อีเธอเรียมเพิ่มความสามารถ (ชื่อทางเทคนิค EIP-7702): เจ้าของ <b>ติดตั้งโปรแกรมผู้ช่วย</b> ไว้ในตู้เซฟได้ เพื่อให้ทำงานอัตโนมัติสะดวกขึ้น</p>
+    <div class="analogy"><div class="ic">🤖</div><p>เหมือนเอา <b>หุ่นยนต์</b> ไปไว้ในตู้เซฟ ตั้งไว้ว่า “ถ้ามีคนกดปุ่ม ให้โกยของตามคำสั่ง” — สะดวกถ้าใช้ดี แต่อันตรายถ้าหุ่นยนต์เป็นของคนร้าย</p></div>
+    <p class="muted">การติดตั้งนี้ต้องมี <b>ลายเซ็นของเจ้าของ</b> อนุมัติ 1 ครั้ง</p>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">จุดพลิก</span>
+    <h2>โจรไม่ได้ขโมยกุญแจ — แต่ยืมมือคนเฝ้าเซ็นให้</h2>
+    <p>Exchange ไม่ได้เก็บกุญแจเป็นไฟล์ แต่มี <b>“ระบบเซ็น”</b> คอยเซ็นให้ตามคำขอ โจรเจาะเข้าระบบนี้ได้</p>
+    <ul>
+      <li class="bad">ขอให้ระบบเซ็น “ใบติดตั้งหุ่นยนต์” ให้ → ระบบไม่ทันเอะใจ เพราะใบนี้หน้าตาไม่เหมือนการโอนเงิน</li>
+      <li class="warn">กุญแจจริงอาจไม่เคยหลุดออกมาเลย — แต่โจร “สั่งเซ็น” ได้ ก็เท่ากับคุมตู้เซฟได้</li>
+    </ul>
+    <div class="analogy"><div class="ic">✍️</div><p>เหมือนโจรไม่ได้ขโมยตรายางของบริษัท แต่แอบสั่งให้พนักงานประทับตราให้ในเอกสารที่ดูไม่มีพิษภัย</p></div>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">ลงมือ · 4 ก้าว</span>
+    <h2>เกิดอะไรขึ้นในไม่กี่นาที</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><h3>ได้ลายเซ็นอนุมัติมา</h3><p>หลอกให้ระบบเซ็น “ใบติดตั้งหุ่นยนต์” ของโจรลงในตู้เซฟ</p></div></div>
+      <div class="step"><div class="num">2</div><div><h3>ติดตั้งหุ่นยนต์</h3><p>ส่งใบนั้นขึ้นระบบ ตู้เซฟของ exchange ตอนนี้มีหุ่นยนต์ของโจรฝังอยู่ (เงินยังไม่ขยับ)</p></div></div>
+      <div class="step"><div class="num">3</div><div><h3>กดปุ่มโกย</h3><p>โจรกดสั่งหุ่นยนต์ครั้งเดียว โกยทั้งเหรียญหลักและเหรียญย่อยอีกหลายสิบชนิดออกพร้อมกัน</p></div></div>
+      <div class="step"><div class="num">4</div><div><h3>เงินออกเกลี้ยง</h3><p>ทุกอย่างจบในธุรกรรมเดียว ไม่ต้องขอให้เจ้าของเซ็นอีกเลย</p></div></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">ทำไมต้องเซ็นหลายใบ</span>
+    <h2>ใบอนุมัติเหมือน “บัตรคิว”</h2>
+    <p>ใบติดตั้งหุ่นยนต์ใช้ได้เฉพาะเมื่อ <b>เลขคิวตรงพอดี</b> แต่ตู้เซฟของ exchange มีคนใช้ตลอดเวลา เลขคิวขยับทุกวินาที</p>
+    <ul>
+      <li class="warn">โจรไม่รู้ว่าตอนส่งใบขึ้นระบบ เลขคิวจะเป็นเท่าไหร่</li>
+      <li>เลยให้เซ็น <b>เผื่อไว้หลายสิบใบ</b> ไล่เลขคิวติดกัน ให้มั่นใจว่ามีสักใบตรง</li>
+      <li class="bad">ใบที่เหลือกลายเป็น <b>“ใบสำรอง”</b> — ไว้ติดตั้งหุ่นยนต์ซ้ำถ้าโดนถอด</li>
+    </ul>
+    <div class="analogy"><div class="ic">🎟️</div><p>เหมือนปลอมบัตรคิวไว้หลายใบ เผื่อไม่รู้ว่าจะถึงคิวเลขไหน ใบที่ใช้ไม่ได้ก็เก็บไว้ลองใหม่</p></div>
+  </section>
+
+  <section class="slide center">
+    <span class="kicker">ความเสียหาย</span>
+    <h2>รวมแล้วเท่าไหร่</h2>
+    <div class="row">
+      <div class="stat"><div class="n" style="color:var(--bad)">~107,400<span style="font-size:.5em"> ล้านบาท</span></div><div class="l">มูลค่ารวมที่ถูกขโมย</div></div>
+      <div class="stat"><div class="n" style="color:var(--good)">~67,400<span style="font-size:.5em"> ล้านบาท</span></div><div class="l">แช่แข็งไว้ได้ทัน</div></div>
+      <div class="stat"><div class="n" style="color:var(--warn)">~32,700<span style="font-size:.5em"> ล้านบาท</span></div><div class="l">หนีไปได้ (แช่แข็งไม่ได้)</div></div>
+    </div>
+    <p class="muted" style="margin-top:18px">เงินบางส่วน (stablecoin) ผู้ออกเหรียญสั่ง “แช่แข็ง” ได้ แต่ต้องแข่งกับเวลา — โจรย้ายเงินก้อนใหญ่ออกภายใน <b>9 นาที</b> ก่อนโดนแช่แข็ง</p>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">แก้เกมยังไง</span>
+    <h2>ถอนหุ่นยนต์ออก — แต่ต้องทำให้ครบ</h2>
+    <div class="cmp">
+      <div class="box no"><span class="tag no">ไม่พอ</span><h3>ถอดหุ่นยนต์เฉยๆ</h3><p class="muted">โจรยังมี “ใบสำรอง” ติดตั้งหุ่นยนต์กลับมาได้ทันที</p></div>
+      <div class="box ok"><span class="tag ok">ถึงจะปิดจริง</span><h3>ถอด + ทำให้ใบสำรองหมดอายุ</h3><p class="muted">เดินเลขคิวให้เลยใบสุดท้าย ใบสำรองทั้งหมดใช้ไม่ได้อีก</p></div>
+    </div>
+    <p class="muted" style="margin-top:14px">ในเหตุการณ์จริง กว่าจะถอดก็ผ่านไปเกือบ 4 ชั่วโมง — ตอนนั้นเลขคิวเลยช่วงใบสำรองไปแล้ว เลยปิดได้สำเร็จ</p>
+  </section>
+
+  <section class="slide">
+    <span class="kicker">ป้องกันที่ต้นเหตุ</span>
+    <h2>บทเรียนที่สำคัญกว่า</h2>
+    <ul>
+      <li class="good"><b>อย่าเก็บเงินกองใหญ่ไว้ที่เดียว</b> ตู้เซฟที่ไม่มีเพดาน ธุรกรรมเดียวเอาออกได้หมด — ควรใส่ระบบที่มีลิมิต/ดีเลย์ หรือกระจายหลายใบ</li>
+      <li class="good"><b>ระบบเซ็นต้องรู้จักใบแปลกหน้า</b> ตั้งกฎให้บล็อก “ใบติดตั้งหุ่นยนต์” และต้องมีคนอนุมัติหลายคน</li>
+      <li class="good"><b>แช่แข็งให้เร็ว</b> ความเร็วสำคัญพอๆ กับความสามารถในการแช่แข็ง</li>
+      <li class="warn"><b>ระบบเตือนภัยช่วยได้ แต่เป็นด่านท้าย</b> มันบอกว่า “มีหุ่นยนต์โผล่” ได้ แต่ถ้าโจรติดตั้งแล้วโกยในก้าวเดียว ก็อาจเตือนไม่ทัน</li>
+    </ul>
+  </section>
+
+  <section class="slide center">
+    <span class="kicker">สรุป</span>
+    <h1>ความสะดวกอย่างใหม่<br>= ช่องโหว่อย่างใหม่</h1>
+    <p class="lead">ความสามารถ “ติดหุ่นยนต์ในตู้เซฟ” มีไว้ให้สะดวก<br>แต่ถ้าคุมระบบเซ็นไม่ดี มันเปลี่ยนลายเซ็นใบเดียวให้กลายเป็นการดูดเงินทั้งกระเป๋า</p>
+    <div class="analogy" style="justify-content:center"><div class="ic">🛡️</div><p>กันที่ต้นเหตุ (อย่ากองเงินที่เดียว + คุมระบบเซ็น) ดีกว่าวิ่งไล่ตามหลังเงินออก</p></div>
+  </section>
+
+</div>
+
+<div id="nav">
+  <button class="btn" id="prev" aria-label="ก่อนหน้า">‹</button>
+  <span id="count">1 / 1</span>
+  <button class="btn" id="next" aria-label="ถัดไป">›</button>
+</div>
+<div class="hint">← → เลื่อนสไลด์ · กด F เต็มจอ</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+const bar=document.getElementById('bar'),count=document.getElementById('count');
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+  count.textContent=(i+1)+' / '+slides.length;
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  prev.disabled=i===0; next.disabled=i===slides.length-1;
+  slides[i].scrollTop=0;
+}
+prev.onclick=()=>show(i-1); next.onclick=()=>show(i+1);
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')show(i+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+  else if(e.key==='Home')show(0);
+  else if(e.key==='End')show(slides.length-1);
+  else if(e.key==='f'||e.key==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+});
+let x0=null;
+addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)show(i+(dx<0?1:-1));x0=null;},{passive:true});
+show(0);
+</script>
+</body>
+</html>
