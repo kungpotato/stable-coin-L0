@@ -1061,6 +1061,7 @@ RERUN = {
     (17, 30): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ต้อง bump nonce เหยื่อก่อนให้ใบบางใบ 'ไม่ตรง'; --auth ใส่ซ้ำได้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 31): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ใช้ 2 wallet แยกเส้นช่องโหว่/เส้นแก้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 32): ("ได้", "source script/deploy-sim-7702.sh ซ้ำได้; ต้องเปิด anvil และตั้ง ATK_PK (หรือ ANVIL_LOG) ก่อน"),
+    (17, 33): ("ได้", "เปิด present-7702.html ในเบราว์เซอร์; แก้เนื้อหาในไฟล์ตรงๆ ไม่ต้องรันอะไร"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
