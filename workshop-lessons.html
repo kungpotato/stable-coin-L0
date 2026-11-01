@@ -1818,9 +1818,11 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
       <tr><td>โครงสร้าง</td><td>contract เดียว <b>ไม่มี proxy</b> (ตรงกับ <code>0xdAC17…ec7</code> จริง)</td><td><b>ERC1967 proxy</b> — logic อยู่หลัง proxy อัปเกรดได้</td></tr>
       <tr><td>freeze</td><td><code>addBlackList</code> / <code>removeBlackList</code> ฝังในตัว</td><td><code>blacklist</code> / <code>unBlacklist</code> อยู่ใน logic เรียกผ่าน proxy</td></tr>
       <tr><td>seize (เผ่ายอด)</td><td><b>มี</b> — <code>destroyBlackFunds</code> เผายอด ลด totalSupply</td><td><b>ไม่มี</b> — freeze ได้อย่างเดียว ยอดค้างไม่ถูกเผา</td></tr>
+      <tr><td>คืนเงินเหยื่อ</td><td><b>ได้</b> — <code>issue</code> mint ชดใหม่ (burn-and-remint)</td><td>—</td></tr>
       <tr><td>ใครกดได้</td><td>owner (Tether) เท่านั้น</td><td>blacklister (Circle) เท่านั้น</td></tr>
     </tbody>
   </table>
+  <div class="callout note"><b>burn แล้วคืนได้ — ต่างกับ ETH</b><p>destroyBlackFunds เผาถาวรก็จริง แต่เพราะ Tether คุม supply จึง <code>issue</code> mint ก้อนใหม่ส่งคืนเหยื่อได้ (ปกติต้องมีคำสั่งศาลก่อน) เทส <code>test_usdtBurnAndRemintReturnsFundsToVictim</code> โชว์ครบวงจร freeze → burn → issue → ส่งเหยื่อ โดย totalSupply สุทธิไม่เปลี่ยน เคยทำจริงเช่นเคส romance scam (~$900K) และ Drift (~$148M) — ส่วน ETH ที่หลุดไปแล้ว ไม่มีใคร mint คืนได้</p></div>
   <p>test <code>test/StablecoinFreeze.t.sol</code> (ผ่าน 8/8) ยืนยัน: freeze แล้วโจรโอนไม่ได้ทั้งสองเหรียญ, เฉพาะ issuer freeze ได้, USDT seize+burn ได้ แต่ USDC ทำไม่ได้, และ <code>vm.load</code> ที่ ERC1967 impl slot ยืนยันว่า USDC มี logic หลัง proxy ส่วน USDT ไม่มี</p>
   <div class="callout note"><b>proxy ไม่ใช่หัวใจ</b><p>หัวใจของ "freeze ได้" คือ <b>มี owner key ที่เรียก blacklist ได้หรือเปล่า</b> ไม่ใช่ proxy — USDT ฝังฟังก์ชันตรงๆ จึงไม่ต้องมี proxy ก็ freeze ได้เท่ากัน proxy เป็นแค่ "วิธีทำให้อัปเกรด logic ได้" ต่างหาก</p></div>
   <div class="callout bad"><b>ทำไมโจรรีบ swap เป็น ETH</b><p>freeze เป็น <b>centralized trust</b> ต้องรอ Binance แจ้ง issuer แล้ว issuer เข้ากด = เป็น <b>race</b> (test <code>test_thiefWinsIfTheyMoveBeforeTheFreeze</code> โชว์ว่าถ้าโจรโอนก่อน freeze landed เงินหลุด) และ <b>ETH ไม่มีปุ่ม blacklist</b> ใครก็ freeze ไม่ได้ (<code>test_ethCannotBeFrozenByAnyone</code>) โจรเลยรีบแปลง stablecoin → ETH/DEX ให้เร็วที่สุด ส่วนที่ยังเป็น stablecoin ตอน freeze ทันเท่านั้นที่ช่วยไว้ได้</p></div>

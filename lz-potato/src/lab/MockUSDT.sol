@@ -36,6 +36,16 @@ contract MockUSDT is ERC20 {
         _mint(_to, _amount);
     }
 
+    /// @notice Issuer mints fresh supply to its own treasury (owner). This is the real Tether
+    ///         `issue` primitive — the second half of burn-and-remint recovery: after
+    ///         destroyBlackFunds burns a thief's stolen USDT, the issuer issues replacement
+    ///         tokens and (off-chain, usually under a court order) sends them to the victim.
+    /// @dev Replacing burned tokens is possible only because the issuer controls supply; a burned
+    ///      ETH balance can never be re-minted by anyone.
+    function issue(uint256 _amount) external onlyOwner {
+        _mint(owner, _amount);
+    }
+
     /// @notice Freeze an address: it can neither send nor receive USDT until removed.
     function addBlackList(address _user) external onlyOwner {
         isBlackListed[_user] = true;

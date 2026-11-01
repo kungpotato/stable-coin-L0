@@ -123,6 +123,31 @@ contract StablecoinFreezeTest is Test {
         assertEq(usdt.balanceOf(cashOut), STOLEN, "already gone before the freeze landed");
     }
 
+    /// @dev The full Tether recovery: freeze -> seize (burn) -> issue replacement -> hand to victim.
+    ///      Supply ends unchanged and the victim is made whole — impossible for burned ETH.
+    function test_usdtBurnAndRemintReturnsFundsToVictim() public {
+        address victim = makeAddr("victim");
+        uint256 supplyBefore = usdt.totalSupply();
+
+        vm.startPrank(tether);
+        usdt.addBlackList(thief);
+        usdt.destroyBlackFunds(thief);          // stolen tokens burned, supply drops
+        assertEq(usdt.totalSupply(), supplyBefore - STOLEN);
+
+        usdt.issue(STOLEN);                      // mint replacement to the issuer treasury
+        usdt.transfer(victim, STOLEN);           // ...then send it to the verified victim
+        vm.stopPrank();
+
+        assertEq(usdt.balanceOf(victim), STOLEN, "victim made whole");
+        assertEq(usdt.totalSupply(), supplyBefore, "net supply unchanged after burn+remint");
+    }
+
+    function test_onlyIssuerCanIssue() public {
+        vm.prank(thief);
+        vm.expectRevert("USDT: not issuer");
+        usdt.issue(STOLEN);
+    }
+
     /// @dev ETH has no issuer and no blacklist. Once the thief holds ETH, nobody can freeze it —
     ///      which is exactly why a drain swaps stablecoins to ETH as fast as possible.
     function test_ethCannotBeFrozenByAnyone() public {
