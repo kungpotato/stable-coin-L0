@@ -1827,6 +1827,14 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <div class="callout note"><b>proxy ไม่ใช่หัวใจ</b><p>หัวใจของ "freeze ได้" คือ <b>มี owner key ที่เรียก blacklist ได้หรือเปล่า</b> ไม่ใช่ proxy — USDT ฝังฟังก์ชันตรงๆ จึงไม่ต้องมี proxy ก็ freeze ได้เท่ากัน proxy เป็นแค่ "วิธีทำให้อัปเกรด logic ได้" ต่างหาก</p></div>
   <div class="callout bad"><b>ทำไมโจรรีบ swap เป็น ETH</b><p>freeze เป็น <b>centralized trust</b> ต้องรอ Binance แจ้ง issuer แล้ว issuer เข้ากด = เป็น <b>race</b> (test <code>test_thiefWinsIfTheyMoveBeforeTheFreeze</code> โชว์ว่าถ้าโจรโอนก่อน freeze landed เงินหลุด) และ <b>ETH ไม่มีปุ่ม blacklist</b> ใครก็ freeze ไม่ได้ (<code>test_ethCannotBeFrozenByAnyone</code>) โจรเลยรีบแปลง stablecoin → ETH/DEX ให้เร็วที่สุด ส่วนที่ยังเป็น stablecoin ตอน freeze ทันเท่านั้นที่ช่วยไว้ได้</p></div>
 
+  <h4>พลังจริงของ proxy: upgrade logic ทั้งที่ address เดิม</h4>
+  <p>USDC V1 ไม่มี seize ก็จริง แต่เพราะเป็น proxy Circle จึง <b>เพิ่มได้ด้วยการ upgrade</b> โดยไม่ต้อง deploy token ใหม่ เราทำ <code>MockUSDC</code> เป็น <b>transparent admin proxy</b> (เลียน FiatTokenProxy จริง) + <code>MockUSDCLogicV2</code> ที่เพิ่ม <code>destroyBlackFunds</code> แล้วสาธิต upgrade สด: deploy logic ใหม่ → admin เรียก <code>upgradeTo</code> → <b>address เดิม balance เดิม blacklister เดิม แต่จู่ๆ seize ได้</b> (test <code>test_adminUpgradeAddsSeizeWithoutChangingAddressOrBalances</code>)</p>
+  <pre><code># อัปเกรดคือ deploy "logic ใหม่" ไม่ใช่ "USDC ใหม่" — address $USDC ไม่เปลี่ยน
+NEW_LOGIC=$(forge create src/lab/MockUSDC.sol:MockUSDCLogicV2 --private-key $ADMIN_PK ... | jq -r .deployedTo)
+cast send $USDC "upgradeTo(address)" $NEW_LOGIC --private-key $ADMIN_PK --rpc-url $RPC</code></pre>
+  <div class="callout note"><b>2 role แยกกัน: ADMIN ≠ ISS</b><p>transparent proxy มีกฎ "ถ้าคนเรียกเป็น admin → proxy ดักไว้ ไม่ delegate ไป logic" ดังนั้น <b>คนอัปเกรด (ADMIN) ต้องคนละ key กับคน freeze (ISS/blacklister)</b> ไม่งั้น ADMIN เรียก <code>blacklist</code>/<code>transfer</code> ไม่ได้เลย (โดน proxy ดัก) — USDC จริงก็แยกด้วยเหตุผลนี้ + แยกอำนาจ "คนแก้โค้ด ≠ คนกดแช่แข็ง" (test <code>test_onlyAdminCanUpgrade_andAdminIsNotTheBlacklister</code>)</p></div>
+  <p>นี่คือจุดที่นักวิจารณ์ในคดี Circle พูดถึง: "แก้โค้ดให้ seize ได้" = <b>upgrade logic ใหม่โดย address USDC ไม่เปลี่ยน ไม่กระทบ exchange/wallet ใด</b> — ทำได้ทางเทคนิคแน่นอน Circle แค่เลือกไม่ทำ</p>
+
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
     <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>
     <li>Binance 14 ถูกผูกด้วย EIP-7702 ผ่าน authorization ที่ใช้ nonce ติดกัน 50 ตัว แล้วถูกกวาดใน tx เดียวหลังจากนั้น 3 นาที</li>

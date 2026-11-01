@@ -3,7 +3,7 @@ pragma solidity ^0.8.22;
 
 import {Test} from "forge-std/Test.sol";
 import {MockUSDT} from "../src/lab/MockUSDT.sol";
-import {MockUSDC, MockUSDCLogic} from "../src/lab/MockUSDC.sol";
+import {MockUSDC, MockUSDCLogic, MockUSDCLogicV2} from "../src/lab/MockUSDC.sol";
 
 /// @notice The "stop-the-bleeding" layer the Binance 14 drain (2026-10-29) actually relied on.
 /// @dev The 7702 sweep itself is unstoppable — it lands in one tx. What limited the net loss was
@@ -13,7 +13,8 @@ import {MockUSDC, MockUSDCLogic} from "../src/lab/MockUSDC.sol";
 contract StablecoinFreezeTest is Test {
     // Issuers (the only keys that can freeze).
     address tether = makeAddr("tether");
-    address circle = makeAddr("circle");
+    address circle = makeAddr("circle"); // USDC blacklister (ISS) — freezes
+    address admin = makeAddr("admin"); // USDC proxy admin (ADMIN) — upgrades only, a DIFFERENT key
     // The address the drain swept funds into.
     address thief = makeAddr("thief");
     address cashOut = makeAddr("cashOut"); // where the thief tries to move/launder funds
@@ -28,7 +29,7 @@ contract StablecoinFreezeTest is Test {
         usdt = new MockUSDT();
 
         vm.prank(circle);
-        usdc = MockUSDCLogic(address(new MockUSDC(circle)));
+        usdc = MockUSDCLogic(address(new MockUSDC(admin, circle)));
 
         // The sweep already happened: stolen stablecoins now sit in the thief's address.
         usdt.mint(thief, STOLEN);
@@ -156,5 +157,58 @@ contract StablecoinFreezeTest is Test {
         (bool ok,) = cashOut.call{value: 100 ether}("");
         assertTrue(ok, "no one can stop a plain ETH transfer");
         assertEq(cashOut.balance, 100 ether);
+    }
+
+    // --- The proxy's real power: upgrade logic in place, address and balances unchanged --------
+
+    /// @dev V1 has no seize; calling destroyBlackFunds reverts (function doesn't exist). After the
+    ///      admin upgrades to V2, the SAME address with the SAME balances suddenly can seize —
+    ///      proving why "Circle could add it by upgrading" is technically true.
+    function test_adminUpgradeAddsSeizeWithoutChangingAddressOrBalances() public {
+        address usdcAddr = address(usdc);
+
+        // V1: no seize function behind the proxy.
+        vm.prank(circle);
+        usdc.blacklist(thief);
+        (bool hasFn,) = usdcAddr.call(abi.encodeWithSignature("destroyBlackFunds(address)", thief));
+        assertFalse(hasFn, "V1 has no destroyBlackFunds");
+        assertEq(usdc.balanceOf(thief), STOLEN, "still frozen, not burned");
+
+        // Admin (NOT circle) deploys V2 logic and upgrades the proxy to it.
+        MockUSDCLogicV2 v2 = new MockUSDCLogicV2();
+        vm.prank(admin);
+        MockUSDC(payable(usdcAddr)).upgradeTo(address(v2));
+
+        // Same address, same balance — but now V2's code is live.
+        assertEq(MockUSDCLogicV2(usdcAddr).version(), 2, "upgrade took effect");
+        assertEq(usdc.balanceOf(thief), STOLEN, "balance survived the upgrade");
+        assertEq(usdc.blacklister(), circle, "state (blacklister) survived the upgrade");
+
+        // The seize that USDC could not do before now works, called by the blacklister.
+        uint256 supplyBefore = usdc.totalSupply();
+        vm.prank(circle);
+        MockUSDCLogicV2(usdcAddr).destroyBlackFunds(thief);
+        assertEq(usdc.balanceOf(thief), 0, "V2 can now seize");
+        assertEq(usdc.totalSupply(), supplyBefore - STOLEN);
+    }
+
+    function test_onlyAdminCanUpgrade_andAdminIsNotTheBlacklister() public {
+        MockUSDCLogicV2 v2 = new MockUSDCLogicV2();
+
+        // The blacklister (circle) is NOT the admin: its upgradeTo is delegated to the logic,
+        // which has no such function, so it reverts.
+        vm.prank(circle);
+        vm.expectRevert();
+        MockUSDC(payable(address(usdc))).upgradeTo(address(v2));
+
+        // The thief certainly cannot upgrade either.
+        vm.prank(thief);
+        vm.expectRevert();
+        MockUSDC(payable(address(usdc))).upgradeTo(address(v2));
+
+        // Only the admin key can.
+        vm.prank(admin);
+        MockUSDC(payable(address(usdc))).upgradeTo(address(v2));
+        assertEq(MockUSDCLogicV2(address(usdc)).version(), 2);
     }
 }
