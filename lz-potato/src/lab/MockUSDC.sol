@@ -167,6 +167,12 @@ contract MockUSDC is Proxy {
         ERC1967Utils.upgradeToAndCall(newImplementation, data);
     }
 
+    /// @dev Proxy only defines a payable fallback; add receive so plain-ETH sends also route to
+    ///      the logic (and to silence solc's missing-receive warning).
+    receive() external payable {
+        _fallback();
+    }
+
     function _implementation() internal view override returns (address) {
         return ERC1967Utils.getImplementation();
     }
