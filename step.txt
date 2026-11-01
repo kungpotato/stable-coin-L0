@@ -101,3 +101,27 @@ cast send $USDT "transfer(address,uint256)" $VICTIM 1175000000000000 --private-k
 # หลังแก้ contract แล้ว คนอัปเกรดโค้ด ≠ คนกด freeze
 # เรียกโดย proxy admin เท่านั้น
 cast send $USDC "upgradeTo(address)" $NEW_LOGIC --private-key $ADMIN_PK --rpc-url $RPC
+
+
+# 1) deploy USDC V1 = deploy proxy  (ข้างใน constructor deploy V1 logic + initialize ให้เอง)
+#    ⚠️ --constructor-args เรียง (admin, blacklister) และต้องอยู่ "ท้ายสุด"
+export USDC=$(forge create src/lab/MockUSDC.sol:MockUSDC \
+  --rpc-url $RPC --private-key $ISS_PK --broadcast --json \
+  --constructor-args $ADMIN $ISS | jq -r .deployedTo)
+
+# 2) deploy logic V2 (ตัวใหม่ ยังไม่ผูก proxy — ได้ address ใหม่ที่ไม่มีใครเรียกตรง)
+export V2=$(forge create src/lab/MockUSDC.sol:MockUSDCLogicV2 \
+  --rpc-url $RPC --private-key $ADMIN_PK --broadcast --json | jq -r .deployedTo)
+
+# 3) upgrade: ADMIN เท่านั้นเรียก upgradeTo บน proxy (address $USDC เดิมไม่เปลี่ยน)
+cast send $USDC "upgradeTo(address)" $V2 --private-key $ADMIN_PK --rpc-url $RPC
+
+echo "USDC(proxy)=$USDC   V2(logic)=$V2"
+
+
+# ยืนยันว่า upgrade ติด
+cast call $USDC "version()(uint256)" --rpc-url $RPC                 # → 2 (V1 ไม่มีฟังก์ชันนี้)
+# implementation() ถูก gate ด้วย ifAdmin → ต้องอ่านด้วย --from $ADMIN
+cast call $USDC "implementation()(address)" --from $ADMIN --rpc-url $RPC   # → $V2
+# หรืออ่าน ERC1967 impl slot ตรงๆ (ใครก็อ่านได้)
+cast storage $USDC 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc --rpc-url $RPC
