@@ -860,6 +860,10 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29", "เขียน present-7702.html (สไลด์ self-contained 11 หน้า เลื่อนด้วยลูกศร/แตะ/ปุ่ม นับหน้า+progress bar รองรับมือถือและ dark)",
      "ไฟล์ HTML เปิดในเบราว์เซอร์ได้ ไม่ต้องพึ่ง lib ภายนอก", "68dd6f3",
      "11 สไลด์: ปัญหา -> 7702 คืออะไร -> ระบบเซ็นถูกยืมมือ -> 4 ก้าว -> nonce=บัตรคิว -> ยอดเสียหาย -> revoke ต้องครบ -> ป้องกันต้นเหตุ -> สรุป; built-in browser เปิด file:// ไม่ได้ เลยส่งไฟล์ให้ผู้ใช้โดยตรง", "ผ่าน"),
+    (17, 34, "ทำ alert monitor (event-driven) + จำลองสดว่าจับ delegate/sweep/revoke ได้", "สร้างฝั่ง 'ตรวจจับ' ที่ workshop แนะนำ ระยะสั้น: เฝ้า code และ balance ของ hot wallet เตือนทันทีเมื่อถูก delegate หรือเงินไหลออก โดยไม่เปลือง CPU/RPC แบบ poll ด้วย timer",
+     "stable-coin-L0/forensics/binance-2026-10-29/sim", "เขียน alert.js (node WebSocket ในตัว ไม่ลง dependency): subscribe newHeads ให้ node push ทุกบล็อก แล้วเช็ก eth_getCode + eth_getBalance เฉพาะบล็อกนั้น แยก CRITICAL/CLEARED พร้อม action; รัน background แล้ว delegate -> sweep -> revoke บน anvil; แก้ Sweeper7702 ให้เหลือ GAS_KEEP 0.01 ETH (เริ่มเขียนเป็น alert.sh busy-poll แต่ผู้ใช้ให้เปลี่ยนเป็น event-driven แล้วลบตัวเก่า)",
+     "alert จับครบ 3 สัญญาณจาก newHeads: code 0x->0xef0100 (CRITICAL delegated blk 20), balance ดิ่ง 10000->0.01 (CRITICAL drop blk 21), code->0x (CLEARED blk 22); หลัง sweep เหยื่อเหลือ 0.01 ETH พอดี", "PENDING",
+     "เจอจุด: cast send --auth เด้ง prompt ยืนยัน ถ้า >/dev/null จะ abort เงียบ ต้อง echo y | ; event-driven ใช้ connection เดียวทำงานเฉพาะตอนมีบล็อก ไม่วนเปล่าเหมือน poll (กระเป๋าเดียว poll 1s = หลายแสน req/วัน); alert เป็นแค่ 'รู้ทัน' ไม่กันการขโมย (delegate+sweep ใน tx เดียวเงินหายก่อนบล็อกถัดไป) แต่ตัดวงจรได้ทัน freeze/trace; GAS_KEEP ทำให้ยอดไม่เป็น 0 เพื่อหลบ alert + ล่อ auto-rebalance เติมซ้ำ", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1062,6 +1066,7 @@ RERUN = {
     (17, 31): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "ใช้ 2 wallet แยกเส้นช่องโหว่/เส้นแก้; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 32): ("ได้", "source script/deploy-sim-7702.sh ซ้ำได้; ต้องเปิด anvil และตั้ง ATK_PK (หรือ ANVIL_LOG) ก่อน"),
     (17, 33): ("ได้", "เปิด present-7702.html ในเบราว์เซอร์; แก้เนื้อหาในไฟล์ตรงๆ ไม่ต้องรันอะไร"),
+    (17, 34): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "HOT=<hot wallet> RPC_WS=ws://127.0.0.1:8545 node alert.js (รัน background, ต้องมี ws endpoint); --auth ต้อง echo y | ; ปิด anvil และล้าง scratchpad เมื่อจบ"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

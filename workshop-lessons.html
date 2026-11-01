@@ -1801,6 +1801,15 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <p>ดูขั้นตอนเป็นวิดีโอ: <a href="forensics/binance-2026-10-29/diagram/eip7702-delegation.mp4">eip7702-delegation.mp4</a> (3:54 นาที มีบทบรรยาย <code>diagram/narration-th.md</code> และซับ <code>.srt</code>) และเป็นภาพทีละขั้น 21 ภาพใน <code>diagram/slides-7702/</code> สร้างจาก <code>diagram/make_video.py</code></p>
   <pre><code>cd lz-potato && forge test --match-contract Sweeper7702Test   <span class="c"># 5 passed</span></code></pre>
 
+  <h3>17.22 จำลอง alert ฝั่ง "ตรวจจับ" และข้อจำกัดของมัน</h3>
+  <p>ระยะสั้นที่ workshop แนะนำคือ <b>เฝ้า hot wallet</b> เราเขียน <code>forensics/binance-2026-10-29/sim/alert.js</code> แบบ <b>event-driven</b>: เปิด WebSocket เดียวที่อยู่ยาว subscribe <code>newHeads</code> ให้ node <b>push</b> มาเองเมื่อมีบล็อกใหม่ แล้วค่อยเช็ก <code>eth_getCode</code> กับ <code>eth_getBalance</code> เฉพาะบล็อกนั้น — ไม่ใช่วน timer เช็กรัวๆ รันจำลองสดบน anvil: delegate → sweep → revoke</p>
+  <pre><code>🔴 CRITICAL blk 20  …266 DELEGATED via EIP-7702 -> 0x1275…2487
+🔴 CRITICAL blk 21  …266 balance DROP 9999.99 ETH  (10000.00 -> 0.01)
+🟢 CLEARED  blk 22  …266 delegation removed (code back to 0x)</code></pre>
+  <p>alert จับครบทั้งสามสัญญาณ (สั่งงานจาก newHeads แต่ละบล็อก ไม่มีการวนเปล่า) และหลัง sweep เหยื่อเหลือ <b>0.01 ETH พอดี</b> เพราะเราแก้ <code>Sweeper7702</code> ให้เว้น <code>GAS_KEEP</code> ไว้ — เลียนแบบของจริงที่โจรไม่กวาดจนเกลี้ยง เพื่อให้กระเป๋ายังมี gas สั่งงานต่อ (re-delegate/กวาดซ้ำ) และยอดไม่เป็น 0 จะได้หลบ alert แบบ "balance = 0" กับล่อให้ระบบ auto-rebalance เติมเงินมาให้กวาดอีกรอบ</p>
+  <div class="callout note"><b>ทำไมต้อง event-driven ไม่ใช่ poll ด้วย timer</b><p>แบบ busy-poll (วน <code>sleep 1</code> แล้วยิง RPC ทุกวินาที) RAM ไม่กิน แต่เปลือง CPU และ RPC request ตลอดเวลาแม้ไม่มีอะไรเกิด กระเป๋าเดียวก็หลายแสน request/วัน แบบ event-driven ใช้โปรเซสเดียว connection เดียว ทำงานเฉพาะตอนมีบล็อกจริง เฝ้าหลายกระเป๋าพร้อมกันได้โดยไม่เปลืองเพิ่มตามจำนวน poll — รูปแบบเดียวกับ <code>npm run alert</code> ในบท 8.9 (เขียนด้วย node WebSocket ในตัว ไม่ต้องลง dependency)</p></div>
+  <div class="callout bad"><b>ขอบเขตของ alert</b><p>alert เป็นแค่ "รู้ทัน" ไม่ใช่ "กันได้": ถ้าโจรรวม delegate กับ sweep ไว้ใน tx เดียว เงินหายก่อนบล็อกถัดไปจะ push มาด้วยซ้ำ คุณค่าจริงของมันคือ <b>ตัดวงจร</b> — เจอปุ๊บ freeze การจ่าย, revoke (เผา nonce ก่อน), ย้ายเงินที่เหลือ, แจ้ง issuer ให้ blacklist ปลายทาง การกันจริงต้องย้ายเงินก้อนไปหลัง smart contract wallet + multisig ที่ 7702 แตะไม่ได้</p></div>
+
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
     <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>
     <li>Binance 14 ถูกผูกด้วย EIP-7702 ผ่าน authorization ที่ใช้ nonce ติดกัน 50 ตัว แล้วถูกกวาดใน tx เดียวหลังจากนั้น 3 นาที</li>
