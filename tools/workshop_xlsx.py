@@ -864,6 +864,11 @@ steps = [
      "stable-coin-L0/forensics/binance-2026-10-29/sim", "เขียน alert.js (node WebSocket ในตัว ไม่ลง dependency): subscribe newHeads ให้ node push ทุกบล็อก แล้วเช็ก eth_getCode + eth_getBalance เฉพาะบล็อกนั้น แยก CRITICAL/CLEARED พร้อม action; รัน background แล้ว delegate -> sweep -> revoke บน anvil; แก้ Sweeper7702 ให้เหลือ GAS_KEEP 0.01 ETH (เริ่มเขียนเป็น alert.sh busy-poll แต่ผู้ใช้ให้เปลี่ยนเป็น event-driven แล้วลบตัวเก่า)",
      "alert จับครบ 3 สัญญาณจาก newHeads: code 0x->0xef0100 (CRITICAL delegated blk 20), balance ดิ่ง 10000->0.01 (CRITICAL drop blk 21), code->0x (CLEARED blk 22); หลัง sweep เหยื่อเหลือ 0.01 ETH พอดี", "aad8244",
      "เจอจุด: cast send --auth เด้ง prompt ยืนยัน ถ้า >/dev/null จะ abort เงียบ ต้อง echo y | ; event-driven ใช้ connection เดียวทำงานเฉพาะตอนมีบล็อก ไม่วนเปล่าเหมือน poll (กระเป๋าเดียว poll 1s = หลายแสน req/วัน); alert เป็นแค่ 'รู้ทัน' ไม่กันการขโมย (delegate+sweep ใน tx เดียวเงินหายก่อนบล็อกถัดไป) แต่ตัดวงจรได้ทัน freeze/trace; GAS_KEEP ทำให้ยอดไม่เป็น 0 เพื่อหลบ alert + ล่อ auto-rebalance เติมซ้ำ", "ผ่าน"),
+
+    (17, 35, "จำลองชั้น 'หยุดเลือด' ของ stablecoin issuer: freeze/seize บน MockUSDT (ไม่มี proxy) + เพิ่ม MockUSDC (proxy)", "โชว์ว่าสิ่งที่จริงๆ จำกัดความเสียหาย Binance คือ issuer freeze ไม่ใช่การ revoke ของเหยื่อ และเทียบ USDT (ฟังก์ชันฝังในตัว contract) กับ USDC (ฟังก์ชันหลัง ERC1967 proxy) ว่าให้ผลเท่ากัน",
+     "stable-coin-L0/lz-potato", "แก้ MockUSDT.sol เพิ่ม owner + addBlackList/removeBlackList/destroyBlackFunds (บล็อก transfer ที่แตะ address ที่ freeze, mint/burn ยังเปิดให้ seize ได้); เพิ่ม MockUSDC.sol = MockUSDCLogic (blacklist/unBlacklist, freeze-only ไม่มี seize) หลัง ERC1967Proxy ที่ deploy+initialize เอง; เขียน test/StablecoinFreeze.t.sol แล้ว forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol'",
+     "ผ่านครบ 13: freeze หยุดโจรโอน (ทั้ง USDT/USDC), เฉพาะ issuer freeze ได้, USDT seize+burn ลด totalSupply ได้ แต่ USDC freeze-only (ยอดค้างไม่ถูกเผา), ถ้าโจรโอนก่อน freeze = หลุด (race), ETH freeze ไม่ได้เลย, และ vm.load ยืนยัน USDC มี impl หลัง proxy ส่วน USDT ไม่มี; แถมแก้ assert GAS_KEEP ใน Sweeper7702.t.sol ที่ค้าง", "PENDING",
+     "proxy ไม่ใช่หัวใจ — หัวใจคือ 'มี owner key ที่เรียก blacklist ได้หรือเปล่า'; USDT ฝังตรงจึงไม่ต้อง proxy, USDC ฝังหลัง proxy ได้ผลเท่ากัน; ต่างจริงคือ USDT seize/เผาได้ USDC แค่ freeze; ทั้งคู่เป็น centralized trust ต้องรอ issuer เข้ากด = เป็น race โจรเลยรีบ swap เป็น ETH ที่ freeze ไม่ได้", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1067,6 +1072,7 @@ RERUN = {
     (17, 32): ("ได้", "source script/deploy-sim-7702.sh ซ้ำได้; ต้องเปิด anvil และตั้ง ATK_PK (หรือ ANVIL_LOG) ก่อน"),
     (17, 33): ("ได้", "เปิด present-7702.html ในเบราว์เซอร์; แก้เนื้อหาในไฟล์ตรงๆ ไม่ต้องรันอะไร"),
     (17, 34): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "HOT=<hot wallet> RPC_WS=ws://127.0.0.1:8545 node alert.js (รัน background, ต้องมี ws endpoint); --auth ต้อง echo y | ; ปิด anvil และล้าง scratchpad เมื่อจบ"),
+    (17, 35): ("ได้", "forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

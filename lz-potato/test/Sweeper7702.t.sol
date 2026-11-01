@@ -43,9 +43,10 @@ contract Sweeper7702Test is Test {
         tokens[0] = address(usdt);
         vm.prank(attacker);
         Sweeper7702(payable(hot)).sweep(tokens);
-        assertEq(hot.balance, 0);
+        // GAS_KEEP (0.01 ETH) is left behind on purpose; everything else is swept.
+        assertEq(hot.balance, x.GAS_KEEP());
         assertEq(usdt.balanceOf(hot), 0);
-        assertEq(drop.balance, 167_464 ether);
+        assertEq(drop.balance, 167_464 ether - x.GAS_KEEP());
         assertEq(usdt.balanceOf(drop), 1_175_000_000e6);
     }
 

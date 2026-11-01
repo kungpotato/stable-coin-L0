@@ -1810,6 +1810,21 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
   <div class="callout note"><b>ทำไมต้อง event-driven ไม่ใช่ poll ด้วย timer</b><p>แบบ busy-poll (วน <code>sleep 1</code> แล้วยิง RPC ทุกวินาที) RAM ไม่กิน แต่เปลือง CPU และ RPC request ตลอดเวลาแม้ไม่มีอะไรเกิด กระเป๋าเดียวก็หลายแสน request/วัน แบบ event-driven ใช้โปรเซสเดียว connection เดียว ทำงานเฉพาะตอนมีบล็อกจริง เฝ้าหลายกระเป๋าพร้อมกันได้โดยไม่เปลืองเพิ่มตามจำนวน poll — รูปแบบเดียวกับ <code>npm run alert</code> ในบท 8.9 (เขียนด้วย node WebSocket ในตัว ไม่ต้องลง dependency)</p></div>
   <div class="callout bad"><b>ขอบเขตของ alert</b><p>alert เป็นแค่ "รู้ทัน" ไม่ใช่ "กันได้": ถ้าโจรรวม delegate กับ sweep ไว้ใน tx เดียว เงินหายก่อนบล็อกถัดไปจะ push มาด้วยซ้ำ คุณค่าจริงของมันคือ <b>ตัดวงจร</b> — เจอปุ๊บ freeze การจ่าย, revoke (เผา nonce ก่อน), ย้ายเงินที่เหลือ, แจ้ง issuer ให้ blacklist ปลายทาง การกันจริงต้องย้ายเงินก้อนไปหลัง smart contract wallet + multisig ที่ 7702 แตะไม่ได้</p></div>
 
+  <h3>17.23 ชั้น "หยุดเลือด" ที่ช่วย Binance จริง — issuer freeze (USDT vs USDC)</h3>
+  <p>7702 sweep <b>หยุดไม่ทัน</b> (จบใน tx เดียว) และการ revoke ของเหยื่อก็ช้าไป 226 นาที สิ่งที่จริงๆ จำกัดความเสียหายคือชั้นถัดมา: <b>ผู้ออก stablecoin แช่แข็ง address ของโจร</b> เราจำลองชั้นนี้ด้วย <code>MockUSDT.sol</code> กับ <code>MockUSDC.sol</code> ใน <code>lz-potato/src/lab/</code></p>
+  <table>
+    <thead><tr><th></th><th>MockUSDT</th><th>MockUSDC</th></tr></thead>
+    <tbody>
+      <tr><td>โครงสร้าง</td><td>contract เดียว <b>ไม่มี proxy</b> (ตรงกับ <code>0xdAC17…ec7</code> จริง)</td><td><b>ERC1967 proxy</b> — logic อยู่หลัง proxy อัปเกรดได้</td></tr>
+      <tr><td>freeze</td><td><code>addBlackList</code> / <code>removeBlackList</code> ฝังในตัว</td><td><code>blacklist</code> / <code>unBlacklist</code> อยู่ใน logic เรียกผ่าน proxy</td></tr>
+      <tr><td>seize (เผ่ายอด)</td><td><b>มี</b> — <code>destroyBlackFunds</code> เผายอด ลด totalSupply</td><td><b>ไม่มี</b> — freeze ได้อย่างเดียว ยอดค้างไม่ถูกเผา</td></tr>
+      <tr><td>ใครกดได้</td><td>owner (Tether) เท่านั้น</td><td>blacklister (Circle) เท่านั้น</td></tr>
+    </tbody>
+  </table>
+  <p>test <code>test/StablecoinFreeze.t.sol</code> (ผ่าน 8/8) ยืนยัน: freeze แล้วโจรโอนไม่ได้ทั้งสองเหรียญ, เฉพาะ issuer freeze ได้, USDT seize+burn ได้ แต่ USDC ทำไม่ได้, และ <code>vm.load</code> ที่ ERC1967 impl slot ยืนยันว่า USDC มี logic หลัง proxy ส่วน USDT ไม่มี</p>
+  <div class="callout note"><b>proxy ไม่ใช่หัวใจ</b><p>หัวใจของ "freeze ได้" คือ <b>มี owner key ที่เรียก blacklist ได้หรือเปล่า</b> ไม่ใช่ proxy — USDT ฝังฟังก์ชันตรงๆ จึงไม่ต้องมี proxy ก็ freeze ได้เท่ากัน proxy เป็นแค่ "วิธีทำให้อัปเกรด logic ได้" ต่างหาก</p></div>
+  <div class="callout bad"><b>ทำไมโจรรีบ swap เป็น ETH</b><p>freeze เป็น <b>centralized trust</b> ต้องรอ Binance แจ้ง issuer แล้ว issuer เข้ากด = เป็น <b>race</b> (test <code>test_thiefWinsIfTheyMoveBeforeTheFreeze</code> โชว์ว่าถ้าโจรโอนก่อน freeze landed เงินหลุด) และ <b>ETH ไม่มีปุ่ม blacklist</b> ใครก็ freeze ไม่ได้ (<code>test_ethCannotBeFrozenByAnyone</code>) โจรเลยรีบแปลง stablecoin → ETH/DEX ให้เร็วที่สุด ส่วนที่ยังเป็น stablecoin ตอน freeze ทันเท่านั้นที่ช่วยไว้ได้</p></div>
+
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
     <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>
     <li>Binance 14 ถูกผูกด้วย EIP-7702 ผ่าน authorization ที่ใช้ nonce ติดกัน 50 ตัว แล้วถูกกวาดใน tx เดียวหลังจากนั้น 3 นาที</li>
@@ -1817,6 +1832,7 @@ POTATO_RPC_PORT=36657 POTATO_GRPC_PORT=19090 scripts/ibc_recover.sh
     <li>delegation ถูกถอน 226 นาทีหลังถูกกวาด ระหว่างนั้นยังมีเงินฝากใหม่เข้า wallet</li>
     <li>ต้องตรวจ code ของ EOA ที่ถือเงินว่ายังเป็น <code>0x</code> และต้องมีเพดานต่อช่วงเวลา แม้ลายเซ็นจะถูกต้อง</li>
     <li>จำลองในเครื่องแล้ว: revoke อย่างเดียวไม่พอถ้าใบที่ nonce สูงกว่ายังใช้ได้ ต้องเผา nonce ให้เลยช่วงก่อน</li>
+    <li>ชั้นที่หยุดเลือดได้จริงคือ issuer freeze (USDT/USDC) ไม่ใช่การ revoke ของเหยื่อ — proxy ไม่สำคัญ สำคัญที่มี owner key กด blacklist ได้ และเป็น race กับโจรที่รีบ swap เป็น ETH ที่ freeze ไม่ได้</li>
   </ul></div>
   <div class="quiz"><h4>คำถามทบทวน</h4>
     <details><summary>ถ้า Binance 14 มี rate limit แบบบท 6 ที่ระดับระบบเซ็น ผลจะต่างไปอย่างไร</summary><p>การกวาดเกิดใน tx เดียวที่รันโค้ดของผู้โจมตีโดยตรง rate limit ที่อยู่ในระบบเซ็นจึงไม่ช่วย เพราะหลัง delegate แล้ว การกวาดไม่ต้องใช้ลายเซ็นของ Binance อีก เพดานต้องอยู่<b>บนเชน</b> เช่นเก็บเงินใน contract ที่มี limit แทน EOA ล้วน หรือแยกเงินเป็นหลาย wallet</p></details>
