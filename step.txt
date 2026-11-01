@@ -22,7 +22,7 @@ echo "USDT=$USDT"
 # Deploy USDC
 export USDC=$(forge create src/lab/MockUSDC.sol:MockUSDC \
   --rpc-url $RPC --private-key $ISS_PK --broadcast --json \
-  --constructor-args $ISS | jq -r .deployedTo)
+  --constructor-args $ADMIN $ISS | jq -r .deployedTo)
 echo "USDC=$USDC"
 
 # Deploy SWEEP
