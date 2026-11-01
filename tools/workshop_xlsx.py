@@ -867,7 +867,7 @@ steps = [
 
     (17, 35, "จำลองชั้น 'หยุดเลือด' ของ stablecoin issuer: freeze/seize บน MockUSDT (ไม่มี proxy) + เพิ่ม MockUSDC (proxy)", "โชว์ว่าสิ่งที่จริงๆ จำกัดความเสียหาย Binance คือ issuer freeze ไม่ใช่การ revoke ของเหยื่อ และเทียบ USDT (ฟังก์ชันฝังในตัว contract) กับ USDC (ฟังก์ชันหลัง ERC1967 proxy) ว่าให้ผลเท่ากัน",
      "stable-coin-L0/lz-potato", "แก้ MockUSDT.sol เพิ่ม owner + addBlackList/removeBlackList/destroyBlackFunds (บล็อก transfer ที่แตะ address ที่ freeze, mint/burn ยังเปิดให้ seize ได้); เพิ่ม MockUSDC.sol = MockUSDCLogic (blacklist/unBlacklist, freeze-only ไม่มี seize) หลัง ERC1967Proxy ที่ deploy+initialize เอง; เขียน test/StablecoinFreeze.t.sol แล้ว forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol'",
-     "ผ่านครบ 13: freeze หยุดโจรโอน (ทั้ง USDT/USDC), เฉพาะ issuer freeze ได้, USDT seize+burn ลด totalSupply ได้ แต่ USDC freeze-only (ยอดค้างไม่ถูกเผา), ถ้าโจรโอนก่อน freeze = หลุด (race), ETH freeze ไม่ได้เลย, และ vm.load ยืนยัน USDC มี impl หลัง proxy ส่วน USDT ไม่มี; แถมแก้ assert GAS_KEEP ใน Sweeper7702.t.sol ที่ค้าง", "PENDING",
+     "ผ่านครบ 13: freeze หยุดโจรโอน (ทั้ง USDT/USDC), เฉพาะ issuer freeze ได้, USDT seize+burn ลด totalSupply ได้ แต่ USDC freeze-only (ยอดค้างไม่ถูกเผา), ถ้าโจรโอนก่อน freeze = หลุด (race), ETH freeze ไม่ได้เลย, และ vm.load ยืนยัน USDC มี impl หลัง proxy ส่วน USDT ไม่มี; แถมแก้ assert GAS_KEEP ใน Sweeper7702.t.sol ที่ค้าง", "8c8082e",
      "proxy ไม่ใช่หัวใจ — หัวใจคือ 'มี owner key ที่เรียก blacklist ได้หรือเปล่า'; USDT ฝังตรงจึงไม่ต้อง proxy, USDC ฝังหลัง proxy ได้ผลเท่ากัน; ต่างจริงคือ USDT seize/เผาได้ USDC แค่ freeze; ทั้งคู่เป็น centralized trust ต้องรอ issuer เข้ากด = เป็น race โจรเลยรีบ swap เป็น ETH ที่ freeze ไม่ได้", "ผ่าน"),
 ]
 RERUN = {
