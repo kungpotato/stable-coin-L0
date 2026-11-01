@@ -11,7 +11,7 @@ export HOT=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266   ATK=0x70997970C51812dc3A
 export HOT_PK=
 export ATK_PK=
 export ISS_PK=
-export ISS=PK=
+export ADMIN_PK=
 
 
 # Deploy USDT
