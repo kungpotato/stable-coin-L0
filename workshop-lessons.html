@@ -1834,6 +1834,7 @@ NEW_LOGIC=$(forge create src/lab/MockUSDC.sol:MockUSDCLogicV2 --private-key $ADM
 cast send $USDC "upgradeTo(address)" $NEW_LOGIC --private-key $ADMIN_PK --rpc-url $RPC</code></pre>
   <div class="callout note"><b>2 role แยกกัน: ADMIN ≠ ISS</b><p>transparent proxy มีกฎ "ถ้าคนเรียกเป็น admin → proxy ดักไว้ ไม่ delegate ไป logic" ดังนั้น <b>คนอัปเกรด (ADMIN) ต้องคนละ key กับคน freeze (ISS/blacklister)</b> ไม่งั้น ADMIN เรียก <code>blacklist</code>/<code>transfer</code> ไม่ได้เลย (โดน proxy ดัก) — USDC จริงก็แยกด้วยเหตุผลนี้ + แยกอำนาจ "คนแก้โค้ด ≠ คนกดแช่แข็ง" (test <code>test_onlyAdminCanUpgrade_andAdminIsNotTheBlacklister</code>)</p></div>
   <p>นี่คือจุดที่นักวิจารณ์ในคดี Circle พูดถึง: "แก้โค้ดให้ seize ได้" = <b>upgrade logic ใหม่โดย address USDC ไม่เปลี่ยน ไม่กระทบ exchange/wallet ใด</b> — ทำได้ทางเทคนิคแน่นอน Circle แค่เลือกไม่ทำ</p>
+  <p>V2 ใส่ <b>ทั้ง</b> <code>destroyBlackFunds</code> (เผา) และ <code>issue</code> (mint ชดใหม่) → USDC หลัง upgrade ทำ <b>burn-and-remint คืนเหยื่อได้เต็มขั้นเท่า USDT ทุกอย่าง</b> (test <code>test_upgradedUsdcCanDoFullBurnAndRemintLikeUsdt</code>: freeze → burn → issue → ส่งเหยื่อ, supply สุทธิเท่าเดิม) ตอกย้ำว่าข้อจำกัดของ USDC ไม่ใช่เรื่องเทคนิค แต่เป็น<b>การเลือกนโยบาย</b></p>
 
   <div class="summary"><h4>สรุปบทที่ 17</h4><ul>
     <li>ตาม incident จริงได้ด้วย <code>cast</code> + RPC ที่ให้ state ย้อนหลัง เริ่มจากเวลาในข่าวแล้วแปลงเป็นเลข block</li>

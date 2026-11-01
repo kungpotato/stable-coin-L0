@@ -192,6 +192,30 @@ contract StablecoinFreezeTest is Test {
         assertEq(usdc.totalSupply(), supplyBefore - STOLEN);
     }
 
+    /// @dev After upgrading to V2 (which adds BOTH destroyBlackFunds and issue), USDC can run the
+    ///      full burn-and-remint recovery — identical to USDT. This is the capability critics say
+    ///      Circle could ship via an in-place upgrade but chooses not to.
+    function test_upgradedUsdcCanDoFullBurnAndRemintLikeUsdt() public {
+        address victim = makeAddr("victim");
+        MockUSDCLogicV2 v2 = new MockUSDCLogicV2();
+        vm.prank(admin);
+        MockUSDC(payable(address(usdc))).upgradeTo(address(v2));
+
+        MockUSDCLogicV2 u = MockUSDCLogicV2(address(usdc));
+        uint256 supplyBefore = u.totalSupply();
+
+        vm.startPrank(circle);
+        u.blacklist(thief);
+        u.destroyBlackFunds(thief);            // burn stolen USDC
+        assertEq(u.totalSupply(), supplyBefore - STOLEN);
+        u.issue(STOLEN);                        // remint to the issuer
+        u.transfer(victim, STOLEN);             // ...then to the victim
+        vm.stopPrank();
+
+        assertEq(u.balanceOf(victim), STOLEN, "victim made whole");
+        assertEq(u.totalSupply(), supplyBefore, "net supply unchanged - USDC now matches USDT");
+    }
+
     function test_onlyAdminCanUpgrade_andAdminIsNotTheBlacklister() public {
         MockUSDCLogicV2 v2 = new MockUSDCLogicV2();
 

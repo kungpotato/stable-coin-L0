@@ -3,7 +3,9 @@ pragma solidity ^0.8.22;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Proxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
-import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
+import {
+    ERC1967Utils
+} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 /// @notice Lab stand-in for USDC — the SAME freeze power as USDT, but reached through a proxy.
 /// @dev The real USDC is an upgradeable proxy (FiatTokenProxy) whose logic Circle can swap out.
@@ -68,7 +70,11 @@ contract MockUSDCLogic is ERC20 {
         emit UnBlacklisted(_account);
     }
 
-    function _update(address from, address to, uint256 value) internal override {
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    ) internal override {
         if (from != address(0) && to != address(0)) {
             require(!isBlacklisted[from], "USDC: sender frozen");
             require(!isBlacklisted[to], "USDC: recipient frozen");
@@ -96,6 +102,13 @@ contract MockUSDCLogicV2 is MockUSDCLogic {
         _burn(_account, dirtyFunds);
         emit DestroyedBlackFunds(_account, dirtyFunds);
     }
+
+    /// @notice The remint half of recovery: issue replacement supply to the issuer, to hand to the
+    ///         victim. With destroyBlackFunds + issue, upgraded USDC matches USDT's full
+    ///         burn-and-remint — the exact capability critics say Circle could add but won't.
+    function issue(uint256 _amount) external onlyBlacklister {
+        _mint(blacklister, _amount);
+    }
 }
 
 /// @notice The deployable USDC: a transparent admin proxy, modelled on the real FiatTokenProxy.
@@ -112,7 +125,8 @@ contract MockUSDCLogicV2 is MockUSDCLogic {
 contract MockUSDC is Proxy {
     constructor(address _admin, address _blacklister) {
         ERC1967Utils.upgradeToAndCall(
-            address(new MockUSDCLogic()), abi.encodeCall(MockUSDCLogic.initialize, (_blacklister))
+            address(new MockUSDCLogic()),
+            abi.encodeCall(MockUSDCLogic.initialize, (_blacklister))
         );
         ERC1967Utils.changeAdmin(_admin);
     }
@@ -146,7 +160,10 @@ contract MockUSDC is Proxy {
     }
 
     /// @notice Upgrade and run an initializer in the same tx.
-    function upgradeToAndCall(address newImplementation, bytes calldata data) external payable ifAdmin {
+    function upgradeToAndCall(
+        address newImplementation,
+        bytes calldata data
+    ) external payable ifAdmin {
         ERC1967Utils.upgradeToAndCall(newImplementation, data);
     }
 
