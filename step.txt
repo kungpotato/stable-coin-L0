@@ -17,13 +17,13 @@ export ADMIN_PK=
 # Deploy USDT
 export USDT=$(forge create src/lab/MockUSDT.sol:MockUSDT \
   --rpc-url $RPC --private-key $ISS_PK --broadcast --json | jq -r .deployedTo)
-"USDT=$USDT"
+echo "USDT=$USDT"
 
 # Deploy USDC
 export USDC=$(forge create src/lab/MockUSDC.sol:MockUSDC \
   --rpc-url $RPC --private-key $ISS_PK --broadcast --json \
   --constructor-args $ISS | jq -r .deployedTo)
-"USDC=$USDC"
+echo "USDC=$USDC"
 
 # Deploy SWEEP
 export SWEEP=$(forge create src/lab/Sweeper7702.sol:Sweeper7702 \
