@@ -111,6 +111,33 @@ run-mesh.sh             launch 3 attesters + 2 redundant submitters
 demo.sh                 ส่ง A->B ผ่าน OFT + verify supply
 ```
 
+## Two-way ACK & stuck detection
+
+หลัง mint สำเร็จ ปลายทางส่ง **receipt (ACK)** กลับต้นทาง **ผ่าน messaging layer เดิม** (mesh เดียวกัน, ไม่มีโค้ด relay เพิ่ม):
+- `send()` บันทึก `outbound[msgId] = PENDING`
+- ปลายทาง mint แล้ว `gateway.send()` ACK อ้าง `msgId` กลับมา (payload tagged: kind 0 = TRANSFER, kind 1 = ACK)
+- ต้นทางรับ ACK → `outbound[msgId] = DELIVERED` + emit `TransferDelivered`
+- view: `isDelivered(msgId)` / `isStuck(msgId, timeout)` → ใช้ reconciliation (จับคู่ burn↔mint) + แจ้งเตือน message ที่ค้าง
+
+พิสูจน์ใน lab: ส่ง 100 A→B → B mint → ACK เด้งกลับ → `A.isDelivered(msgId)=true`
+
+## Safe cancel & refund (two-phase, กัน double-mint)
+
+refund transfer ที่ค้าง (PENDING) ได้อย่างปลอดภัย โดย**ไม่เสี่ยง double-mint** (ตาม Two Generals):
+
+```
+A.requestCancel(msgId)  → status=CANCEL_REQUESTED, ส่ง CANCEL(msgId,to,amount,nonce) A→B
+B รับ CANCEL             → gateway.blockMessage(origMsgId):
+                            - ถ้า "delivered แล้ว" → revert → ไม่มี refund (ปลอดภัย)
+                            - ถ้ายังไม่ deliver → mark processed+cancelled (deliver ไม่ได้ตลอดกาล)
+                          → ส่ง CANCEL_ACK กลับ A
+A รับ CANCEL_ACK         → re-mint คืน sender, status=REFUNDED
+```
+
+**หัวใจความปลอดภัย**: delivery กับ block ใช้ flag `processed[msgId]` **ตัวเดียวกัน** → เกิดได้แค่ **อย่างใดอย่างหนึ่ง** (deliver หรือ refund) ไม่มีทางทั้งคู่
+
+พิสูจน์ใน lab: transfer ค้าง → requestCancel → CANCEL block B (`cancelled=true`) → CANCEL_ACK → refund คืน sender (1000), **B ยัง 0**; ลองส่ง transfer เดิมซ้ำ → **ถูก block** (ไม่ double-mint)
+
 ## Permissionless & redundant relaying
 
 relay แยกเป็น 2 บทบาท → ไม่เป็น chokepoint:

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 /// @title IBridgeToken
 /// @notice The ONLY surface bamboo needs from an issuer's token. The issuer keeps

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {IBambooReceiver} from "./IBambooReceiver.sol";
 
@@ -31,7 +31,8 @@ contract BambooGateway {
     uint256 public threshold;
 
     uint64 public outNonce;
-    mapping(bytes32 => bool) public processed; // msgId => consumed
+    mapping(bytes32 => bool) public processed; // msgId => consumed (delivered OR cancelled)
+    mapping(bytes32 => bool) public cancelled; // msgId => blocked by the cancel protocol
 
     struct FailedMsg {
         uint64 srcChainId;
@@ -60,6 +61,7 @@ contract BambooGateway {
     );
     event MessageReceived(bytes32 indexed msgId, uint64 srcChainId, address sender, address receiver);
     event MessageFailed(bytes32 indexed msgId);
+    event MessageCancelled(bytes32 indexed msgId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -142,12 +144,29 @@ contract BambooGateway {
     function send(uint64 dstChainId, address receiver, bytes calldata payload)
         external
         whenNotPaused
-        returns (bytes32 msgId)
+        returns (bytes32 msgId, uint64 nonce)
     {
         require(receiver != address(0), "receiver 0");
-        uint64 n = outNonce++;
-        msgId = computeMsgId(localChainId, dstChainId, msg.sender, receiver, keccak256(payload), n);
-        emit MessageSent(msgId, localChainId, dstChainId, msg.sender, receiver, payload, n);
+        nonce = outNonce++;
+        msgId = computeMsgId(localChainId, dstChainId, msg.sender, receiver, keccak256(payload), nonce);
+        emit MessageSent(msgId, localChainId, dstChainId, msg.sender, receiver, payload, nonce);
+    }
+
+    /// @notice Block an UNDELIVERED inbound message addressed to the caller, so it can
+    ///         never be delivered. Used by the cancel/refund protocol: the dest app
+    ///         blocks its own pending inbound BEFORE the source refunds, so a transfer
+    ///         can never both mint (here) and refund (on the source) — no double-mint.
+    ///         Permissionless, but only affects msgIds whose receiver == msg.sender,
+    ///         so no app can block another app's messages.
+    function blockMessage(uint64 srcChainId, address sender, bytes calldata payload, uint64 nonce)
+        external
+        whenNotPaused
+    {
+        bytes32 msgId = computeMsgId(srcChainId, localChainId, sender, msg.sender, keccak256(payload), nonce);
+        require(!processed[msgId], "already processed"); // already delivered or cancelled
+        processed[msgId] = true;
+        cancelled[msgId] = true;
+        emit MessageCancelled(msgId);
     }
 
     // --- receive: verify threshold, then deliver (recoverable on failure) ---
