@@ -1,0 +1,13 @@
+{
+  "name": "bamboo-relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Attester + relayer for the bamboo cross-chain lab (untrusted transport, non-custodial)",
+  "scripts": {
+    "relay": "node --experimental-strip-types relay.ts"
+  },
+  "dependencies": {
+    "viem": "2.21.55"
+  }
+}

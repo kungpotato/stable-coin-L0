@@ -1,0 +1,13 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+# anvil-lab and potato (cosmos/evm) both support prague
+evm_version = "prague"
+
+[rpc_endpoints]
+anvil = "http://localhost:28545"
+potato = "http://localhost:18545"
