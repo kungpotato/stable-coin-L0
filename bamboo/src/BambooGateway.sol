@@ -167,7 +167,7 @@ contract BambooGateway {
 
         processed[msgId] = true; // effects before interaction
         // H-3: do not let an app revert lose the message — store it for retry()
-        try IBambooReceiver(receiver).bambooReceive(srcChainId, sender, payload) {
+        try IBambooReceiver(receiver).bambooReceive(srcChainId, sender, msgId, payload) {
             emit MessageReceived(msgId, srcChainId, sender, receiver);
         } catch {
             failed[msgId] = FailedMsg(srcChainId, sender, receiver, true, payload);
@@ -180,7 +180,7 @@ contract BambooGateway {
         FailedMsg memory f = failed[msgId];
         require(f.exists, "no failed msg");
         delete failed[msgId];
-        IBambooReceiver(f.receiver).bambooReceive(f.srcChainId, f.sender, f.payload); // reverts if still failing
+        IBambooReceiver(f.receiver).bambooReceive(f.srcChainId, f.sender, msgId, f.payload); // reverts if still failing
         emit MessageReceived(msgId, f.srcChainId, f.sender, f.receiver);
     }
 
