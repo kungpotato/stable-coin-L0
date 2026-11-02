@@ -8,6 +8,7 @@ interface IBambooGateway {
     function send(uint64 dstChainId, address receiver, bytes calldata payload)
         external returns (bytes32 msgId, uint64 nonce);
     function blockMessage(uint64 srcChainId, address sender, bytes calldata payload, uint64 nonce) external;
+    function processed(bytes32 msgId) external view returns (bool);
 }
 
 /// @title BambooOFT
@@ -38,12 +39,14 @@ contract BambooOFT is IBambooReceiver {
     uint8 internal constant KIND_ACK = 1;
     uint8 internal constant KIND_CANCEL = 2;
     uint8 internal constant KIND_CANCEL_ACK = 3;
+    uint8 internal constant KIND_DELIVERED_NOTICE = 4; // M-B: dest tells source "already delivered"
 
     uint8 internal constant ST_NONE = 0;
     uint8 internal constant ST_PENDING = 1;
     uint8 internal constant ST_DELIVERED = 2;
     uint8 internal constant ST_CANCEL_REQUESTED = 3;
     uint8 internal constant ST_REFUNDED = 4;
+    uint8 internal constant ST_REFUND_BLOCKED = 5; // M-A: refund held (sender not whitelisted)
 
     IBambooGateway public immutable gateway;
     IBridgeToken public immutable token;
@@ -82,6 +85,7 @@ contract BambooOFT is IBambooReceiver {
     event TransferDelivered(bytes32 indexed msgId);
     event CancelRequested(bytes32 indexed msgId);
     event TransferRefunded(bytes32 indexed msgId, address indexed to, uint256 amount);
+    event RefundBlocked(bytes32 indexed msgId, address indexed sender, uint256 amount);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "not owner");
@@ -159,6 +163,18 @@ contract BambooOFT is IBambooReceiver {
         emit CancelRequested(msgId);
     }
 
+    /// @notice M-A: resolve a refund that was blocked because the original sender is no
+    ///         longer whitelisted. Owner (→ consortium/BOT) directs it to a whitelisted
+    ///         recovery address instead of auto-returning to a sanctioned party.
+    function resolveRefund(bytes32 msgId, address to) external onlyOwner {
+        Outbound storage o = outbound[msgId];
+        require(o.status == ST_REFUND_BLOCKED, "not blocked");
+        if (whitelistEnabled) require(whitelisted[to], "to not whitelisted");
+        o.status = ST_REFUNDED;
+        token.mint(to, o.amount);
+        emit TransferRefunded(msgId, to, o.amount);
+    }
+
     // --- receive handler (gateway-only) ---
     function bambooReceive(uint64 srcChainId, address sender, bytes32 msgId, bytes calldata payload) external {
         require(msg.sender == address(gateway), "not gateway");
@@ -182,24 +198,46 @@ contract BambooOFT is IBambooReceiver {
             }
 
         } else if (kind == KIND_CANCEL) {
-            // block the original (undelivered) transfer on THIS (dest) chain, then ack back
             (bytes32 orig, address to, uint256 amount, uint64 nonce) =
                 abi.decode(inner, (bytes32, address, uint256, uint64));
-            bytes memory origPayload = abi.encode(KIND_TRANSFER, abi.encode(to, amount));
-            // sender == the source peer (OFT on srcChain); receiver (=msg.sender inside gateway) == this app.
-            // reverts if the transfer was already delivered -> whole cancel reverts -> no refund. Safe.
-            gateway.blockMessage(srcChainId, sender, origPayload, nonce);
-            gateway.send(srcChainId, peer[srcChainId], abi.encode(KIND_CANCEL_ACK, abi.encode(orig)));
+            if (gateway.processed(orig)) {
+                // M-B: already delivered (minted) here -> tell the source it's DELIVERED,
+                //      so its status is corrected instead of stuck at CANCEL_REQUESTED.
+                gateway.send(srcChainId, peer[srcChainId], abi.encode(KIND_DELIVERED_NOTICE, abi.encode(orig)));
+            } else {
+                // not delivered -> block it forever (can never mint), then authorize refund.
+                bytes memory origPayload = abi.encode(KIND_TRANSFER, abi.encode(to, amount));
+                gateway.blockMessage(srcChainId, sender, origPayload, nonce);
+                gateway.send(srcChainId, peer[srcChainId], abi.encode(KIND_CANCEL_ACK, abi.encode(orig)));
+            }
 
         } else if (kind == KIND_CANCEL_ACK) {
             // dest confirmed the transfer is blocked -> safe to refund on the source
             bytes32 orig = abi.decode(inner, (bytes32));
             Outbound storage o = outbound[orig];
             if (o.status == ST_CANCEL_REQUESTED) {
-                o.status = ST_REFUNDED;
-                token.mint(o.sender, o.amount); // restore the burned tokens
-                emit TransferRefunded(orig, o.sender, o.amount);
+                // M-A: don't auto-return funds to a now-unwhitelisted (e.g. sanctioned) sender
+                if (whitelistEnabled && !whitelisted[o.sender]) {
+                    o.status = ST_REFUND_BLOCKED;
+                    emit RefundBlocked(orig, o.sender, o.amount);
+                } else {
+                    o.status = ST_REFUNDED;
+                    token.mint(o.sender, o.amount);
+                    emit TransferRefunded(orig, o.sender, o.amount);
+                }
             }
+
+        } else if (kind == KIND_DELIVERED_NOTICE) {
+            // M-B: dest says the transfer was actually delivered -> correct our status
+            bytes32 orig = abi.decode(inner, (bytes32));
+            Outbound storage o = outbound[orig];
+            if (o.status == ST_PENDING || o.status == ST_CANCEL_REQUESTED) {
+                o.status = ST_DELIVERED;
+                emit TransferDelivered(orig);
+            }
+
+        } else {
+            revert("bad kind"); // L-A: never silently consume an unknown message
         }
     }
 
