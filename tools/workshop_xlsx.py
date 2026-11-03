@@ -869,6 +869,16 @@ steps = [
      "stable-coin-L0/lz-potato", "MockUSDT.sol: owner + addBlackList/removeBlackList/destroyBlackFunds + issue (remint ชดเหยื่อ); MockUSDC.sol: MockUSDCLogic (freeze-only) + MockUSDCLogicV2 (เพิ่ม destroyBlackFunds) หลัง transparent admin proxy (เลียน FiatTokenProxy, แยก ADMIN/upgrade ออกจาก ISS/blacklister, มี upgradeTo); test/StablecoinFreeze.t.sol แล้ว forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol'",
      "ผ่าน 17 (freeze 12 + sweeper 5): freeze หยุดโจรทั้ง USDT/USDC, เฉพาะ issuer, USDT seize+burn + burn-and-remint คืนเหยื่อ (supply สุทธิเท่าเดิม) แต่ USDC V1 freeze-only, race ถ้าโจรโอนก่อน freeze, ETH freeze ไม่ได้, vm.load ยืนยัน USDC เป็น proxy, และ upgrade USDC->V2 ได้ seize โดย address/balance/blacklister เดิม (ADMIN เท่านั้น ไม่ใช่ ISS); แถมแก้ assert GAS_KEEP ใน Sweeper7702.t.sol", "8c8082e",
      "proxy ไม่ใช่หัวใจของ freeze — หัวใจคือ 'มี owner key กด blacklist ได้ไหม'; แต่ proxy ให้พลังอีกอย่าง: upgrade logic เพิ่มฟังก์ชัน (เช่น seize) โดย address เดิม ไม่กระทบใคร = จุดที่คดี Circle บอกว่า 'แก้โค้ดได้แต่เลือกไม่ทำ'; USDT ไม่มี proxy เพิ่มฟังก์ชันไม่ได้แต่มี destroyBlackFunds+issue มาแต่แรก; USDC freeze-only จริงตามโลก; ทั้งคู่ centralized = race โจรเลยรีบ swap เป็น ETH ที่ freeze ไม่ได้", "ผ่าน"),
+
+    (18, 0, "สืบ Mercado Bitcoin hack (2026-11-02) จากข่าว + verify address สดบน mainnet", "เคสที่ 2 เทียบกับ Binance: ตลาดบราซิลโดนกวาด hot wallet ~$46-49M บน 10+ เชน ด้วยการเซ็นโอนธรรมดา ไม่ใช่ 7702 — ยืนยัน address/ยอด/สถานะ freeze จากเชนจริง ไม่เดา",
+     "stable-coin-L0/forensics/mercado-bitcoin-2026-11-02", "WebSearch/WebFetch (Arkham, Bitquery, CoinDesk) หา address แล้วเขียน check.sh เรียก cast balance/nonce/code/balanceOf/isBlackListed ยิง drpc archive; สรุปใน README.md พร้อมตาราง trace และตารางเทียบ Binance",
+     "verify สด (block ~26,337,586): เหยื่อ MB hot 0x5cc7 EOA nonce 16192 ถูกกวาดเหลือ ~0.009 ETH; โจร main 0xe485 EOA nonce 50 ถือ USDT 3,059,424 isBlackListed=true (Tether freeze); พัก ETH 0x59a9 nonce 0 นั่ง 2,979 ETH, 0x071f ~670, 0x4d5f ~761 (freeze ไม่ได้); ทุก address เป็น EOA ล้วน ไม่มี 7702", "PENDING",
+     "ตรงข้ามกับ Binance: ไม่มี delegation/contract ของโจร เป็น signed transfer ล้วน แต่กวาดได้ทั้ง hot wallet + deposit 36,042 ใบ ข้าม 10+ เชน = ชี้ signing authority ตัวเดียวถูกยึด (shared seed/signer); alert ตรวจ code EOA แบบ Binance ใช้ไม่ได้ เพราะเหยื่อไม่เคยมี code; บทเรียนร่วม = USDT freeze ได้/ETH ไม่ได้ โจรรีบพัก ETH กระเป๋าสด", "ผ่าน"),
+
+    (18, 1, "ทำ lab จำลองกลไก deposit-sweep ด้วย key เดียว (เทียบ 7702)", "โชว์ blast radius ของ signing authority ตัวเดียว: 1 seed derive key ของ N deposit address → ยึด seed = เซ็นแทนได้ทุกใบ ด้วย plain transfer ไม่ต้องมี code/7702",
+     "stable-coin-L0/lz-potato", "เขียน test/MercadoDepositSweep.t.sol: derive key จาก MASTER_SEED, fund N=100 deposit EOA ด้วย USDT+ETH, วนเซ็นโอนออกทุกใบ (assert code.length==0 ทุกใบ), แล้ว issuer freeze USDT collector ได้ แต่ ETH ที่พักไว้ freeze ไม่ได้; forge test --match-path 'test/MercadoDepositSweep.t.sol'",
+     "ผ่าน 2/2: oneStolenSeedDrainsEveryDepositAddress (กวาดครบ N, ทุก victim ยังเป็น EOA code 0), issuerFreezesUsdtButNotParkedEth (USDT collector โดน freeze โอนต่อ revert, ETH park โอนออกได้)", "PENDING",
+     "หัวใจต่างจาก 7702: ไม่ต้องหลอกให้เซ็น auth หรือ deploy sweeper — แค่ยึด seed/signer ก็เซ็นแทนทุก address ที่ derive มา จุดเดียวแตก=ทั้งตลาดแตก; ป้องกันที่ custody (แยก key, MPC/HSM, สิทธิ์ต่อ address) ไม่ใช่ที่ code ของ EOA; reuse MockUSDT แสดงชั้น freeze เดียวกับบท 17", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1073,6 +1083,8 @@ RERUN = {
     (17, 33): ("ได้", "เปิด present-7702.html ในเบราว์เซอร์; แก้เนื้อหาในไฟล์ตรงๆ ไม่ต้องรันอะไร"),
     (17, 34): ("ได้ (บน anvil ในเครื่องเท่านั้น)", "HOT=<hot wallet> RPC_WS=ws://127.0.0.1:8545 node alert.js (รัน background, ต้องมี ws endpoint); --auth ต้อง echo y | ; ปิด anvil และล้าง scratchpad เมื่อจบ"),
     (17, 35): ("ได้", "forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
+    (18, 0): ("ได้", "RPC=https://eth.drpc.org ./forensics/mercado-bitcoin-2026-11-02/check.sh อ่านอย่างเดียว (archive RPC); ตัวเลขอาจขยับตามเวลาที่ freeze/move เพิ่ม"),
+    (18, 1): ("ได้", "forge test --match-path 'test/MercadoDepositSweep.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

@@ -217,6 +217,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <div class="part">กรณีศึกษา</div>
   <ol>
     <li><a href="#case-binance"><span class="n">17</span>ตามรอย Binance hack บน mainnet</a></li>
+    <li><a href="#case-mercado"><span class="n">18</span>ตามรอย Mercado Bitcoin hack</a></li>
   </ol>
   <div class="part">ภาคผนวก</div>
   <ol>
@@ -244,7 +245,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <a href="#ch12">12 · DVN และ Executor</a><a href="#ch13">13 · Bridge POTATO</a><a href="#ch14">14 · Bridge USDC</a>
     <a href="#ch15">15 · Frontend และ indexer</a><a href="#ch16">16 · IBC กับ production</a>
     <div class="part">กรณีศึกษา</div>
-    <a href="#case-binance">17 · ตามรอย Binance hack</a>
+    <a href="#case-binance">17 · ตามรอย Binance hack</a><a href="#case-mercado">18 · Mercado Bitcoin hack</a>
     <div class="part">ภาคผนวก</div>
     <a href="#apx-a">A · บทเรียนรวม</a><a href="#apx-b">B · แคตตาล็อก bug</a><a href="#apx-c">C · Checklist</a>
     <a href="#apx-d">D · คำสั่ง</a><a href="#apx-e">E · อภิธานศัพท์</a><a href="#apx-f">F · ไฟล์อ้างอิง</a>
@@ -1848,6 +1849,70 @@ cast send $USDC "upgradeTo(address)" $NEW_LOGIC --private-key $ADMIN_PK --rpc-ur
   <div class="quiz"><h4>คำถามทบทวน</h4>
     <details><summary>ถ้า Binance 14 มี rate limit แบบบท 6 ที่ระดับระบบเซ็น ผลจะต่างไปอย่างไร</summary><p>การกวาดเกิดใน tx เดียวที่รันโค้ดของผู้โจมตีโดยตรง rate limit ที่อยู่ในระบบเซ็นจึงไม่ช่วย เพราะหลัง delegate แล้ว การกวาดไม่ต้องใช้ลายเซ็นของ Binance อีก เพดานต้องอยู่<b>บนเชน</b> เช่นเก็บเงินใน contract ที่มี limit แทน EOA ล้วน หรือแยกเงินเป็นหลาย wallet</p></details>
     <details><summary>ทำไม alert ที่ตรวจ code ของ EOA ถึงทันในเคสนี้ แต่อาจไม่ทันในเคสอื่น</summary><p>ผู้โจมตีส่ง delegate กับ sweep เป็นสอง tx ห่างกัน 17 block ถ้ารวมไว้ใน tx เดียว (type 4 ที่ทั้ง delegate และเรียก sweep) alert จะมาหลังเงินออกไปแล้ว ตอนนั้นสิ่งที่ช่วยได้มีแค่เพดานบนเชนและการแช่แข็งของ issuer</p></details>
+  </div>
+</section>
+
+<section class="chapter tabpanel" id="case-mercado">
+  <div class="ch-num">บทที่ 18 · CASE STUDY</div>
+  <h2>ตามรอย Mercado Bitcoin hack (2026-11-02) — เคสตรงข้ามกับ Binance</h2>
+  <p class="lead">สามวันหลัง Binance 14 ตลาด Mercado Bitcoin (บราซิล) โดนกวาด hot wallet ~$46–49M บน 10+ เชน เคสนี้เป็น <b>ขั้วตรงข้าม</b>ของ Binance: ไม่มี EIP-7702 ไม่มี contract ของโจร มีแค่ <b>การเซ็นโอนธรรมดา</b> แต่กวาดได้ทั้ง hot wallet และ deposit address ของลูกค้า 36,042 ใบ ข้อมูลทั้งหมด verify สดบน mainnet (ดู <code>forensics/mercado-bitcoin-2026-11-02/</code>)</p>
+
+  <h3>18.1 เกิดอะไรขึ้น</h3>
+  <ul>
+    <li><b>01:22 UTC</b> ยิง test tx 0.0001 ETH ออกจาก hot wallet ฝั่ง Base</li>
+    <li><b>06:24–06:50 UTC</b> กวาด hot wallet ~10 เชนภายใน ~25 นาที บน Ethereum ส่งทีละเหรียญ (2,852 ETH แล้ว USDT/USDC แล้ว 185+ ERC-20) · BTC 104.43 เหรียญถูกกวาด 06:41</li>
+    <li><b>ตั้งแต่ 12:27 UTC</b> <b>deposit address ของลูกค้า</b>เริ่มเซ็นโอนยอดทั้งหมดเข้าโจร — เฉพาะ Ethereum <b>36,042 ใบ</b> และยังทำต่อหลายชั่วโมงหลังตลาดบอกว่า "คุมได้แล้ว"</li>
+    <li>บริษัทความปลอดภัยยืนยัน: เป็น <b>ธุรกรรมเซ็นโอนธรรมดา ไม่ใช่ smart-contract exploit</b></li>
+    <li>Mercado Bitcoin รับผิดชอบคืนผู้ใช้ (~$40M) · Tether+Circle+Chainalysis freeze ได้ ~$9–11M</li>
+  </ul>
+
+  <h3>18.2 ทำได้ยังไง (กลไก — อนุมานจาก on-chain ยังไม่ยืนยันทางการ)</h3>
+  <p>โจรเซ็นได้ <b>ทั้ง</b> hot wallet <b>และทุก deposit address</b> ข้ามหลายเชน — blast radius ขนาดนี้ชี้ไปที่ <b>signing authority ตัวเดียวถูกยึด</b>: master seed ตัวเดียว (HD wallet) หรือ signing service/HSM ไม่ใช่การขโมย key ทีละ 36,042 ใบ <b>ความลับชิ้นเดียว = อำนาจเซ็นให้ทุก address ที่ derive มา</b></p>
+
+  <h3>18.3 trace on-chain (verify สด block ~26,337,586)</h3>
+  <table>
+    <thead><tr><th>บทบาท</th><th>address</th><th>สถานะสด</th></tr></thead>
+    <tbody>
+      <tr><td>เหยื่อ — MB ETH hot wallet</td><td><code>0x5cc7…d548</code></td><td>EOA nonce 16192 ถูกกวาดเหลือ ~0.009 ETH</td></tr>
+      <tr><td>โจร main (ทุกเชน EVM)</td><td><code>0xe485…2478</code></td><td>EOA nonce 50 · <b>USDT 3,059,424 ถูก freeze (isBlackListed=true)</b></td></tr>
+      <tr><td>ตัวกลาง</td><td><code>0x8419…f320</code></td><td>EOA nonce 3 ส่ง ~2,800 ETH ผ่าน</td></tr>
+      <tr><td>พัก ETH</td><td><code>0x59a9…731e</code></td><td>EOA <b>nonce 0 · 2,979 ETH นั่งนิ่ง</b> (ไม่เคยส่งต่อ)</td></tr>
+      <tr><td>พัก ETH</td><td><code>0x071f…9270</code></td><td>EOA nonce 0 · ~670 ETH</td></tr>
+      <tr><td>ETH จาก Tron/Bridgers</td><td><code>0x4d5f…9c4d</code></td><td>EOA nonce 0 · ~761 ETH</td></tr>
+    </tbody>
+  </table>
+  <pre><code>MB hot 0x5cc7… ──(ส่งทีละเหรียญ)──► โจร main 0xe485…
+0xe485… ─~2,800 ETH─► 0x8419… ─$6.7M ETH (12:07)─► พัก 0x59a9… (2,979 ETH, nonce 0)
+new wallets + 0xe485… ─3,649 ETH ข้ามคืน─► 0x59a9… และ 0x071f…
+Tron 1.71M TRX ─Bridgers─► 181 ETH ─► 0x4d5f…   |  Solana ─Mayan/Chainflip─► ~$1.15M ETH</code></pre>
+  <p>USDT ที่ยังเป็น stablecoin โดน Tether <b>freeze</b> (0xe485… 3.05M) แต่ ETH ถูกรวบไปพักในกระเป๋า <b>nonce 0</b> สดๆ ที่ freeze ไม่ได้ — <b>บทเรียนซ้ำกับ Binance เป๊ะ</b></p>
+
+  <h3>18.4 เหมือน/ต่างจาก Binance 14 ยังไง</h3>
+  <table>
+    <thead><tr><th></th><th>Binance 14 (10-29)</th><th>Mercado Bitcoin (11-02)</th></tr></thead>
+    <tbody>
+      <tr><td>กลไก</td><td><b>EIP-7702</b> delegate → <b>sweeper contract</b> รันแทน wallet</td><td><b>เซ็นโอนธรรมดา</b> ไม่มี contract</td></tr>
+      <tr><td>เหยื่อบนเชน</td><td>wallet มี code <code>0xef0100‖sweeper</code></td><td>ยังเป็น <b>EOA เปล่า</b> (code length 0)</td></tr>
+      <tr><td>ขอบเขต</td><td>hot wallet ที่เจ้าของเซ็น 7702</td><td>hot wallet <b>+ deposit 36,042 ใบ · 10+ เชน</b></td></tr>
+      <tr><td>ต้นเหตุ</td><td>ปล่อยให้ auth type-4 ผ่าน signing layer</td><td><b>signing authority ตัวเดียวถูกยึด</b> (seed/signer)</td></tr>
+      <tr><td>หยุดเลือด</td><td>revoke 7702 (ช้า 226 นาที) + issuer freeze</td><td>มีแค่ issuer freeze (ไม่มี delegation ให้ revoke)</td></tr>
+      <tr><td>บทเรียนร่วม</td><td colspan="2"><b>stablecoin freeze ได้ · ETH ไม่ได้</b> → โจรรีบรวบ ETH ไปพักในกระเป๋าสด ส่วน USDT โดน freeze ทัน (เหมือนกันทั้งสองเคส)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout bad"><b>แก่นของ Mercado Bitcoin</b><p>7702-guard หรือ alert ตรวจ <code>code</code> ของ EOA <b>ช่วยเคสนี้ไม่ได้เลย</b> เพราะเหยื่อไม่เคยมี code — เป็น EOA ตลอด สิ่งที่สำคัญคือ <b>custody ของ signing key</b>: อย่าให้ seed เดียว/signer เดียวเซ็นแทนทุก deposit address (แยก key, MPC/HSM, จำกัดสิทธิ์ต่อ address) เพราะจุดเดียวแตก = ทั้งตลาดแตก</p></div>
+
+  <h3>18.5 Lab</h3>
+  <p><code>lz-potato/test/MercadoDepositSweep.t.sol</code> จำลองกลไกนี้: 1 master seed derive key ของ N deposit address → โจรที่ได้ seed ไปวนเซ็นโอน USDT+ETH ออกจากทุกใบด้วย <b>plain transfer</b> (ยืนยัน <code>code.length==0</code> ทุกใบ = ไม่ต้องใช้ 7702) จากนั้น issuer freeze USDT collector ได้ แต่ ETH ที่พักไว้ freeze ไม่ได้ — รันผ่าน 2/2 เชื่อมกับ <code>MockUSDT</code>/<code>MockUSDC</code> ในบท 17</p>
+
+  <div class="summary"><h4>สรุปบทที่ 18</h4><ul>
+    <li>Mercado Bitcoin = เคส key/signer compromise ล้วน ไม่มี 7702 — กวาดด้วยเซ็นโอนธรรมดาทั้ง hot wallet และ deposit 36,042 ใบ บน 10+ เชน</li>
+    <li>blast radius ชี้ที่ signing authority ตัวเดียว (shared seed / signing service) ไม่ใช่ขโมย key ทีละใบ</li>
+    <li>on-chain: USDT โดน freeze ที่ 0xe485… (3.05M) · ETH รวบไปพักกระเป๋า nonce-0 (2,979 + 670 + 761 ETH) ที่ freeze ไม่ได้</li>
+    <li>alert/guard แบบ 7702 ใช้ไม่ได้กับเคสนี้ — ด่านจริงคือ custody ของ key (แยก key, MPC/HSM, สิทธิ์ต่อ address)</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ทำไม alert ตรวจ <code>code</code> ของ EOA (ที่ช่วยจับ Binance) ถึงไม่ช่วย Mercado Bitcoin</summary><p>เพราะ Mercado Bitcoin ไม่ได้ใช้ 7702 เหยื่อไม่เคยมี code เปลี่ยน — เป็น EOA เปล่าตลอด การโจมตีคือการเซ็นโอนที่ "ถูกต้องตามลายเซ็น" ทุกประการ สิ่งที่ตรวจจับได้คือ pattern การโอน (ยอดเต็มออกจากหลายพัน address พร้อมกัน) และเพดาน/นโยบายที่ signing layer ไม่ใช่ code ของ EOA</p></details>
+    <details><summary>ทำไม deposit address 36,042 ใบถึงโดนพร้อมกันได้ ทั้งที่เป็นคนละ address</summary><p>เพราะมันถูก derive จาก seed เดียว (หรือเซ็นผ่าน signing service เดียว) โจรที่ยึด secret ชิ้นนั้นได้จึงเซ็นแทนได้ทุกใบ นี่คือเหตุผลที่ควรแยก key/จำกัดสิทธิ์ต่อ address ไม่ให้จุดเดียวคุมทั้งหมด</p></details>
   </div>
 </section>
 
