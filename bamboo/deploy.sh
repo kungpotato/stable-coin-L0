@@ -23,6 +23,10 @@ THRESHOLD="${THRESHOLD:-2}"
 # demo seed on chain A
 SEED_TO="${SEED_TO:-0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266}" # anvil #0
 SEED_AMT="${SEED_AMT:-1000000000000000000000}"                   # 1000e18
+# damage-bounding defaults (bound a compromised attester set — Ronin/AFX lost all at once)
+GUARDIAN="${GUARDIAN:-0x70997970C51812dc3A010C7d01b50e0d17dc79C8}"      # anvil #1 as BOT guardian (emergency pause)
+MAX_PER_TRANSFER="${MAX_PER_TRANSFER:-200000000000000000000}"          # 200e18 per transfer
+DAILY_CAP="${DAILY_CAP:-1000000000000000000000}"                       # 1000e18 per day
 
 deploy_chain() { # $1=rpc $2=logicalId $3=key  -> echoes "token gateway oft"
   local rpc="$1" id="$2" key="$3" token gateway oft
@@ -42,6 +46,10 @@ deploy_chain() { # $1=rpc $2=logicalId $3=key  -> echoes "token gateway oft"
     cast send "$gateway" "setAttester(address,bool)" "$a" true --rpc-url "$rpc" --private-key "$key" >/dev/null
   done
   cast send "$gateway" "setThreshold(uint256)" "$THRESHOLD" --rpc-url "$rpc" --private-key "$key" >/dev/null
+  # guardian (emergency pause) + damage caps
+  cast send "$gateway" "setGuardian(address)" "$GUARDIAN" --rpc-url "$rpc" --private-key "$key" >/dev/null
+  cast send "$oft" "setMaxPerTransfer(uint256)" "$MAX_PER_TRANSFER" --rpc-url "$rpc" --private-key "$key" >/dev/null
+  cast send "$oft" "setDailyMintCap(uint256)" "$DAILY_CAP" --rpc-url "$rpc" --private-key "$key" >/dev/null
   echo "$token $gateway $oft"
 }
 

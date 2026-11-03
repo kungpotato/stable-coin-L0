@@ -9,11 +9,29 @@
 
 import { buildChains, innerDigest, writeSig, readCkpt, writeCkpt, scanMessages, POLL_MS, type Chain } from "./common.ts";
 import { privateKeyToAccount } from "viem/accounts";
-import type { Hex } from "viem";
+import { decodeAbiParameters, type Hex } from "viem";
 
 const key = process.env.BAMBOO_ATTESTER_KEY as Hex;
 if (!key) throw new Error("set BAMBOO_ATTESTER_KEY (one key)");
 const acct = privateKeyToAccount(key);
+
+// Anti blind-signing (Bybit lesson): validate the message against this attester's
+// policy BEFORE signing. In production each issuer/BOT enforces its own policy; here
+// we reject unknown message kinds and transfers above an optional amount cap.
+const MAX_SIGN_AMOUNT = process.env.BAMBOO_MAX_SIGN_AMOUNT ? BigInt(process.env.BAMBOO_MAX_SIGN_AMOUNT) : 0n;
+
+function refuseReason(payload: Hex): string | null {
+  try {
+    const [kind, inner] = decodeAbiParameters([{ type: "uint8" }, { type: "bytes" }], payload);
+    const k = Number(kind);
+    if (k > 4) return `unknown kind ${k}`;
+    if (k === 0 && MAX_SIGN_AMOUNT > 0n) { // TRANSFER
+      const [, amount] = decodeAbiParameters([{ type: "address" }, { type: "uint256" }], inner as Hex);
+      if ((amount as bigint) > MAX_SIGN_AMOUNT) return `amount ${amount} > policy cap ${MAX_SIGN_AMOUNT}`;
+    }
+    return null;
+  } catch { return "undecodable payload"; }
+}
 
 const { chains, byLogicalId } = await buildChains();
 const ckptFile = `.ckpt-att-${acct.address.toLowerCase()}.json`;
@@ -27,6 +45,8 @@ async function poll(c: Chain) {
   for (const a of msgs) {
     const dst = byLogicalId.get(Number(a.dstChainId));
     if (!dst) continue;
+    const reason = refuseReason(a.payload as Hex);
+    if (reason) { console.warn(`  REFUSE ${a.msgId.slice(0, 10)}: ${reason}`); continue; }
     const inner = innerDigest(dst.evmChainId, dst.cfg.gateway, a.msgId);
     const sig = await acct.signMessage({ message: { raw: inner } });
     writeSig(a.msgId, acct.address, sig);

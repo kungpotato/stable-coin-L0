@@ -21,9 +21,14 @@ import {IBambooReceiver} from "./IBambooReceiver.sol";
 ///   M-4 governance: 2-step ownership; owner is meant to be a multisig + timelock.
 ///   L-2 reentrancy: receiveMessage/retry are nonReentrant (plus checks-effects order).
 contract BambooGateway {
+    /// @dev minimum signatures ever allowed — blocks the 1-of-1 / single-verifier
+    ///      misconfiguration that caused the largest 2026 bridge loss (Kelp DAO, ~$292M).
+    uint256 public constant MIN_THRESHOLD = 2;
+
     uint64 public immutable localChainId; // logical chain id (not the EVM chainid)
     address public owner;
     address public pendingOwner;
+    address public guardian; // emergency pause only (e.g. BOT) — faster than owner multisig
     bool public paused;
 
     mapping(address => bool) public isAttester;
@@ -48,6 +53,7 @@ contract BambooGateway {
     event AttesterSet(address indexed attester, bool allowed);
     event ThresholdSet(uint256 threshold);
     event PausedSet(bool paused);
+    event GuardianSet(address indexed guardian);
     event OwnershipTransferStarted(address indexed newOwner);
     event OwnershipTransferred(address indexed newOwner);
     event MessageSent(
@@ -99,9 +105,22 @@ contract BambooGateway {
     }
 
     // --- admin ---
-    function setPaused(bool p) external onlyOwner {
-        paused = p;
-        emit PausedSet(p);
+    function setGuardian(address g) external onlyOwner {
+        guardian = g;
+        emit GuardianSet(g);
+    }
+
+    /// @notice Emergency pause — owner OR guardian (fast incident response).
+    function pause() external {
+        require(msg.sender == owner || msg.sender == guardian, "not owner/guardian");
+        paused = true;
+        emit PausedSet(true);
+    }
+
+    /// @notice Unpause — owner only (guardian cannot resume, only halt).
+    function unpause() external onlyOwner {
+        paused = false;
+        emit PausedSet(false);
     }
 
     function setAttester(address a, bool allowed) external onlyOwner {
@@ -117,7 +136,8 @@ contract BambooGateway {
     }
 
     function setThreshold(uint256 t) external onlyOwner {
-        require(t > 0 && t <= attesterCount, "bad threshold");
+        require(t >= MIN_THRESHOLD, "below min threshold"); // anti 1-of-1 (Kelp DAO)
+        require(t <= attesterCount, "threshold > attesters");
         threshold = t;
         emit ThresholdSet(t);
     }

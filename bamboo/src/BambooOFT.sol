@@ -59,9 +59,10 @@ contract BambooOFT is IBambooReceiver {
     bool public whitelistEnabled = true;
     mapping(address => bool) public whitelisted;
 
-    uint256 public dailyMintCap; // 0 = unlimited
+    uint256 public dailyMintCap;   // 0 = unlimited (bounds TOTAL damage per day)
     uint256 public mintedInWindow;
     uint256 public windowStart;
+    uint256 public maxPerTransfer; // 0 = unlimited (bounds a SINGLE transfer)
 
     struct Outbound {
         address sender;
@@ -78,6 +79,7 @@ contract BambooOFT is IBambooReceiver {
     event WhitelistSet(address indexed account, bool allowed);
     event WhitelistEnabled(bool enabled);
     event DailyMintCapSet(uint256 cap);
+    event MaxPerTransferSet(uint256 max);
     event OwnershipTransferStarted(address indexed newOwner);
     event OwnershipTransferred(address indexed newOwner);
     event SentCrossChain(bytes32 indexed msgId, uint64 indexed dstChainId, address indexed to, uint256 amount);
@@ -133,11 +135,17 @@ contract BambooOFT is IBambooReceiver {
         emit DailyMintCapSet(cap);
     }
 
+    function setMaxPerTransfer(uint256 m) external onlyOwner {
+        maxPerTransfer = m;
+        emit MaxPerTransferSet(m);
+    }
+
     // --- send: burn here, instruct the peer to mint ---
     function send(uint64 dstChainId, address to, uint256 amount) external returns (bytes32 msgId) {
         address dstApp = peer[dstChainId];
         require(dstApp != address(0), "no peer");
         require(amount > 0, "amount 0");
+        if (maxPerTransfer > 0) require(amount <= maxPerTransfer, "over max per transfer");
         if (whitelistEnabled) {
             require(whitelisted[msg.sender], "sender not whitelisted");
             require(whitelisted[to], "recipient not whitelisted");
@@ -184,7 +192,8 @@ contract BambooOFT is IBambooReceiver {
         if (kind == KIND_TRANSFER) {
             (address to, uint256 amount) = abi.decode(inner, (address, uint256));
             if (whitelistEnabled) require(whitelisted[to], "recipient not whitelisted");
-            _checkAndAccrueCap(amount);
+            if (maxPerTransfer > 0) require(amount <= maxPerTransfer, "over max per transfer"); // bound single-tx drain
+            _checkAndAccrueCap(amount); // bound total daily drain
             token.mint(to, amount);
             emit ReceivedCrossChain(srcChainId, to, amount);
             gateway.send(srcChainId, peer[srcChainId], abi.encode(KIND_ACK, abi.encode(msgId)));

@@ -90,6 +90,7 @@
   <a href="#security">ความปลอดภัย</a>
   <a href="#setup">Setup</a>
   <a href="#api">API</a>
+  <a href="#hacks">กันการแฮก</a>
   <a href="#prod">Production</a>
 </div></nav>
 
@@ -298,7 +299,8 @@ cast send $OFT "resolveRefund(bytes32,address)" $MSGID $RECOVERY --private-key $
     <tr><td><code>receiveMessage(src, sender, receiver, payload, nonce, sigs[])</code></td><td>ตรวจ threshold → เรียก <code>bambooReceive</code> (permissionless)</td></tr>
     <tr><td><code>blockMessage(src, sender, payload, nonce)</code></td><td>block inbound ที่ยังไม่ deliver ของตัวเอง (ใช้ตอน cancel)</td></tr>
     <tr><td><code>retry(msgId)</code></td><td>ส่ง message ที่ delivery เคย revert อีกครั้ง</td></tr>
-    <tr><td><code>setAttester(a,bool)</code> / <code>setThreshold(t)</code> / <code>setPaused(bool)</code></td><td>admin (owner → multisig)</td></tr>
+    <tr><td><code>setAttester(a,bool)</code> / <code>setThreshold(t≥2)</code></td><td>admin (owner → multisig); threshold floor กัน 1-of-1</td></tr>
+    <tr><td><code>setGuardian(g)</code> / <code>pause()</code> / <code>unpause()</code></td><td>pause: owner|guardian (เร็ว) · unpause: owner-only</td></tr>
     <tr><td><code>processed(msgId)</code> / <code>cancelled(msgId)</code></td><td>views</td></tr>
   </table>
   <h3>BambooOFT</h3>
@@ -308,7 +310,8 @@ cast send $OFT "resolveRefund(bytes32,address)" $MSGID $RECOVERY --private-key $
     <tr><td><code>requestCancel(msgId)</code></td><td>sender/owner ขอ cancel transfer ที่ PENDING</td></tr>
     <tr><td><code>resolveRefund(msgId, to)</code></td><td>owner กู้ refund ที่ถูก block ไป recovery address</td></tr>
     <tr><td><code>setPeer(chainId, addr)</code></td><td>ผูก OFT ฝั่งโน้น (เหมือน LayerZero setPeer)</td></tr>
-    <tr><td><code>setWhitelist(a,bool)</code> / <code>setWhitelistEnabled(bool)</code> / <code>setDailyMintCap(cap)</code></td><td>compliance controls</td></tr>
+    <tr><td><code>setWhitelist(a,bool)</code> / <code>setWhitelistEnabled(bool)</code></td><td>compliance (KYC gate)</td></tr>
+    <tr><td><code>setDailyMintCap(cap)</code> / <code>setMaxPerTransfer(max)</code></td><td>damage bounds (daily total + per-transfer)</td></tr>
     <tr><td><code>isDelivered(msgId)</code> / <code>isStuck(msgId,timeout)</code> / <code>statusOf(msgId)</code></td><td>views (reconciliation / monitoring)</td></tr>
   </table>
   <h3>สถานะ outbound &amp; payload kinds</h3>
@@ -318,8 +321,32 @@ cast send $OFT "resolveRefund(bytes32,address)" $MSGID $RECOVERY --private-key $
   </div>
 </section>
 
+<section id="hacks">
+  <h2>9. กันการแฮกที่เกิดจริง (hack → defense)</h2>
+  <p>วิเคราะห์เคสจริง 2021–2026 เทียบกับสิ่งที่ bamboo ป้องกัน ⚠️ <b>ความจริง:</b> "กัน 100% ด้วยโค้ด" ทำไม่ได้ —
+  class <b>implementation bug</b> กันได้ด้วย audit เท่านั้น แต่เคสเงินหายเยอะสุด (misconfiguration + ไม่มี damage cap)
+  bamboo ปิดด้วยดีไซน์ได้</p>
+  <table>
+    <tr><th>เคส</th><th>สาเหตุ</th><th>defense ใน bamboo</th><th>สถานะ</th></tr>
+    <tr><td><b>Kelp DAO</b> ~$292M (2026)</td><td>single-verifier (1-of-1 quorum)</td><td>Min-threshold floor (ห้าม &lt;2) + N-of-M</td><td><span class="pill ok">ปิดได้</span></td></tr>
+    <tr><td><b>Ronin</b> $625M · <b>AFX</b> $24M</td><td>validator key ถูกขโมยถึง quorum</td><td>per-transfer cap + daily cap + guardian pause + ผู้เซ็นอิสระ/accountable + reconciliation</td><td><span class="pill warnp">bound ความเสียหาย</span></td></tr>
+    <tr><td><b>Multichain</b> ~$130M</td><td>MPC key รวมศูนย์</td><td>non-custodial — relay ไม่มีอำนาจ mint, key กระจาย</td><td><span class="pill ok">ปิดได้</span></td></tr>
+    <tr><td><b>Poly Network</b> $611M</td><td>message เรียก privileged function</td><td>gateway เรียกได้แค่ <code>bambooReceive</code>; admin = owner-only; แอป gate ด้วย peer</td><td><span class="pill ok">ปิดได้</span></td></tr>
+    <tr><td><b>Wanchain</b> ~$12M (2026)</td><td>signature reuse</td><td>domain separation + nonce + replay guard</td><td><span class="pill ok">ปิดได้</span></td></tr>
+    <tr><td><b>Verus</b> ~$11.6M (2026)</td><td>ไม่เช็คว่ายอดโอนตรง payout</td><td>amount ผูกใน msgId + payloadHash (แก้ไม่ได้)</td><td><span class="pill ok">ปิดได้</span></td></tr>
+    <tr><td><b>Nomad</b> $190M</td><td>upgrade ตั้ง trusted root = 0</td><td>ไม่มี single root; threshold&gt;0 บังคับ; gateway ไม่ upgradeable</td><td><span class="pill ok">footgun ไม่มี</span></td></tr>
+    <tr><td><b>Bybit</b> $1.5B (2025)</td><td>multisig UI หลอกให้เซ็น (blind sign)</td><td>attester ตรวจ policy ก่อนเซ็น + domain-bound digest</td><td><span class="pill warnp">ลดความเสี่ยง</span></td></tr>
+    <tr><td><b>Wormhole</b> $320M · <b>zkLink</b> · <b>BNB Bridge</b></td><td><b>implementation bug</b> ใน verify logic</td><td>โค้ดเรียบง่าย + ecrecover + guard ครบ — แต่ bug ของตัวเองยังเป็นไปได้</td><td><span class="pill dangerp">ต้อง audit</span></td></tr>
+  </table>
+  <div class="note warn"><b>สรุปซื่อสัตย์:</b> bamboo แข็งที่สุดในเคสเงินหายเยอะสุด (key concentration / single-verifier / privileged-function)
+  และ <b>bound ความเสียหาย</b>ได้แม้โดนเจาะ (cap + guardian) แต่ <b>pure implementation bug</b> กันได้ด้วย
+  <b>independent audit + formal verification</b> เท่านั้น — bamboo ยังเป็น self-audit บน lab</div>
+  <p class="muted">มาตรการใหม่ที่เพิ่มจากบทเรียนปี 2025–26 (ทดสอบแล้ว): Min-threshold floor, per-transfer/daily cap,
+  guardian emergency pause (owner|guardian pause / owner-only unpause), attester policy check ก่อนเซ็น</p>
+</section>
+
 <section id="prod">
-  <h2>9. ยังไม่ได้ทำ (roadmap สู่ production)</h2>
+  <h2>10. ยังไม่ได้ทำ (roadmap สู่ production)</h2>
   <ul>
     <li>Independent audit + formal verification + bug bounty</li>
     <li>Key management จริง: HSM / MPC (ตอนนี้ key ใน env = lab)</li>
