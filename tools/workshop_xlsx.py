@@ -872,12 +872,12 @@ steps = [
 
     (18, 0, "สืบ Mercado Bitcoin hack (2026-11-02) จากข่าว + verify address สดบน mainnet", "เคสที่ 2 เทียบกับ Binance: ตลาดบราซิลโดนกวาด hot wallet ~$46-49M บน 10+ เชน ด้วยการเซ็นโอนธรรมดา ไม่ใช่ 7702 — ยืนยัน address/ยอด/สถานะ freeze จากเชนจริง ไม่เดา",
      "stable-coin-L0/forensics/mercado-bitcoin-2026-11-02", "WebSearch/WebFetch (Arkham, Bitquery, CoinDesk) หา address แล้วเขียน check.sh เรียก cast balance/nonce/code/balanceOf/isBlackListed ยิง drpc archive; สรุปใน README.md พร้อมตาราง trace และตารางเทียบ Binance",
-     "verify สด (block ~26,337,586): เหยื่อ MB hot 0x5cc7 EOA nonce 16192 ถูกกวาดเหลือ ~0.009 ETH; โจร main 0xe485 EOA nonce 50 ถือ USDT 3,059,424 isBlackListed=true (Tether freeze); พัก ETH 0x59a9 nonce 0 นั่ง 2,979 ETH, 0x071f ~670, 0x4d5f ~761 (freeze ไม่ได้); ทุก address เป็น EOA ล้วน ไม่มี 7702", "PENDING",
+     "verify สด (block ~26,337,586): เหยื่อ MB hot 0x5cc7 EOA nonce 16192 ถูกกวาดเหลือ ~0.009 ETH; โจร main 0xe485 EOA nonce 50 ถือ USDT 3,059,424 isBlackListed=true (Tether freeze); พัก ETH 0x59a9 nonce 0 นั่ง 2,979 ETH, 0x071f ~670, 0x4d5f ~761 (freeze ไม่ได้); ทุก address เป็น EOA ล้วน ไม่มี 7702", "fa1885d",
      "ตรงข้ามกับ Binance: ไม่มี delegation/contract ของโจร เป็น signed transfer ล้วน แต่กวาดได้ทั้ง hot wallet + deposit 36,042 ใบ ข้าม 10+ เชน = ชี้ signing authority ตัวเดียวถูกยึด (shared seed/signer); alert ตรวจ code EOA แบบ Binance ใช้ไม่ได้ เพราะเหยื่อไม่เคยมี code; บทเรียนร่วม = USDT freeze ได้/ETH ไม่ได้ โจรรีบพัก ETH กระเป๋าสด", "ผ่าน"),
 
     (18, 1, "ทำ lab จำลองกลไก deposit-sweep ด้วย key เดียว (เทียบ 7702)", "โชว์ blast radius ของ signing authority ตัวเดียว: 1 seed derive key ของ N deposit address → ยึด seed = เซ็นแทนได้ทุกใบ ด้วย plain transfer ไม่ต้องมี code/7702",
      "stable-coin-L0/lz-potato", "เขียน test/MercadoDepositSweep.t.sol: derive key จาก MASTER_SEED, fund N=100 deposit EOA ด้วย USDT+ETH, วนเซ็นโอนออกทุกใบ (assert code.length==0 ทุกใบ), แล้ว issuer freeze USDT collector ได้ แต่ ETH ที่พักไว้ freeze ไม่ได้; forge test --match-path 'test/MercadoDepositSweep.t.sol'",
-     "ผ่าน 2/2: oneStolenSeedDrainsEveryDepositAddress (กวาดครบ N, ทุก victim ยังเป็น EOA code 0), issuerFreezesUsdtButNotParkedEth (USDT collector โดน freeze โอนต่อ revert, ETH park โอนออกได้)", "PENDING",
+     "ผ่าน 2/2: oneStolenSeedDrainsEveryDepositAddress (กวาดครบ N, ทุก victim ยังเป็น EOA code 0), issuerFreezesUsdtButNotParkedEth (USDT collector โดน freeze โอนต่อ revert, ETH park โอนออกได้)", "fa1885d",
      "หัวใจต่างจาก 7702: ไม่ต้องหลอกให้เซ็น auth หรือ deploy sweeper — แค่ยึด seed/signer ก็เซ็นแทนทุก address ที่ derive มา จุดเดียวแตก=ทั้งตลาดแตก; ป้องกันที่ custody (แยก key, MPC/HSM, สิทธิ์ต่อ address) ไม่ใช่ที่ code ของ EOA; reuse MockUSDT แสดงชั้น freeze เดียวกับบท 17", "ผ่าน"),
 ]
 RERUN = {
