@@ -3,366 +3,690 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bamboo — Cross-chain Messaging Protocol</title>
+<title>bamboo Protocol Documentation</title>
+<meta name="description" content="Official technical documentation for the bamboo cross-chain messaging protocol.">
 <style>
   :root{
-    --bg:#ffffff; --fg:#1a1f2b; --muted:#5b6476; --line:#e4e8f0;
-    --card:#f7f9fc; --accent:#2f8f5b; --accent2:#2563eb; --warn:#b4690e; --danger:#c0392b;
-    --code-bg:#f2f4f8; --code-fg:#1a1f2b; --pre-bg:#0f1420; --pre-fg:#d6e0f0;
+    --bg:#ffffff;--fg:#1c2230;--muted:#5a6476;--faint:#8a93a6;--line:#e6e9f0;
+    --sidebar:#f7f8fb;--accent:#2563eb;--accent-soft:#eaf0ff;--ok:#1a8f4c;--warn:#b4690e;--danger:#c0392b;
+    --code-bg:#f1f3f8;--code-fg:#24324a;--pre-bg:#0f1526;--pre-fg:#d6e0f3;--th:#f2f4f9;
   }
-  @media (prefers-color-scheme:dark){
-    :root:not([data-theme="light"]){
-      --bg:#0f1420; --fg:#e6ebf4; --muted:#9aa6bd; --line:#243049;
-      --card:#161d2e; --accent:#4cc585; --accent2:#6ea8ff; --warn:#e0a44a; --danger:#ff7a6b;
-      --code-bg:#1b2334; --code-fg:#e6ebf4; --pre-bg:#0a0e18; --pre-fg:#d6e0f0;
-    }
-  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0d1119;--fg:#dde4f0;--muted:#99a3b7;--faint:#6b7488;--line:#222c42;
+    --sidebar:#10151f;--accent:#6ea8ff;--accent-soft:#182642;--ok:#54c784;--warn:#e0a44a;--danger:#ff7a6b;
+    --code-bg:#182134;--code-fg:#dde4f0;--pre-bg:#080b12;--pre-fg:#d6e0f3;--th:#161d2c;
+  }}
   :root[data-theme="dark"]{
-    --bg:#0f1420; --fg:#e6ebf4; --muted:#9aa6bd; --line:#243049;
-    --card:#161d2e; --accent:#4cc585; --accent2:#6ea8ff; --warn:#e0a44a; --danger:#ff7a6b;
-    --code-bg:#1b2334; --code-fg:#e6ebf4; --pre-bg:#0a0e18; --pre-fg:#d6e0f0;
+    --bg:#0d1119;--fg:#dde4f0;--muted:#99a3b7;--faint:#6b7488;--line:#222c42;
+    --sidebar:#10151f;--accent:#6ea8ff;--accent-soft:#182642;--ok:#54c784;--warn:#e0a44a;--danger:#ff7a6b;
+    --code-bg:#182134;--code-fg:#dde4f0;--pre-bg:#080b12;--pre-fg:#d6e0f3;--th:#161d2c;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--fg);
-    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;}
-  .wrap{max-width:1040px;margin:0 auto;padding:0 16px}
-  header.hero{padding:48px 16px 28px;border-bottom:1px solid var(--line);background:var(--card)}
-  header.hero .wrap{max-width:1040px}
-  h1{font-size:34px;margin:0 0 6px;letter-spacing:-.5px}
-  .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);
-    border:1px solid var(--accent);border-radius:999px;padding:2px 10px;margin-bottom:14px}
-  .lede{font-size:18px;color:var(--muted);max-width:760px;margin:0}
-  nav.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);
-    padding:10px 0;z-index:10;overflow-x:auto;white-space:nowrap}
-  nav.toc a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;margin-right:16px}
-  nav.toc a:hover{color:var(--accent2)}
-  section{padding:34px 0;border-bottom:1px solid var(--line)}
-  h2{font-size:24px;margin:0 0 14px;letter-spacing:-.3px}
-  h3{font-size:18px;margin:26px 0 8px}
-  p{margin:10px 0}
-  a{color:var(--accent2)}
-  code{background:var(--code-bg);color:var(--code-fg);padding:1px 6px;border-radius:5px;
-    font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  pre{background:var(--pre-bg);color:var(--pre-fg);padding:16px;border-radius:10px;overflow-x:auto;
-    font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line)}
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:var(--code-bg);color:var(--code-fg);padding:1px 5px;border-radius:4px;
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-word}
+  pre{background:var(--pre-bg);color:var(--pre-fg);padding:15px 16px;border-radius:8px;overflow-x:auto;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line)}
   pre code{background:none;color:inherit;padding:0}
-  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;display:block;overflow-x:auto}
-  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
-  th{background:var(--card);font-weight:600}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:16px 0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:6px}
-  .ok{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
-  .warnp{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
-  .dangerp{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
-  .muted{color:var(--muted)}
-  .note{border-left:3px solid var(--accent2);padding:6px 14px;margin:14px 0;background:var(--card);border-radius:0 8px 8px 0}
-  .warn{border-left-color:var(--warn)}
-  ul,ol{padding-left:22px}
+
+  /* layout */
+  .topbar{position:fixed;top:0;left:0;right:0;height:52px;background:var(--bg);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px;padding:0 18px;z-index:30}
+  .topbar .brand{font-weight:700;font-size:16px;letter-spacing:-.3px}
+  .topbar .ver{font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .topbar .sp{flex:1}
+  .topbar button{background:var(--sidebar);border:1px solid var(--line);color:var(--fg);border-radius:7px;
+    padding:5px 10px;font-size:13px;cursor:pointer}
+  .layout{display:flex;padding-top:52px}
+  aside{position:fixed;top:52px;bottom:0;left:0;width:272px;overflow-y:auto;background:var(--sidebar);
+    border-right:1px solid var(--line);padding:18px 14px 60px}
+  aside .grp{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);
+    margin:18px 10px 6px}
+  aside a{display:block;color:var(--muted);padding:5px 10px;border-radius:7px;font-size:13.5px;line-height:1.3}
+  aside a:hover{background:var(--accent-soft);text-decoration:none;color:var(--fg)}
+  aside a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  main{margin-left:272px;max-width:860px;padding:34px 40px 120px;width:100%}
+  @media(max-width:900px){
+    aside{transform:translateX(-100%);transition:.2s;z-index:25;box-shadow:0 0 40px rgba(0,0,0,.3)}
+    body.nav-open aside{transform:none}
+    main{margin-left:0;padding:24px 18px 100px}
+    .menu-btn{display:inline-flex!important}
+  }
+  .menu-btn{display:none;align-items:center}
+
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.6px}
+  h2{font-size:22px;margin:40px 0 12px;padding-top:12px;border-top:1px solid var(--line);letter-spacing:-.3px}
+  section:first-of-type h2{border-top:none;padding-top:0;margin-top:14px}
+  h3{font-size:17px;margin:26px 0 8px}
+  h4{font-size:14px;margin:18px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  p{margin:10px 0}
+  ul,ol{padding-left:22px;margin:10px 0}
   li{margin:4px 0}
-  footer{padding:30px 16px;color:var(--muted);font-size:13px;text-align:center}
-  .theme-btn{position:fixed;top:12px;right:12px;z-index:20;background:var(--card);border:1px solid var(--line);
-    color:var(--fg);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
-  .kbd{font:12px ui-monospace,monospace;background:var(--code-bg);border:1px solid var(--line);
-    border-radius:5px;padding:1px 6px}
+  .lead{font-size:16px;color:var(--muted)}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;display:block;overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--th);font-weight:600;white-space:nowrap}
+  td code{white-space:nowrap}
+  .fn{background:var(--code-bg);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 8px 8px 0;padding:10px 14px;margin:18px 0 8px;font:13px ui-monospace,monospace;overflow-x:auto}
+  .meta{font-size:12.5px;color:var(--muted);margin:2px 0 10px}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 7px;margin-left:6px;vertical-align:middle}
+  .b-owner{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-open{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-view{background:var(--accent-soft);color:var(--accent)}
+  .note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:8px 14px;border-radius:0 8px 8px 0;margin:14px 0}
+  .note.warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
+  .note.danger{border-left-color:var(--danger);background:color-mix(in srgb,var(--danger) 9%,transparent)}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .p-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .p-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .p-danger{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
+  .muted{color:var(--muted)}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px}
+  h2,h3{scroll-margin-top:66px}
 </style>
 </head>
 <body>
-<button class="theme-btn" onclick="(function(){var r=document.documentElement;var d=r.getAttribute('data-theme')==='dark';r.setAttribute('data-theme',d?'light':'dark');try{localStorage.setItem('bamboo-theme',d?'light':'dark')}catch(e){}})()">◐ theme</button>
+<div class="topbar">
+  <button class="menu-btn" onclick="document.body.classList.toggle('nav-open')">☰</button>
+  <span class="brand">bamboo</span><span class="ver">v0.1 · draft</span>
+  <span class="sp"></span>
+  <button onclick="(function(){var r=document.documentElement,d=r.getAttribute('data-theme')==='dark';r.setAttribute('data-theme',d?'light':'dark');try{localStorage.setItem('bamboo-theme',d?'light':'dark')}catch(e){}})()">◐</button>
+</div>
 <script>try{var t=localStorage.getItem('bamboo-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 
-<header class="hero">
-  <div class="wrap">
-    <div class="tag">cross-chain messaging / interoperability protocol</div>
-    <h1>🎋 bamboo</h1>
-    <p class="lede">โปรโตคอลส่งข้อความข้ามเชนแบบ <b>non-custodial</b> + <b>attestation-based</b> สำหรับระบบ
-    THB stablecoin หลาย issuer หลายเชน — ส่ง payload อะไรก็ได้ข้ามเชน โดยตัวกลาง (relay) <b>ปลอม/ขโมยไม่ได้</b>
-    และ token transfer เป็นเพียง "แอปตัวแรก" บน messaging layer</p>
-  </div>
-</header>
+<div class="layout">
+<aside id="nav">
+  <div class="grp">เริ่มต้น</div>
+  <a href="#introduction">Introduction</a>
+  <a href="#quickstart">Quickstart</a>
+  <div class="grp">แนวคิด</div>
+  <a href="#terminology">Terminology</a>
+  <a href="#trust-model">Trust model</a>
+  <a href="#layering">Messaging layer &amp; apps</a>
+  <div class="grp">Protocol specification</div>
+  <a href="#msgid">Message identity</a>
+  <a href="#digest">Signing digest</a>
+  <a href="#verification">Verification</a>
+  <a href="#payload">Payload encoding</a>
+  <a href="#lifecycle">Message lifecycle</a>
+  <div class="grp">Flows</div>
+  <a href="#flow-transfer">Transfer &amp; ACK</a>
+  <a href="#flow-cancel">Cancel &amp; refund</a>
+  <a href="#flow-relay">Permissionless relay</a>
+  <a href="#flow-retail">Retail payments</a>
+  <div class="grp">Contract reference</div>
+  <a href="#ref-gateway">BambooGateway</a>
+  <a href="#ref-oft">BambooOFT</a>
+  <a href="#ref-interfaces">Interfaces</a>
+  <div class="grp">Off-chain</div>
+  <a href="#offchain">Relay components</a>
+  <a href="#config">Configuration</a>
+  <div class="grp">Guides</div>
+  <a href="#guide-deploy">Deploy a chain pair</a>
+  <a href="#guide-app">Build an app</a>
+  <a href="#guide-onboard">Onboard an issuer</a>
+  <a href="#guide-ops">Operate the mesh</a>
+  <a href="#guide-recover">Recover / cancel</a>
+  <div class="grp">Security</div>
+  <a href="#sec-model">Threat model</a>
+  <a href="#sec-hardening">Hardening</a>
+  <a href="#sec-hacks">Hack → defense</a>
+  <a href="#sec-audit">Audit status</a>
+  <div class="grp">Operations</div>
+  <a href="#ops-deploy">Deployment &amp; infra</a>
+  <div class="grp">Reference</div>
+  <a href="#glossary">Glossary</a>
+</aside>
 
-<nav class="toc"><div class="wrap">
-  <a href="#what">ภาพรวม</a>
-  <a href="#trust">Trust model</a>
-  <a href="#arch">สถาปัตยกรรม</a>
-  <a href="#components">ส่วนประกอบ</a>
-  <a href="#flows">Flows</a>
-  <a href="#security">ความปลอดภัย</a>
-  <a href="#setup">Setup</a>
-  <a href="#api">API</a>
-  <a href="#hacks">กันการแฮก</a>
-  <a href="#prod">Production</a>
-</div></nav>
+<main>
+<h1>bamboo Protocol</h1>
+<p class="lead">เอกสารทางเทคนิคสำหรับ bamboo — โปรโตคอลส่งข้อความข้ามเชนแบบ non-custodial, attestation-based
+สำหรับระบบ stablecoin หลาย issuer หลายเชน</p>
+<p class="muted">เอกสารนี้สร้างจากซอร์สในไดเรกทอรี <code>bamboo/</code> (contracts <code>src/</code>, off-chain <code>relay/</code>).
+สถานะ: <b>v0.1 draft</b> — self-audited lab MVP, ยังไม่ผ่าน independent audit.</p>
 
-<main class="wrap">
-
-<section id="what">
-  <h2>1. ภาพรวม — bamboo ทำอะไรได้</h2>
-  <p>bamboo คือ <b>generic cross-chain messaging layer</b>: smart contract บนเชน A ส่งข้อความ (bytes อะไรก็ได้)
-  ไปเรียกแอปบนเชน B ได้ ผ่านตัวกลาง (relay) ที่ <b>ไม่ต้องเชื่อถือ</b> เพราะความถูกต้องถูกค้ำด้วยลายเซ็นของ
-  "attester set" ที่ตรวจสอบบนเชนปลายทาง</p>
-
-  <div class="grid">
-    <div class="card"><b>📨 Generic messaging</b><br><span class="muted">ส่ง arbitrary <code>bytes</code> payload ข้ามเชน — แอปไหน implement <code>IBambooReceiver</code> ก็รับได้</span></div>
-    <div class="card"><b>💵 Token transfer (OFT)</b><br><span class="muted">burn-and-mint ข้ามเชน (ไม่ wrap) — เป็นแอปตัวแรกบน messaging layer</span></div>
-    <div class="card"><b>🔁 Two-way ACK</b><br><span class="muted">ปลายทางส่ง receipt กลับ → ต้นทางรู้ว่า delivered → reconciliation + ตรวจจับ stuck</span></div>
-    <div class="card"><b>↩️ Safe refund</b><br><span class="muted">cancel transfer ที่ค้างได้อย่างปลอดภัย (two-phase) โดยไม่เสี่ยง double-mint</span></div>
-    <div class="card"><b>🌐 Permissionless relay</b><br><span class="muted">ใครก็ส่ง message ได้ (self-relay) → relay ดับ/เซ็นเซอร์ก็ไม่ทำเงินติด</span></div>
-    <div class="card"><b>🛡️ Issuer เก็บ token เดิม</b><br><span class="muted">ไม่ต้องใช้ token ของเรา — grant minter role ให้ gateway, เก็บ proxy/upgradability/controls</span></div>
-  </div>
-
-  <div class="note">บริบท: ออกแบบสำหรับ 3 issuer ที่มี license จาก ธปท. แต่ละรายมีเชนของตัวเอง — ต้องการ interoperability
-  ที่ <b>regulator ยอมรับ</b> (verifier = issuer ที่รับผิดตามกฎหมาย ไม่ใช่ validator นิรนามแบบ public bridge)</div>
+<section id="introduction">
+<h2>Introduction</h2>
+<p>bamboo เป็น <b>generic cross-chain messaging layer</b>: สัญญาบนเชนหนึ่งส่งข้อความ (payload เป็น <code>bytes</code> อะไรก็ได้)
+ไปให้แอปบนอีกเชนประมวลผล โดยส่งผ่านตัวกลาง (relay) ที่ <b>ไม่จำเป็นต้องเชื่อถือ</b> — ความถูกต้องถูกบังคับด้วย
+ลายเซ็นของชุด attester ที่ตรวจสอบบนเชนปลายทาง</p>
+<h4>Design goals</h4>
+<ul>
+  <li><b>Non-custodial</b> — ตัวกลางไม่มีสิทธิ์ mint/ถือเงิน ปลอมข้อความไม่ได้</li>
+  <li><b>Accountable trust</b> — ผู้รับรอง (attester) = issuer ที่มี license + ผู้กำกับ ไม่ใช่ validator นิรนาม</li>
+  <li><b>Generic</b> — token transfer เป็นเพียงแอปตัวอย่าง; แอปใดก็สร้างบน messaging layer ได้</li>
+  <li><b>Regulator-aligned</b> — มี whitelist, freeze/pause, mint cap, reconciliation hooks</li>
+</ul>
+<h4>Non-goals</h4>
+<ul>
+  <li>ไม่ใช่ trustless light-client bridge (เป็นไปไม่ได้เมื่อเชนปลายทางเป็น black box)</li>
+  <li>ไม่รับประกัน atomic settlement ข้ามเชน (ดู <a href="#sec-model">Two Generals</a>)</li>
+</ul>
 </section>
 
-<section id="trust">
-  <h2>2. Trust model — ทำไมถึงปลอดภัย</h2>
-  <p>หัวใจคือ <b>attester set + N-of-M threshold</b>: ข้อความจะถูก execute บนปลายทางได้ก็ต่อเมื่อมี
-  ลายเซ็นจาก attester ที่ลงทะเบียนไว้ครบ <code>threshold</code> ตัว</p>
-  <table>
-    <tr><th>บทบาท</th><th>ถือ key?</th><th>ทำอะไรได้ / ไม่ได้</th></tr>
-    <tr><td><b>Attester</b> (issuer + BOT)</td><td>✅ signing key</td><td>เซ็นรับรองข้อความ — เป็นที่มาของความเชื่อถือ (ในระบบจริง = issuer ที่มี license รับผิดตามกฎหมาย)</td></tr>
-    <tr><td><b>Relay / Submitter</b> (เรา / ใครก็ได้)</td><td>❌ แค่ gas key</td><td>เดินสาร + submit — <b>ปลอม/ขโมย/mint เองไม่ได้</b> ทำได้แค่ช้า/ดอง (ซึ่งแก้ด้วย redundancy)</td></tr>
-    <tr><td><b>Dest gateway</b></td><td>—</td><td>ตรวจ threshold signatures + replay ก่อน execute</td></tr>
-  </table>
-  <div class="note">เทียบ LayerZero/Wormhole: โครงเดียวกัน (verifier set + threshold) ต่างที่ <b>ใครอยู่ใน set</b> —
-  ของ bamboo = issuer ที่มี license + BOT (accountable) ไม่ใช่ DVN/guardian ภายนอก</div>
-  <h3>Burn-and-mint (ไม่ wrap)</h3>
-  <p>การโอน token ใช้ burn ที่ต้นทาง + mint ที่ปลายทาง → supply รวมทุกเชนคงที่ 1:1 เสมอ ไม่มี wrapped token
-  (ซึ่ง ธปท. เตือนเรื่อง bridging/wrapping ออกนอกขอบเขตกำกับ)</p>
-</section>
+<section id="quickstart">
+<h2>Quickstart (local)</h2>
+<p>รัน anvil ↔ anvil พร้อม relay mesh และโอน token ข้ามเชน</p>
+<pre><code># prerequisites: Foundry (anvil/cast/forge), Node.js >= 22, jq
 
-<section id="arch">
-  <h2>3. สถาปัตยกรรม</h2>
-<pre><code>  chain A (เช่น anvil)            relay mesh (off-chain, untrusted)        chain B (เช่น potato EVM)
-  ┌───────────────────┐                                                  ┌───────────────────┐
-  │ issuer token      │◀─ burnFrom ─┐   ┌──────────────────────────┐     │ issuer token      │
-  │ (proxy, คงเดิม)    │             │   │ attesters: เซ็น + publish │  ┌─▶│ (proxy, คงเดิม)    │
-  │   ▲ mint          │             │   │ sigs -> shared store      │  │  │   ▲ mint          │
-  │ BambooOFT (app)   │─ gateway.send(payload) ─┐                   │  │  │ BambooOFT (app)   │
-  │   │               │             │   │ submitters: เก็บ ≥T sigs  │  │  │   │               │
-  │ BambooGateway ────┼── MessageSent ─────────▶│ แล้ว submit ปลายทาง │──┘  │ BambooGateway     │
-  │ (messaging)       │             │   └──────────────────────────┘     │ (messaging)       │
-  └───────────────────┘                  verify threshold @ dest         └───────────────────┘
-       gateway ส่ง "bytes" เฉยๆ — มีแต่ OFT ที่รู้ว่าเป็น token transfer
-       ACK / CANCEL / CANCEL_ACK / DELIVERED_NOTICE วิ่งกลับผ่าน mesh เดียวกัน</code></pre>
-  <p class="muted">ทั้ง anvil และ potato เป็น EVM (potato = cosmos/evm chain ที่มี EVM JSON-RPC) → Solidity ชุดเดียว deploy ได้ทั้งคู่</p>
-</section>
-
-<section id="components">
-  <h2>4. ส่วนประกอบ</h2>
-  <h3>On-chain (Solidity, <code>src/</code>)</h3>
-  <table>
-    <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
-    <tr><td><code>BambooGateway.sol</code></td><td>generic messaging: <code>send(bytes)</code> / <code>receiveMessage()</code> ตรวจ N-of-M → เรียกแอป; มี pause, domain-separated signature, replay guard, recovery (<code>retry</code>), <code>blockMessage</code> (cancel)</td></tr>
-    <tr><td><code>IBambooReceiver.sol</code></td><td>interface ของแอปที่รับ message: <code>bambooReceive(src, sender, msgId, payload)</code></td></tr>
-    <tr><td><code>BambooOFT.sol</code></td><td>แอปโอน token แบบ burn-and-mint + ACK + cancel/refund + whitelist + daily mint cap</td></tr>
-    <tr><td><code>IBridgeToken.sol</code></td><td>interface ขั้นต่ำที่ OFT ต้องการจาก token ของ issuer: <code>mint</code> / <code>burnFrom</code></td></tr>
-    <tr><td><code>BambooToken.sol</code></td><td><span class="pill warnp">LAB MOCK</span> จำลอง token ของ issuer (role-based) — ไม่ใช่ส่วนของ protocol</td></tr>
-  </table>
-  <h3>Off-chain (TypeScript, <code>relay/</code>)</h3>
-  <table>
-    <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
-    <tr><td><code>attester.ts</code></td><td>1 process / 1 key — เฝ้า event, เซ็น domain digest, publish sig ลง store (ในจริง: issuer + BOT รันเอง, key ใน HSM)</td></tr>
-    <tr><td><code>submitter.ts</code></td><td>permissionless relayer — เก็บ ≥threshold sigs แล้ว submit; รันหลายตัวได้ (redundant)</td></tr>
-    <tr><td><code>self-relay.ts</code></td><td>user กู้ message เดียวเองด้วย sigs ที่ publish ไว้ (ไม่ต้องมี attester key)</td></tr>
-    <tr><td><code>relay.ts</code></td><td>all-in-one (lab convenience) — ถือ key ครบ, ใช้เฉพาะ lab</td></tr>
-    <tr><td><code>common.ts</code></td><td>shared: chain setup, domain digest, sig store, checkpoints</td></tr>
-  </table>
-  <h3>Scripts</h3>
-  <table>
-    <tr><td><code>deploy.sh</code></td><td>deploy gateway + token + OFT, wire attester set + peers → <code>deployments/local.json</code></td></tr>
-    <tr><td><code>run-mesh.sh</code></td><td>สตาร์ท 3 attesters + 2 submitters</td></tr>
-    <tr><td><code>demo.sh</code></td><td>ส่ง 100 bUSD A→B แล้ว verify supply</td></tr>
-  </table>
-</section>
-
-<section id="flows">
-  <h2>5. Message flows</h2>
-
-  <h3>5.1 Transfer + ACK</h3>
-<pre><code>A.send(dst,to,amt)   → burnFrom(sender), outbound[msgId]=PENDING, emit MessageSent
-   ↓ mesh
-B.bambooReceive      → verify threshold → mint(to,amt) → ส่ง ACK(msgId) กลับ
-   ↓ mesh
-A.bambooReceive(ACK) → outbound[msgId]=DELIVERED  (isDelivered(msgId)=true)</code></pre>
-  <p><span class="pill ok">tested</span> ส่ง 100 A→B → B mint → ACK กลับ → A.isDelivered=true · supply รวมคงที่</p>
-
-  <h3>5.2 Safe cancel + refund (two-phase, กัน double-mint)</h3>
-<pre><code>A.requestCancel(msgId)   → status=CANCEL_REQUESTED, ส่ง CANCEL ไป B
-B รับ CANCEL:
-   • ถ้า B.processed(msgId)=true (deliver แล้ว) → ส่ง DELIVERED_NOTICE กลับ (แก้สถานะ A เป็น DELIVERED)
-   • ถ้ายังไม่ deliver → blockMessage(msgId) [ส่ง deliver ไม่ได้ตลอดกาล] → ส่ง CANCEL_ACK กลับ
-A รับ CANCEL_ACK:
-   • ถ้า sender ยัง whitelisted → mint คืน sender, status=REFUNDED
-   • ถ้า sender ถูก de-whitelist → status=REFUND_BLOCKED → owner ใช้ resolveRefund(msgId, recovery)</code></pre>
-  <div class="note"><b>Invariant ความปลอดภัย:</b> deliver กับ block ใช้ flag <code>processed[msgId]</code> ตัวเดียวกัน
-  → เกิดได้แค่ <b>อย่างใดอย่างหนึ่ง</b>; CANCEL_ACK ถูกส่งเฉพาะหลัง block สำเร็จ → refund ⟹ ไม่เคย mint
-  → <b>ไม่มีทาง double-mint</b></div>
-  <p><span class="pill ok">tested</span> refund สำเร็จ (sender ได้คืน / recovery ได้เมื่อ blocked) · ส่ง transfer เดิมซ้ำ → ถูก block · B ไม่ขึ้น</p>
-
-  <h3>5.3 Permissionless / self-relay</h3>
-  <p>attester (ถือ key) แยกจาก submitter (ไม่ถือ key) — <code>receiveMessage</code> ต้องการแค่ "ลายเซ็น" →
-  <b>ใครก็ submit ได้</b></p>
-  <ul>
-    <li><b>Redundant:</b> submitter หลายตัวแข่งกัน ตัวแพ้เห็น <code>replay</code> แล้วหลบ</li>
-    <li><b>Self-relay:</b> relay ดับ/เซ็นเซอร์ → user รัน <code>self-relay.ts &lt;msgId&gt;</code> ส่งเอง</li>
-  </ul>
-  <p><span class="pill ok">tested</span> 2 submitters: ตัวนึง deliver อีกตัว "already delivered"; ปิด submitter หมด → self-relay กู้ได้</p>
-</section>
-
-<section id="security">
-  <h2>6. ความปลอดภัย</h2>
-  <p>ผ่าน self-audit 2 รอบ — รอบ 1 เจอ 13 (แก้หมด), รอบ 2 เจอ 2 medium (แก้แล้ว)</p>
-  <table>
-    <tr><th>มาตรการ</th><th>ป้องกัน</th></tr>
-    <tr><td>Domain-separated signature</td><td>replay ข้าม gateway/chain (sign digest ผูก chainid + gateway address)</td></tr>
-    <tr><td>N-of-M threshold + replay guard</td><td>ปลอมข้อความ / ส่งซ้ำ</td></tr>
-    <tr><td>Finality wait (confirmations)</td><td>reorg → double-mint</td></tr>
-    <tr><td>Recovery (<code>retry</code>) + checkpoint</td><td>message หาย/ค้างเมื่อ relay ดับ</td></tr>
-    <tr><td>Threshold guard on attester removal</td><td>ถอด attester จนต่ำกว่า threshold = DoS</td></tr>
-    <tr><td>Pause + 2-step ownership</td><td>ฉุกเฉิน / key หลุด (owner = multisig+timelock ในจริง)</td></tr>
-    <tr><td>Whitelist + daily mint cap</td><td>mint ให้ wallet ที่ไม่ KYC / จำกัดความเสียหาย</td></tr>
-    <tr><td>Two-phase cancel</td><td><b>double-mint</b> ตอน refund</td></tr>
-    <tr><td>Refund whitelist check (M-A)</td><td>คืนเงินให้ sender ที่โดน sanction อัตโนมัติ</td></tr>
-  </table>
-  <div class="note warn"><b>ยังเป็น self-audit บน lab</b> — ก่อนแตะเงินจริงต้องมี <b>independent audit + formal verification</b>
-  และ key ต้องอยู่ใน HSM (ตอนนี้อยู่ใน env = lab เท่านั้น)</div>
-</section>
-
-<section id="setup">
-  <h2>7. Setup &amp; การใช้งาน</h2>
-  <h3>7.1 Prerequisites</h3>
-  <ul>
-    <li><b>Foundry</b> (anvil, cast, forge) — <code>~/.foundry/bin</code></li>
-    <li><b>Node.js ≥ 22</b> (ใช้ <code>--experimental-strip-types</code> รัน .ts ตรงๆ)</li>
-    <li><code>jq</code></li>
-  </ul>
-
-  <h3>7.2 รัน anvil ↔ anvil (เร็วสุด, พิสูจน์ protocol)</h3>
-<pre><code># 1) สอง anvil
+# 1. สอง local EVM
 anvil --port 28545 --chain-id 31338 --hardfork prague --block-time 1 &amp;
 anvil --port 38545 --chain-id 31340 --hardfork prague --block-time 1 &amp;
 
-# 2) deploy + wire (token, gateway, OFT, attester set, peers, seed)
+# 2. deploy + wire (token, gateway, OFT, attester set, peers, caps, seed)
 cd bamboo
 A_NAME=anvilA A_RPC=http://localhost:28545 A_ID=1 \
 B_NAME=anvilB B_RPC=http://localhost:38545 B_ID=2 ./deploy.sh
 
-# 3) ติดตั้ง relay deps
+# 3. relay mesh (3 attesters + 2 submitters)
 cd relay &amp;&amp; npm install &amp;&amp; cd ..
-
-# 4) สตาร์ท relay mesh (3 attesters + 2 submitters)
 ./run-mesh.sh
 
-# 5) demo: ส่ง 100 bUSD A→B + verify
+# 4. demo: โอน 100 bUSD A->B แล้ว verify supply
 ./demo.sh</code></pre>
-  <p class="muted">ผลที่ควรเห็น: supply ฝั่ง A ลด 100, ฝั่ง B เพิ่ม 100, รวมคงที่ = burn-and-mint</p>
+<p class="muted">ผลลัพธ์: supply ฝั่ง A ลด 100, ฝั่ง B เพิ่ม 100 (supply รวมคงที่ = burn-and-mint)</p>
+</section>
 
-  <h3>7.3 รัน anvil ↔ potato (เป้าหมายจริง)</h3>
-  <p>potato เป็น cosmos/evm → มี EVM JSON-RPC ที่ <code>:18545</code> เหมือน EVM ทั่วไป ต่างแค่:</p>
-  <ol>
-    <li>สตาร์ท potato ก่อน: <code>cd ../../potato-chain &amp;&amp; make localnet-up</code> (รอ EVM :18545)</li>
-    <li>relayer key ฝั่ง potato ต้องมี gas — ตั้ง <code>BAMBOO_RELAYER_KEY_POTATO=&lt;key ที่ faucet เติม&gt;</code></li>
-  </ol>
-<pre><code>A_NAME=anvil A_RPC=http://localhost:28545 A_ID=1 A_KEY=&lt;anvil dev key&gt; \
-B_NAME=potato B_RPC=http://localhost:18545 B_ID=2 B_KEY=&lt;potato funded key&gt; ./deploy.sh</code></pre>
+<section id="terminology">
+<h2>Terminology</h2>
+<table>
+  <tr><th>คำ</th><th>ความหมาย</th></tr>
+  <tr><td>Gateway</td><td>สัญญา messaging layer บนแต่ละเชน (<code>BambooGateway</code>)</td></tr>
+  <tr><td>App</td><td>สัญญาที่ implement <code>IBambooReceiver</code> เพื่อรับข้อความ (เช่น <code>BambooOFT</code>)</td></tr>
+  <tr><td>Attester</td><td>ผู้ถือ key ที่เซ็นรับรองข้อความ (issuer / ผู้กำกับ)</td></tr>
+  <tr><td>Submitter / Relay</td><td>ผู้เดินสาร — เก็บลายเซ็นแล้ว submit ปลายทาง (ไม่ถือ key)</td></tr>
+  <tr><td>Threshold (N-of-M)</td><td>จำนวนลายเซ็น attester ขั้นต่ำที่ต้องมี</td></tr>
+  <tr><td>msgId</td><td>ตัวระบุข้อความ (เท่ากันทั้งสองเชน) ใช้กัน replay</td></tr>
+  <tr><td>Peer</td><td>แอปคู่แฝดบนอีกเชนที่ไว้ใจกัน</td></tr>
+  <tr><td>Logical chain id</td><td>รหัสเชนเชิงตรรกะที่โปรโตคอลใช้ (ไม่จำเป็นต้องเท่ากับ EVM chainid)</td></tr>
+</table>
+</section>
 
-  <h3>7.4 Onboarding (ใครลงอะไร)</h3>
-  <table>
-    <tr><th>ส่วน</th><th>ใครทำ</th></tr>
-    <tr><td>grant minter role บน token (<code>setMinter</code>)</td><td><b>issuer เท่านั้น</b> (key ของเขา)</td></tr>
-    <tr><td>รัน attester node</td><td><b>issuer รันเอง</b> (เห็นเชนตัวเอง, key ใน HSM)</td></tr>
-    <tr><td>deploy gateway + app (verifiable artifact)</td><td>เราจัดให้ / ทุกฝ่าย verify bytecode</td></tr>
-    <tr><td>gateway admin (attester set / threshold)</td><td><b>consortium multisig</b></td></tr>
-    <tr><td>relay + monitoring</td><td>เรา (neutral operator)</td></tr>
-  </table>
+<section id="trust-model">
+<h2>Trust model</h2>
+<p>ความปลอดภัยตั้งอยู่บน <b>attester set + N-of-M threshold</b> ข้อความจะถูก execute บนปลายทางได้ต่อเมื่อมีลายเซ็น
+จาก attester ที่ลงทะเบียน ครบ <code>threshold</code> ตัว</p>
+<table>
+  <tr><th>บทบาท</th><th>ถือ signing key</th><th>ทำได้ / ไม่ได้</th></tr>
+  <tr><td>Attester</td><td>ใช่ (HSM ใน production)</td><td>เป็นรากความเชื่อถือ — รับผิดตามกฎหมาย</td></tr>
+  <tr><td>Submitter/Relay</td><td>ไม่ (เฉพาะ gas key)</td><td>เดินสารเท่านั้น — ปลอม/mint ไม่ได้ ทำได้แค่ช้า/ดอง (แก้ด้วย redundancy + self-relay)</td></tr>
+  <tr><td>Owner</td><td>—</td><td>admin (ควรเป็น multisig+timelock)</td></tr>
+  <tr><td>Guardian</td><td>—</td><td>pause ฉุกเฉินได้อย่างเดียว (unpause ไม่ได้)</td></tr>
+</table>
+<h4>Trust assumptions</h4>
+<ul>
+  <li>attester ที่ซื่อสัตย์ &lt; threshold (ถ้า ≥threshold สมคบ → ปลอมได้ แต่ bound ด้วย cap + reconciliation + legal)</li>
+  <li>signing key ของ attester ไม่รั่ว (ลดด้วย HSM + การกระจายผู้เซ็นอิสระ)</li>
+  <li>โค้ดสัญญาถูกต้อง (ต้องผ่าน audit — ยังไม่ได้ทำ)</li>
+</ul>
+</section>
 
-  <h3>7.5 กู้ message ที่ค้าง (self-relay)</h3>
+<section id="layering">
+<h2>Messaging layer &amp; apps</h2>
+<pre><code>Interoperability protocol
+  └─ Messaging layer (BambooGateway) — ส่ง arbitrary bytes, verify N-of-M
+       └─ Apps (implement IBambooReceiver)
+            ├─ BambooOFT       — burn-and-mint token transfer (reference app)
+            └─ &lt;your app&gt;      — cross-chain call, governance, ฯลฯ</code></pre>
+<p>Gateway ไม่รู้จัก token — มันแค่ส่ง <code>bytes</code> แล้วเรียก <code>bambooReceive()</code> บนแอปปลายทาง
+ความหมายของ payload เป็นเรื่องของแอป</p>
+</section>
+
+<section id="msgid">
+<h2>Message identity (msgId)</h2>
+<p>msgId คำนวณเหมือนกันทั้งสองเชน ใช้สำหรับ dedup / replay protection</p>
+<pre><code>msgId = keccak256(abi.encode(
+          uint64  srcChainId,   // logical id เชนต้นทาง
+          uint64  dstChainId,   // logical id เชนปลายทาง
+          address sender,       // แอปต้นทาง
+          address receiver,     // แอปปลายทาง
+          bytes32 keccak256(payload),
+          uint64  nonce         // per-gateway outNonce
+        ))</code></pre>
+<p class="muted">msgId ไม่ผูกกับ EVM chainid หรือ address ของ gateway — การผูก domain อยู่ที่ "digest ที่เซ็น" (ด้านล่าง)</p>
+</section>
+
+<section id="digest">
+<h2>Signing digest (domain separation)</h2>
+<p>attester ไม่ได้เซ็น msgId ตรงๆ แต่เซ็น <b>digest ที่ผูกกับ gateway ปลายทาง + EVM chain</b> เพื่อกันการนำลายเซ็นไป
+replay ข้าม gateway/เชนอื่น</p>
+<pre><code>inner  = keccak256(abi.encode(block.chainid, address(gateway), msgId))
+digest = keccak256("\x19Ethereum Signed Message:\n32" ‖ inner)   // EIP-191</code></pre>
+<p>ฝั่ง off-chain (<code>innerDigest()</code> ใน <code>common.ts</code>) ต้องคำนวณ <code>inner</code> ด้วย
+EVM chainid + address ของ gateway <i>ปลายทาง</i> แล้วเซ็นแบบ personal_sign</p>
+</section>
+
+<section id="verification">
+<h2>Verification</h2>
+<p><code>receiveMessage()</code> ตรวจตามลำดับ:</p>
+<ol>
+  <li><code>threshold &gt; 0</code> (ไม่งั้น revert)</li>
+  <li>คำนวณ msgId; <code>!processed[msgId]</code> (กัน replay)</li>
+  <li>recover ทุกลายเซ็นจาก <code>digest(msgId)</code>; ต้องเรียง address <b>ascending เข้มงวด</b> (กัน duplicate), ทุกตัว <code>isAttester</code>, reject zero/high-s</li>
+  <li>นับ ≥ <code>threshold</code></li>
+  <li>ตั้ง <code>processed=true</code> (ก่อนเรียกภายนอก) แล้วเรียก <code>receiver.bambooReceive()</code> ใน try/catch</li>
+</ol>
+</section>
+
+<section id="payload">
+<h2>Payload encoding (BambooOFT)</h2>
+<p>แอป <code>BambooOFT</code> ใช้ payload แบบติด tag: <code>abi.encode(uint8 kind, bytes inner)</code></p>
+<table>
+  <tr><th>kind</th><th>ชื่อ</th><th>inner</th><th>ทิศ</th></tr>
+  <tr><td>0</td><td>TRANSFER</td><td><code>abi.encode(address to, uint256 amount)</code></td><td>src→dst</td></tr>
+  <tr><td>1</td><td>ACK</td><td><code>abi.encode(bytes32 origMsgId)</code></td><td>dst→src</td></tr>
+  <tr><td>2</td><td>CANCEL</td><td><code>abi.encode(bytes32 origMsgId, address to, uint256 amount, uint64 nonce)</code></td><td>src→dst</td></tr>
+  <tr><td>3</td><td>CANCEL_ACK</td><td><code>abi.encode(bytes32 origMsgId)</code></td><td>dst→src</td></tr>
+  <tr><td>4</td><td>DELIVERED_NOTICE</td><td><code>abi.encode(bytes32 origMsgId)</code></td><td>dst→src</td></tr>
+</table>
+</section>
+
+<section id="lifecycle">
+<h2>Message lifecycle (outbound status)</h2>
+<pre><code>NONE ─send()─▶ PENDING ─ACK/NOTICE─▶ DELIVERED      (terminal)
+                 │
+                 └─requestCancel()─▶ CANCEL_REQUESTED ─CANCEL_ACK─┬─▶ REFUNDED        (terminal)
+                                                                   └─▶ REFUND_BLOCKED ─resolveRefund()─▶ REFUNDED</code></pre>
+<table>
+  <tr><th>ค่า</th><th>status</th><th>ความหมาย</th></tr>
+  <tr><td>0</td><td>NONE</td><td>ไม่มีรายการ</td></tr>
+  <tr><td>1</td><td>PENDING</td><td>ส่งแล้ว รอ ACK</td></tr>
+  <tr><td>2</td><td>DELIVERED</td><td>ปลายทาง mint แล้ว (ยืนยันผ่าน ACK/NOTICE)</td></tr>
+  <tr><td>3</td><td>CANCEL_REQUESTED</td><td>ขอ cancel แล้ว รอผล</td></tr>
+  <tr><td>4</td><td>REFUNDED</td><td>คืนเงินแล้ว</td></tr>
+  <tr><td>5</td><td>REFUND_BLOCKED</td><td>คืนไม่ได้ (sender ไม่ whitelisted) รอ <code>resolveRefund</code></td></tr>
+</table>
+</section>
+
+<section id="flow-transfer">
+<h2>Flow: Transfer &amp; ACK</h2>
+<pre><code>A.send(dst,to,amt)   → token.burnFrom(sender); outbound[msgId]=PENDING; emit MessageSent
+   ↓ mesh
+B.bambooReceive      → verify threshold → token.mint(to,amt) → gateway.send(ACK)
+   ↓ mesh
+A.bambooReceive(ACK) → outbound[msgId]=DELIVERED; emit TransferDelivered</code></pre>
+</section>
+
+<section id="flow-cancel">
+<h2>Flow: Cancel &amp; refund (two-phase)</h2>
+<pre><code>A.requestCancel(msgId)  → status=CANCEL_REQUESTED; ส่ง CANCEL ไป B
+B รับ CANCEL:
+   ├ ถ้า processed(msgId)=true (deliver แล้ว) → ส่ง DELIVERED_NOTICE (A → DELIVERED)
+   └ ไม่งั้น → gateway.blockMessage(msgId) [deliver ไม่ได้ตลอดไป] → ส่ง CANCEL_ACK
+A รับ CANCEL_ACK:
+   ├ sender ยัง whitelisted → mint คืน sender; REFUNDED
+   └ ไม่ whitelisted → REFUND_BLOCKED → owner.resolveRefund(msgId, recovery)</code></pre>
+<div class="note"><b>No-double-mint invariant:</b> delivery และ block ใช้ flag <code>processed[msgId]</code> ร่วมกัน →
+เกิดได้อย่างใดอย่างหนึ่ง; CANCEL_ACK ถูกส่งเฉพาะหลัง block สำเร็จ ⇒ refund ⟹ ไม่เคย mint</div>
+</section>
+
+<section id="flow-relay">
+<h2>Flow: Permissionless relay &amp; self-relay</h2>
+<p>attester (ถือ key) แยกจาก submitter (ไม่ถือ key) — <code>receiveMessage</code> ต้องการแค่ลายเซ็น จึง <b>ใครก็ submit ได้</b></p>
+<ul>
+  <li><b>Redundant:</b> รัน submitter หลายตัว แข่งกัน ตัวแพ้เจอ revert "replay" แล้วข้าม</li>
+  <li><b>Self-relay:</b> ถ้า relay ดับ/เซ็นเซอร์ ผู้ใช้รัน <code>self-relay.ts &lt;msgId&gt;</code> ส่งเองด้วยลายเซ็นที่ publish ไว้</li>
+</ul>
+</section>
+
+<section id="flow-retail">
+<h2>Retail payments (fast-path + netting)</h2>
+<p>การข้ามเชน <i>ทุกครั้ง</i> ที่จ่ายเงิน (ซื้อผลไม้) ช้า+แพงเกินไป bamboo รองรับ retail ด้วยการ
+<b>แยกการจ่าย (instant) ออกจากการ settle (batch)</b> — เหมือน Visa authorize ทันที settle ทีหลัง</p>
+<pre><code>ชั้น 1 — Payment (instant, local)
+  user บน A จ่าย → PSP/operator จ่ายร้านค้าบน B ทันทีจาก FastPayPool (~1s, โอนในเชนเดียว)
+  ร้านได้เงินทันที ไม่รอข้ามเชน
+
+ชั้น 2 — Settlement (batch, bamboo)
+  payment หลายรายการถูก net รวม → BambooOFT.sendBatch() ส่ง "1 message ต่อรอบ"
+  burn รวมจาก A → mint รวมเข้า FastPayPool บน B (เติมเงินที่ pool สำรองจ่ายไป)</code></pre>
+<p><b>ความเร็ว</b> มาจากชั้น 1 (pool สำรองจ่ายก่อน รับความเสี่ยงสั้นๆ — ในโมเดล regulated คือ PSP ที่มี license)
+· <b>ต้นทุน/throughput</b> มาจากชั้น 2 (ตรวจลายเซ็น + ACK ครั้งเดียวต่อ batch → cost ต่อรายการ ≈ 1/N)</p>
+<div class="note">ทดสอบแล้ว: 3 ร้านได้เงินทันทีจาก pool (local) → <code>sendBatch</code> เติม pool กลับ net 0 →
+เงิน user ย้ายข้ามเชนใน 1 batch · 5 payment ใน 1 message ตรวจลายเซ็นครั้งเดียว</div>
+<p class="muted">ความเสี่ยง pool จำกัดด้วย: ขนาด pool, per-payout + daily cap, pause, และ operator ที่เป็น PSP มี license
+(bounded credit risk แบบ card acquirer). ดู <code>src/FastPayPool.sol</code> + <code>fast-pay-demo.sh</code></p>
+</section>
+
+<section id="ref-gateway">
+<h2>Contract reference — BambooGateway</h2>
+<p class="muted">Messaging layer. ไม่แตะ token/เงิน. <code>src/BambooGateway.sol</code></p>
+
+<h4>Constants &amp; key state</h4>
+<table>
+  <tr><th>ชื่อ</th><th>type</th><th>คำอธิบาย</th></tr>
+  <tr><td><code>MIN_THRESHOLD</code></td><td>uint256 constant = 2</td><td>threshold ต่ำสุดที่ยอมรับ (กัน 1-of-1)</td></tr>
+  <tr><td><code>localChainId</code></td><td>uint64 immutable</td><td>logical chain id</td></tr>
+  <tr><td><code>threshold</code> / <code>attesterCount</code></td><td>uint256</td><td>N-of-M ปัจจุบัน</td></tr>
+  <tr><td><code>processed(bytes32)</code></td><td>→bool</td><td>msgId ถูกใช้แล้ว (delivered หรือ cancelled)</td></tr>
+  <tr><td><code>cancelled(bytes32)</code></td><td>→bool</td><td>msgId ถูก block ด้วย cancel protocol</td></tr>
+  <tr><td><code>owner</code>/<code>guardian</code>/<code>paused</code></td><td>address/bool</td><td>admin + emergency control</td></tr>
+</table>
+
+<h4>Write functions</h4>
+
+<div class="fn">send(uint64 dstChainId, address receiver, bytes payload) → (bytes32 msgId, uint64 nonce)</div>
+<p class="meta"><span class="badge b-open">public</span> whenNotPaused · <b>emits</b> MessageSent · <b>reverts</b>: paused, receiver==0</p>
+<p>ส่งข้อความ generic; คืน msgId + nonce ให้ผู้เรียกบันทึก</p>
+
+<div class="fn">receiveMessage(uint64 srcChainId, address sender, address receiver, bytes payload, uint64 nonce, bytes[] sigs)</div>
+<p class="meta"><span class="badge b-open">public</span> whenNotPaused nonReentrant · <b>emits</b> MessageReceived | MessageFailed · <b>reverts</b>: paused, "threshold unset", "replay", "unsorted/dup", "not attester", "below threshold", bad sig</p>
+<p>ตรวจ threshold ของลายเซ็น แล้วเรียก <code>receiver.bambooReceive()</code> (ถ้า revert → เก็บเป็น failed สำหรับ retry)</p>
+
+<div class="fn">retry(bytes32 msgId)</div>
+<p class="meta"><span class="badge b-open">public</span> nonReentrant · <b>reverts</b>: "no failed msg"</p>
+<p>ส่งข้อความที่ delivery เคย revert อีกครั้ง</p>
+
+<div class="fn">blockMessage(uint64 srcChainId, address sender, bytes payload, uint64 nonce)</div>
+<p class="meta"><span class="badge b-open">public</span> whenNotPaused · <b>emits</b> MessageCancelled · <b>reverts</b>: "already processed"</p>
+<p>block inbound ที่ยังไม่ deliver ซึ่งมี <code>receiver == msg.sender</code> (คำนวณ msgId จาก receiver=ผู้เรียก) — จึง block ได้เฉพาะข้อความที่ส่งถึงตัวเอง ใช้ในขั้น cancel</p>
+
+<div class="fn">setAttester(address a, bool allowed)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · <b>emits</b> AttesterSet · <b>reverts</b>: "would break threshold" (ถ้าถอดจนต่ำกว่า threshold)</p>
+
+<div class="fn">setThreshold(uint256 t)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · <b>emits</b> ThresholdSet · <b>reverts</b>: "below min threshold" (t&lt;2), "threshold &gt; attesters"</p>
+
+<div class="fn">setGuardian(address g)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · <b>emits</b> GuardianSet</p>
+
+<div class="fn">pause()  /  unpause()</div>
+<p class="meta"><code>pause</code>: owner|guardian · <code>unpause</code>: <span class="badge b-owner">onlyOwner</span> · <b>emits</b> PausedSet</p>
+
+<div class="fn">transferOwnership(address n)  /  acceptOwnership()</div>
+<p class="meta">2-step ownership · <b>emits</b> OwnershipTransferStarted / OwnershipTransferred</p>
+
+<h4>View / pure</h4>
+<table>
+  <tr><td><code>computeMsgId(src,dst,sender,receiver,payloadHash,nonce) → bytes32</code></td><td>pure</td></tr>
+  <tr><td><code>digest(bytes32 msgId) → bytes32</code></td><td>view (domain-bound EIP-191 digest)</td></tr>
+</table>
+
+<h4>Events</h4>
+<pre><code>MessageSent(bytes32 indexed msgId, uint64 srcChainId, uint64 dstChainId,
+            address sender, address receiver, bytes payload, uint64 nonce)
+MessageReceived(bytes32 indexed msgId, uint64 srcChainId, address sender, address receiver)
+MessageFailed(bytes32 indexed msgId)
+MessageCancelled(bytes32 indexed msgId)
+AttesterSet(address indexed attester, bool allowed)
+ThresholdSet(uint256 threshold)   PausedSet(bool paused)   GuardianSet(address indexed guardian)
+OwnershipTransferStarted(address indexed newOwner)   OwnershipTransferred(address indexed newOwner)</code></pre>
+</section>
+
+<section id="ref-oft">
+<h2>Contract reference — BambooOFT</h2>
+<p class="muted">Burn-and-mint token transfer app. <code>src/BambooOFT.sol</code></p>
+
+<h4>Write functions</h4>
+
+<div class="fn">send(uint64 dstChainId, address to, uint256 amount) → bytes32 msgId</div>
+<p class="meta"><span class="badge b-open">public</span> · <b>emits</b> SentCrossChain · <b>reverts</b>: "no peer", "amount 0", "over max per transfer", "sender not whitelisted", "recipient not whitelisted"</p>
+<p>burn ที่ต้นทาง (ต้อง <code>approve</code> OFT ก่อน) แล้วส่งคำสั่ง mint ไปยัง peer; บันทึก <code>outbound[msgId]=PENDING</code></p>
+
+<div class="fn">sendBatch(uint64 dstChainId, address[] tos, uint256[] amounts) → bytes32 msgId</div>
+<p class="meta"><span class="badge b-open">public</span> · <b>emits</b> SentCrossChain (to=0) · <b>reverts</b>: "no peer", "bad batch", "amount 0", "over max per transfer", "sender not whitelisted"</p>
+<p>รวมหลาย payment ใน <b>1 message</b> — ตรวจลายเซ็น + ACK ครั้งเดียวต่อ batch (settlement layer). batches เป็น fire-and-settle (ACK ใช่, user-cancel ไม่มีใน v1)</p>
+
+<div class="fn">requestCancel(bytes32 msgId)</div>
+<p class="meta">sender หรือ owner · <b>emits</b> CancelRequested · <b>reverts</b>: "not pending", "not sender/owner"</p>
+
+<div class="fn">resolveRefund(bytes32 msgId, address to)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · <b>emits</b> TransferRefunded · <b>reverts</b>: "not blocked", "to not whitelisted"</p>
+<p>กู้ refund ที่อยู่สถานะ REFUND_BLOCKED ไปยัง recovery address ที่ whitelisted</p>
+
+<div class="fn">bambooReceive(uint64 srcChainId, address sender, bytes32 msgId, bytes payload)</div>
+<p class="meta">gateway-only · <b>reverts</b>: "not gateway", "sender not peer", "recipient not whitelisted", "over max per transfer", "daily mint cap", "bad kind"</p>
+<p>จัดการตาม kind: TRANSFER (mint + ACK) / ACK / CANCEL / CANCEL_ACK / DELIVERED_NOTICE</p>
+
+<div class="fn">setPeer(uint64 chainId, address p)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · ผูกแอปคู่แฝดบนอีกเชน · <b>emits</b> PeerSet</p>
+
+<div class="fn">setWhitelist(address a, bool allowed)  /  setWhitelistEnabled(bool e)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · compliance (KYC gate)</p>
+
+<div class="fn">setDailyMintCap(uint256 cap)  /  setMaxPerTransfer(uint256 m)</div>
+<p class="meta"><span class="badge b-owner">onlyOwner</span> · damage bounds (0 = unlimited)</p>
+
+<h4>View</h4>
+<table>
+  <tr><td><code>isDelivered(bytes32) → bool</code></td><td>status == DELIVERED</td></tr>
+  <tr><td><code>isRefunded(bytes32) → bool</code></td><td>status == REFUNDED</td></tr>
+  <tr><td><code>statusOf(bytes32) → uint8</code></td><td>ค่าสถานะ (ดู lifecycle)</td></tr>
+  <tr><td><code>isStuck(bytes32, uint64 timeout) → bool</code></td><td>PENDING และเกิน timeout วินาที</td></tr>
+  <tr><td><code>outbound(bytes32)</code></td><td>{sender,to,amount,dstChainId,nonce,status,ts}</td></tr>
+</table>
+
+<h4>Events</h4>
+<pre><code>SentCrossChain(bytes32 indexed msgId, uint64 indexed dstChainId, address indexed to, uint256 amount)
+ReceivedCrossChain(uint64 indexed srcChainId, address indexed to, uint256 amount)
+TransferDelivered(bytes32 indexed msgId)   CancelRequested(bytes32 indexed msgId)
+TransferRefunded(bytes32 indexed msgId, address indexed to, uint256 amount)
+RefundBlocked(bytes32 indexed msgId, address indexed sender, uint256 amount)
+PeerSet / WhitelistSet / WhitelistEnabled / DailyMintCapSet / MaxPerTransferSet / Ownership*</code></pre>
+</section>
+
+<section id="ref-interfaces">
+<h2>Contract reference — Interfaces</h2>
+<h4>IBambooReceiver</h4>
+<pre><code>function bambooReceive(uint64 srcChainId, address sender, bytes32 msgId, bytes calldata payload) external;</code></pre>
+<p>แอปต้องตรวจ <code>msg.sender == gateway</code> และ <code>sender</code> เป็น peer ที่ไว้ใจ</p>
+<h4>IBridgeToken</h4>
+<pre><code>function mint(address to, uint256 amount) external;
+function burnFrom(address from, uint256 amount) external;   // allowance-based</code></pre>
+<p>token ของ issuer เพียง grant minter role ให้ OFT — เก็บ proxy/upgradability/controls ไว้ครบ</p>
+<h4>FastPayPool (retail fast-path)</h4>
+<p class="muted"><code>src/FastPayPool.sol</code> — pool สำรองบนเชนร้านค้า</p>
+<table>
+  <tr><td><code>payMerchant(address merchant, uint256 amount, bytes32 ref)</code></td><td>operator-only · จ่ายร้านทันที (local); <code>ref</code> กันจ่ายซ้ำ; bounded ด้วย maxPayout/dailyPayoutCap/pause</td></tr>
+  <tr><td><code>setOperator</code> / <code>setCaps</code> / <code>setPaused</code> / <code>withdraw</code></td><td>owner-only</td></tr>
+  <tr><td><code>poolBalance() → uint256</code></td><td>liquidity คงเหลือ</td></tr>
+</table>
+<p class="muted">เติม pool โดยให้เป็น recipient ของ <code>sendBatch</code> (bamboo mint เข้า pool)</p>
+</section>
+
+<section id="offchain">
+<h2>Off-chain — Relay components</h2>
+<table>
+  <tr><th>ไฟล์</th><th>บทบาท</th></tr>
+  <tr><td><code>attester.ts</code></td><td>1 process / 1 key — เฝ้า event, ตรวจ policy, เซ็น domain digest, publish sig (production: issuer/BOT รันเอง, HSM)</td></tr>
+  <tr><td><code>submitter.ts</code></td><td>permissionless relayer — เก็บ ≥threshold sigs แล้ว submit (รันหลายตัวได้)</td></tr>
+  <tr><td><code>self-relay.ts</code></td><td>กู้ข้อความเดียว: <code>node --experimental-strip-types self-relay.ts &lt;msgId&gt;</code></td></tr>
+  <tr><td><code>common.ts</code></td><td>chain setup, domain digest, sig store, checkpoints</td></tr>
+  <tr><td><code>relay.ts</code></td><td>all-in-one (lab เท่านั้น — ถือ key ครบ)</td></tr>
+</table>
+<h4>Signature store (lab)</h4>
+<p>ไฟล์ระบบ: <code>relay/sigs/&lt;msgId&gt;/&lt;signerAddress&gt;.sig</code> (1 ไฟล์ต่อ signer — กันเขียนทับ)
+production = API/gossip ที่ authenticate</p>
+</section>
+
+<section id="config">
+<h2>Configuration reference</h2>
+<h4>Relay (env)</h4>
+<table>
+  <tr><th>ตัวแปร</th><th>ค่าเริ่มต้น</th><th>ความหมาย</th></tr>
+  <tr><td><code>BAMBOO_THRESHOLD</code></td><td>2</td><td>จำนวนลายเซ็นที่ต้องเก็บ (ต้องตรงกับ on-chain)</td></tr>
+  <tr><td><code>BAMBOO_CONFIRMATIONS</code></td><td>2</td><td>รอ N บล็อกก่อนดำเนินการ (กัน reorg)</td></tr>
+  <tr><td><code>BAMBOO_POLL_MS</code></td><td>1500</td><td>ช่วงเวลา poll</td></tr>
+  <tr><td><code>BAMBOO_ATTESTER_KEY</code></td><td>—</td><td>key ของ attester (attester.ts, ตัวเดียว)</td></tr>
+  <tr><td><code>BAMBOO_RELAYER_KEY</code> / <code>_&lt;CHAIN&gt;</code></td><td>—</td><td>key จ่าย gas ตอน submit</td></tr>
+  <tr><td><code>BAMBOO_SUBMITTER_ID</code></td><td>0</td><td>แยก checkpoint ของแต่ละ submitter</td></tr>
+  <tr><td><code>BAMBOO_MAX_SIGN_AMOUNT</code></td><td>0 (ปิด)</td><td>attester ปฏิเสธการเซ็น transfer เกินวงเงินนี้</td></tr>
+</table>
+<h4>deploy.sh (env)</h4>
+<table>
+  <tr><td><code>A_NAME/A_RPC/A_ID/A_KEY</code>, <code>B_*</code></td><td>config ของสองเชน (name, RPC, logical id, deployer key)</td></tr>
+  <tr><td><code>ATTESTERS</code> / <code>THRESHOLD</code></td><td>ชุด attester (comma) + threshold</td></tr>
+  <tr><td><code>GUARDIAN</code></td><td>address ที่ pause ฉุกเฉินได้</td></tr>
+  <tr><td><code>MAX_PER_TRANSFER</code> / <code>DAILY_CAP</code></td><td>damage bounds (wei)</td></tr>
+  <tr><td><code>SEED_TO</code> / <code>SEED_AMT</code></td><td>seed supply สำหรับ demo</td></tr>
+</table>
+</section>
+
+<section id="guide-deploy">
+<h2>Guide: Deploy a chain pair</h2>
+<p>ทั้ง anvil และ potato (cosmos/evm) เป็น EVM → Solidity ชุดเดียว deploy ได้ทั้งคู่</p>
+<pre><code># anvil <-> potato (potato EVM JSON-RPC ที่ :18545)
+A_NAME=anvil  A_RPC=http://localhost:28545 A_ID=1 A_KEY=&lt;anvil key&gt; \
+B_NAME=potato B_RPC=http://localhost:18545 B_ID=2 B_KEY=&lt;potato funded key&gt; \
+GUARDIAN=&lt;bot addr&gt; MAX_PER_TRANSFER=&lt;wei&gt; DAILY_CAP=&lt;wei&gt; ./deploy.sh</code></pre>
+<p><code>deploy.sh</code> จะ: deploy token+gateway+OFT, setMinter, whitelist, setAttester+threshold, setGuardian, caps, setPeer ทั้งสองฝั่ง, และเขียน <code>deployments/local.json</code></p>
+</section>
+
+<section id="guide-app">
+<h2>Guide: Build an app on the messaging layer</h2>
+<pre><code>contract MyApp is IBambooReceiver {
+    IBambooGateway public gateway;
+    mapping(uint64 =&gt; address) public peer;
+
+    function doCrossChain(uint64 dst, bytes memory data) external {
+        gateway.send(dst, peer[dst], data);          // ส่ง
+    }
+    function bambooReceive(uint64 src, address sender, bytes32 msgId, bytes calldata payload) external {
+        require(msg.sender == address(gateway), "not gateway");
+        require(sender == peer[src], "not peer");     // ไว้ใจเฉพาะคู่แฝด
+        // ... ประมวลผล payload ...
+    }
+}</code></pre>
+<div class="note warn">แอปต้อง gate ด้วย <code>msg.sender == gateway</code> และ <code>sender == peer</code> เสมอ มิฉะนั้นใครก็ trigger logic ได้</div>
+</section>
+
+<section id="guide-onboard">
+<h2>Guide: Onboard an issuer / chain</h2>
+<table>
+  <tr><th>ขั้นตอน</th><th>ใครทำ (key อะไร)</th></tr>
+  <tr><td>deploy gateway + app (จาก artifact ที่ audit แล้ว)</td><td>เรา/ทุกฝ่าย verify bytecode</td></tr>
+  <tr><td><code>token.setMinter(oft, true)</code></td><td><b>issuer เท่านั้น</b> (owner key ของ token)</td></tr>
+  <tr><td>รัน attester node</td><td><b>issuer รันเอง</b> (key ใน HSM)</td></tr>
+  <tr><td>เพิ่ม attester + ตั้ง threshold, setGuardian</td><td>consortium multisig</td></tr>
+  <tr><td><code>setPeer</code> ทั้งสองฝั่ง</td><td>app owner</td></tr>
+  <tr><td>relay + monitoring</td><td>เรา (neutral operator)</td></tr>
+</table>
+</section>
+
+<section id="guide-ops">
+<h2>Guide: Operate the relay mesh</h2>
+<pre><code>./run-mesh.sh          # 3 attesters + 2 submitters (lab)
+# production:
+#  - แต่ละ attester รันแยกเครื่อง/องค์กร, key ใน HSM, ตั้ง BAMBOO_MAX_SIGN_AMOUNT ตาม policy
+#  - submitter ≥2 ตัว คนละ provider (redundancy); BAMBOO_SUBMITTER_ID ต่างกัน
+#  - BAMBOO_CONFIRMATIONS ตั้งตาม finality ของแต่ละเชน</code></pre>
+</section>
+
+<section id="guide-recover">
+<h2>Guide: Recover / cancel a transfer</h2>
+<h4>Self-relay (ข้อความค้างเพราะ relay ดับ)</h4>
 <pre><code>cd relay
 BAMBOO_RELAYER_KEY=&lt;funded on dst&gt; node --experimental-strip-types self-relay.ts &lt;msgId&gt;</code></pre>
-
-  <h3>7.6 Cancel + refund transfer ที่ค้าง</h3>
-<pre><code># ต้นทาง (sender หรือ owner)
-cast send $OFT "requestCancel(bytes32)" $MSGID --rpc-url $RPC_A --private-key $KEY
-# จากนั้น CANCEL / CANCEL_ACK วิ่งผ่าน mesh เอง -> refund คืน sender
-# ถ้า refund ถูก block (sender ไม่ whitelisted):
-cast send $OFT "resolveRefund(bytes32,address)" $MSGID $RECOVERY --private-key $OWNER_KEY</code></pre>
+<h4>Cancel &amp; refund (transfer ที่ค้าง PENDING)</h4>
+<pre><code>cast send $OFT "requestCancel(bytes32)" $MSGID --private-key $SENDER_KEY --rpc-url $RPC_A
+# CANCEL/CANCEL_ACK เดินผ่าน mesh เอง -> refund คืน sender
+# ถ้า REFUND_BLOCKED:
+cast send $OFT "resolveRefund(bytes32,address)" $MSGID $RECOVERY --private-key $OWNER_KEY --rpc-url $RPC_A</code></pre>
 </section>
 
-<section id="api">
-  <h2>8. API reference (ย่อ)</h2>
-  <h3>BambooGateway</h3>
-  <table>
-    <tr><th>function</th><th>คำอธิบาย</th></tr>
-    <tr><td><code>send(dstChainId, receiver, payload) → (msgId, nonce)</code></td><td>emit ข้อความ generic ให้ relay เดิน</td></tr>
-    <tr><td><code>receiveMessage(src, sender, receiver, payload, nonce, sigs[])</code></td><td>ตรวจ threshold → เรียก <code>bambooReceive</code> (permissionless)</td></tr>
-    <tr><td><code>blockMessage(src, sender, payload, nonce)</code></td><td>block inbound ที่ยังไม่ deliver ของตัวเอง (ใช้ตอน cancel)</td></tr>
-    <tr><td><code>retry(msgId)</code></td><td>ส่ง message ที่ delivery เคย revert อีกครั้ง</td></tr>
-    <tr><td><code>setAttester(a,bool)</code> / <code>setThreshold(t≥2)</code></td><td>admin (owner → multisig); threshold floor กัน 1-of-1</td></tr>
-    <tr><td><code>setGuardian(g)</code> / <code>pause()</code> / <code>unpause()</code></td><td>pause: owner|guardian (เร็ว) · unpause: owner-only</td></tr>
-    <tr><td><code>processed(msgId)</code> / <code>cancelled(msgId)</code></td><td>views</td></tr>
-  </table>
-  <h3>BambooOFT</h3>
-  <table>
-    <tr><th>function</th><th>คำอธิบาย</th></tr>
-    <tr><td><code>send(dstChainId, to, amount) → msgId</code></td><td>burn + ส่งคำสั่ง mint ไป peer (ต้อง approve ก่อน)</td></tr>
-    <tr><td><code>requestCancel(msgId)</code></td><td>sender/owner ขอ cancel transfer ที่ PENDING</td></tr>
-    <tr><td><code>resolveRefund(msgId, to)</code></td><td>owner กู้ refund ที่ถูก block ไป recovery address</td></tr>
-    <tr><td><code>setPeer(chainId, addr)</code></td><td>ผูก OFT ฝั่งโน้น (เหมือน LayerZero setPeer)</td></tr>
-    <tr><td><code>setWhitelist(a,bool)</code> / <code>setWhitelistEnabled(bool)</code></td><td>compliance (KYC gate)</td></tr>
-    <tr><td><code>setDailyMintCap(cap)</code> / <code>setMaxPerTransfer(max)</code></td><td>damage bounds (daily total + per-transfer)</td></tr>
-    <tr><td><code>isDelivered(msgId)</code> / <code>isStuck(msgId,timeout)</code> / <code>statusOf(msgId)</code></td><td>views (reconciliation / monitoring)</td></tr>
-  </table>
-  <h3>สถานะ outbound &amp; payload kinds</h3>
-  <div class="grid">
-    <div class="card"><b>Status</b><br><span class="muted">0 NONE · 1 PENDING · 2 DELIVERED · 3 CANCEL_REQUESTED · 4 REFUNDED · 5 REFUND_BLOCKED</span></div>
-    <div class="card"><b>Payload kind</b><br><span class="muted">0 TRANSFER · 1 ACK · 2 CANCEL · 3 CANCEL_ACK · 4 DELIVERED_NOTICE</span></div>
-  </div>
+<section id="sec-model">
+<h2>Security — Threat model</h2>
+<ul>
+  <li><b>Relay compromise</b> → ปลอม/mint ไม่ได้ (ลายเซ็นตรวจ on-chain); ทำได้แค่ดอง → แก้ด้วย self-relay/redundancy</li>
+  <li><b>Attester &lt; threshold รั่ว</b> → ยังปลอมไม่ได้</li>
+  <li><b>Attester ≥ threshold สมคบ/รั่ว</b> → ปลอมได้ แต่ bound ด้วย per-transfer/daily cap + guardian pause + reconciliation + legal</li>
+  <li><b>Contract bug</b> → ไม่กันด้วยฟีเจอร์ ต้อง audit + formal verification</li>
+  <li><b>Two Generals</b> → ไม่รับประกัน atomic แต่ safety (ถ้า B mint = A อนุมัติจริง) = 100%; liveness กู้ได้ด้วย retry/self-relay/refund</li>
+</ul>
 </section>
 
-<section id="hacks">
-  <h2>9. กันการแฮกที่เกิดจริง (hack → defense)</h2>
-  <p>วิเคราะห์เคสจริง 2021–2026 เทียบกับสิ่งที่ bamboo ป้องกัน ⚠️ <b>ความจริง:</b> "กัน 100% ด้วยโค้ด" ทำไม่ได้ —
-  class <b>implementation bug</b> กันได้ด้วย audit เท่านั้น แต่เคสเงินหายเยอะสุด (misconfiguration + ไม่มี damage cap)
-  bamboo ปิดด้วยดีไซน์ได้</p>
-  <table>
-    <tr><th>เคส</th><th>สาเหตุ</th><th>defense ใน bamboo</th><th>สถานะ</th></tr>
-    <tr><td><b>Kelp DAO</b> ~$292M (2026)</td><td>single-verifier (1-of-1 quorum)</td><td>Min-threshold floor (ห้าม &lt;2) + N-of-M</td><td><span class="pill ok">ปิดได้</span></td></tr>
-    <tr><td><b>Ronin</b> $625M · <b>AFX</b> $24M</td><td>validator key ถูกขโมยถึง quorum</td><td>per-transfer cap + daily cap + guardian pause + ผู้เซ็นอิสระ/accountable + reconciliation</td><td><span class="pill warnp">bound ความเสียหาย</span></td></tr>
-    <tr><td><b>Multichain</b> ~$130M</td><td>MPC key รวมศูนย์</td><td>non-custodial — relay ไม่มีอำนาจ mint, key กระจาย</td><td><span class="pill ok">ปิดได้</span></td></tr>
-    <tr><td><b>Poly Network</b> $611M</td><td>message เรียก privileged function</td><td>gateway เรียกได้แค่ <code>bambooReceive</code>; admin = owner-only; แอป gate ด้วย peer</td><td><span class="pill ok">ปิดได้</span></td></tr>
-    <tr><td><b>Wanchain</b> ~$12M (2026)</td><td>signature reuse</td><td>domain separation + nonce + replay guard</td><td><span class="pill ok">ปิดได้</span></td></tr>
-    <tr><td><b>Verus</b> ~$11.6M (2026)</td><td>ไม่เช็คว่ายอดโอนตรง payout</td><td>amount ผูกใน msgId + payloadHash (แก้ไม่ได้)</td><td><span class="pill ok">ปิดได้</span></td></tr>
-    <tr><td><b>Nomad</b> $190M</td><td>upgrade ตั้ง trusted root = 0</td><td>ไม่มี single root; threshold&gt;0 บังคับ; gateway ไม่ upgradeable</td><td><span class="pill ok">footgun ไม่มี</span></td></tr>
-    <tr><td><b>Bybit</b> $1.5B (2025)</td><td>multisig UI หลอกให้เซ็น (blind sign)</td><td>attester ตรวจ policy ก่อนเซ็น + domain-bound digest</td><td><span class="pill warnp">ลดความเสี่ยง</span></td></tr>
-    <tr><td><b>Wormhole</b> $320M · <b>zkLink</b> · <b>BNB Bridge</b></td><td><b>implementation bug</b> ใน verify logic</td><td>โค้ดเรียบง่าย + ecrecover + guard ครบ — แต่ bug ของตัวเองยังเป็นไปได้</td><td><span class="pill dangerp">ต้อง audit</span></td></tr>
-  </table>
-  <div class="note warn"><b>สรุปซื่อสัตย์:</b> bamboo แข็งที่สุดในเคสเงินหายเยอะสุด (key concentration / single-verifier / privileged-function)
-  และ <b>bound ความเสียหาย</b>ได้แม้โดนเจาะ (cap + guardian) แต่ <b>pure implementation bug</b> กันได้ด้วย
-  <b>independent audit + formal verification</b> เท่านั้น — bamboo ยังเป็น self-audit บน lab</div>
-  <p class="muted">มาตรการใหม่ที่เพิ่มจากบทเรียนปี 2025–26 (ทดสอบแล้ว): Min-threshold floor, per-transfer/daily cap,
-  guardian emergency pause (owner|guardian pause / owner-only unpause), attester policy check ก่อนเซ็น</p>
+<section id="sec-hardening">
+<h2>Security — Hardening measures</h2>
+<table>
+  <tr><th>มาตรการ</th><th>ป้องกัน</th></tr>
+  <tr><td>Domain-separated signature</td><td>replay ข้าม gateway/chain</td></tr>
+  <tr><td>N-of-M threshold + min-threshold floor (≥2)</td><td>ปลอมข้อความ / single-verifier (1-of-1)</td></tr>
+  <tr><td>Replay guard (<code>processed</code>) + strict-ascending sigs</td><td>replay / duplicate signer</td></tr>
+  <tr><td>Finality wait (confirmations)</td><td>reorg → double-mint</td></tr>
+  <tr><td>Recovery (<code>retry</code>) + relay checkpoint</td><td>ข้อความหาย/ค้างตอน relay ดับ</td></tr>
+  <tr><td>Two-phase cancel (block-before-refund)</td><td>double-mint ตอน refund</td></tr>
+  <tr><td>Per-transfer + daily mint cap</td><td>bound ความเสียหายจาก key compromise</td></tr>
+  <tr><td>Guardian emergency pause</td><td>incident response เร็ว</td></tr>
+  <tr><td>Whitelist + refund whitelist check</td><td>mint/refund ให้ wallet ที่ไม่ KYC/โดน sanction</td></tr>
+  <tr><td>Attester policy check (off-chain)</td><td>blind-signing</td></tr>
+  <tr><td>2-step ownership</td><td>fat-finger / key loss</td></tr>
+</table>
 </section>
 
-<section id="prod">
-  <h2>10. ยังไม่ได้ทำ (roadmap สู่ production)</h2>
-  <ul>
-    <li>Independent audit + formal verification + bug bounty</li>
-    <li>Key management จริง: HSM / MPC (ตอนนี้ key ใน env = lab)</li>
-    <li>Payload encryption (HPKE) + zk amount privacy</li>
-    <li>BOT เป็น co-signer role แยกจาก attester set</li>
-    <li>BLS aggregate signatures (ลด gas ฝั่ง verify)</li>
-    <li>Supply reconciliation ↔ reserve (จับคู่ burn↔mint กับเงินสำรอง)</li>
-    <li>HA relay หลาย provider + monitoring/alerting + SLA</li>
-  </ul>
-  <div class="note">bamboo วันนี้ = <b>PoC ที่พิสูจน์ว่ากลไกถูกและออกแบบมาถูกทาง</b> ไม่ใช่ production-ready — ใช้เป็นฐานเทคนิคคุยกับ issuer/BOT</div>
+<section id="sec-hacks">
+<h2>Security — Hack → defense (2021–2026)</h2>
+<table>
+  <tr><th>เคส</th><th>สาเหตุ</th><th>bamboo</th><th>สถานะ</th></tr>
+  <tr><td>Kelp DAO ~$292M (2026)</td><td>single-verifier (1-of-1)</td><td>min-threshold floor + N-of-M</td><td><span class="pill p-ok">ปิดได้</span></td></tr>
+  <tr><td>Ronin $625M · AFX $24M</td><td>key ถูกขโมยถึง quorum</td><td>cap + guardian + ผู้เซ็นอิสระ/accountable + reconciliation</td><td><span class="pill p-warn">bound damage</span></td></tr>
+  <tr><td>Multichain ~$130M</td><td>MPC key รวมศูนย์</td><td>non-custodial, key กระจาย</td><td><span class="pill p-ok">ปิดได้</span></td></tr>
+  <tr><td>Poly Network $611M</td><td>message เรียก privileged fn</td><td>เรียกได้แค่ bambooReceive; admin owner-only; peer-gated</td><td><span class="pill p-ok">ปิดได้</span></td></tr>
+  <tr><td>Wanchain ~$12M</td><td>signature reuse</td><td>domain sep + nonce + replay guard</td><td><span class="pill p-ok">ปิดได้</span></td></tr>
+  <tr><td>Verus ~$11.6M</td><td>ไม่เช็คยอดตรง payout</td><td>amount ผูกใน msgId/payloadHash</td><td><span class="pill p-ok">ปิดได้</span></td></tr>
+  <tr><td>Nomad $190M</td><td>trusted root = 0</td><td>ไม่มี single root; threshold&gt;0; ไม่ upgradeable</td><td><span class="pill p-ok">footgun ไม่มี</span></td></tr>
+  <tr><td>Bybit $1.5B (2025)</td><td>blind-sign ใน multisig UI</td><td>attester policy check + domain digest</td><td><span class="pill p-warn">ลดความเสี่ยง</span></td></tr>
+  <tr><td>Wormhole $320M · zkLink · BNB</td><td>implementation bug</td><td>โค้ดเรียบง่าย + ecrecover + guards</td><td><span class="pill p-danger">ต้อง audit</span></td></tr>
+</table>
 </section>
 
-</main>
+<section id="sec-audit">
+<h2>Security — Audit status</h2>
+<div class="note danger"><b>สถานะปัจจุบัน: self-audited lab MVP เท่านั้น</b> — ยังไม่ผ่าน independent audit หรือ formal verification
+และ key ยังอยู่ใน env (lab) <b>ห้ามใช้กับเงินจริงจนกว่าจะผ่าน audit ภายนอก</b></div>
+<p>self-audit 2 รอบ: รอบ 1 เจอ 13 (แก้หมด), รอบ 2 เจอ 2 medium (แก้แล้ว) — ครอบคลุม replay, reorg, recovery,
+DoS, double-mint, whitelist, blind-sign ดูรายละเอียดใน <code>README.md</code></p>
+</section>
+
+<section id="ops-deploy">
+<h2>Operations — Deployment &amp; infra</h2>
+<p>workload เบา (node processes ไม่ใช่ heavy compute) — ไม่ผูก cloud เจ้าใด (cloud-agnostic, Docker/k8s)</p>
+<table>
+  <tr><th>ส่วน</th><th>ทรัพยากร</th><th>ใครรัน</th></tr>
+  <tr><td>relay / submitter</td><td>VM เล็ก (1–2 vCPU) ≥2 ตัวคนละ provider</td><td>operator</td></tr>
+  <tr><td>attester</td><td>VM เล็ก + <b>HSM</b></td><td>issuer / BOT</td></tr>
+  <tr><td>RPC node</td><td>moderate หรือใช้ provider</td><td>operator/issuer</td></tr>
+  <tr><td>monitoring + control-plane</td><td>VM เล็ก</td><td>operator</td></tr>
+</table>
+<p class="muted">ตัวตัดสินเลือก region: data residency (BOT อาจบังคับ in-TH — AWS มี Bangkok region), HSM, และ multi-provider เพื่อ resilience — ไม่ใช่ยี่ห้อ cloud</p>
+</section>
+
+<section id="glossary">
+<h2>Glossary</h2>
+<table>
+  <tr><td>Burn-and-mint</td><td>โอนโดย burn ต้นทาง + mint ปลายทาง (ไม่มี wrapped token, supply รวมคงที่)</td></tr>
+  <tr><td>Domain separation</td><td>ผูกลายเซ็นกับ contract/chain เฉพาะ เพื่อกัน replay ข้ามที่</td></tr>
+  <tr><td>OFT</td><td>Omnichain Fungible Token — token ที่ย้ายข้ามเชนได้ (ที่นี่คือแอปบน messaging layer)</td></tr>
+  <tr><td>Attestation</td><td>การที่ผู้มีสิทธิ์เซ็นรับรองว่าเหตุการณ์เกิดจริง</td></tr>
+  <tr><td>Non-custodial</td><td>ตัวกลางไม่ถือเงิน/ไม่มีสิทธิ์ mint</td></tr>
+</table>
 <footer>
-  bamboo cross-chain messaging protocol · เอกสารนี้สร้างจากโค้ดใน <code>stable-coin-L0/bamboo</code> ·
-  ดู <code>README.md</code> สำหรับรายละเอียดเพิ่มเติม
+  bamboo Protocol Documentation · v0.1 draft · สร้างจากซอร์สใน <code>stable-coin-L0/bamboo</code><br>
+  เอกสารนี้สะท้อนสถานะ lab MVP — ไม่ใช่คำแนะนำให้ใช้งานจริงก่อนผ่าน independent audit
 </footer>
+</section>
+</main>
+</div>
+
+<script>
+// scroll-spy: highlight active sidebar link
+(function(){
+  var links=[].slice.call(document.querySelectorAll('#nav a'));
+  var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+  var secs=[].slice.call(document.querySelectorAll('main section[id]'));
+  function onScroll(){
+    var y=window.scrollY+80,cur=null;
+    secs.forEach(function(s){if(s.offsetTop<=y)cur=s.id;});
+    links.forEach(function(a){a.classList.remove('active');});
+    if(cur&&map[cur])map[cur].classList.add('active');
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+  links.forEach(function(a){a.addEventListener('click',function(){document.body.classList.remove('nav-open');});});
+})();
+</script>
 </body>
 </html>

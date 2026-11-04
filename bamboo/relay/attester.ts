@@ -24,10 +24,15 @@ function refuseReason(payload: Hex): string | null {
   try {
     const [kind, inner] = decodeAbiParameters([{ type: "uint8" }, { type: "bytes" }], payload);
     const k = Number(kind);
-    if (k > 4) return `unknown kind ${k}`;
-    if (k === 0 && MAX_SIGN_AMOUNT > 0n) { // TRANSFER
-      const [, amount] = decodeAbiParameters([{ type: "address" }, { type: "uint256" }], inner as Hex);
-      if ((amount as bigint) > MAX_SIGN_AMOUNT) return `amount ${amount} > policy cap ${MAX_SIGN_AMOUNT}`;
+    if (k > 5) return `unknown kind ${k}`;
+    if (MAX_SIGN_AMOUNT > 0n) {
+      if (k === 0) { // TRANSFER
+        const [, amount] = decodeAbiParameters([{ type: "address" }, { type: "uint256" }], inner as Hex);
+        if ((amount as bigint) > MAX_SIGN_AMOUNT) return `amount ${amount} > policy cap ${MAX_SIGN_AMOUNT}`;
+      } else if (k === 5) { // BATCH — each item must be within the per-payment cap
+        const [, amounts] = decodeAbiParameters([{ type: "address[]" }, { type: "uint256[]" }], inner as Hex);
+        for (const a of amounts as readonly bigint[]) if (a > MAX_SIGN_AMOUNT) return `batch item ${a} > policy cap ${MAX_SIGN_AMOUNT}`;
+      }
     }
     return null;
   } catch { return "undecodable payload"; }

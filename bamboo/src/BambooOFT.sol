@@ -40,6 +40,7 @@ contract BambooOFT is IBambooReceiver {
     uint8 internal constant KIND_CANCEL = 2;
     uint8 internal constant KIND_CANCEL_ACK = 3;
     uint8 internal constant KIND_DELIVERED_NOTICE = 4; // M-B: dest tells source "already delivered"
+    uint8 internal constant KIND_BATCH = 5;            // many (to,amount) in ONE cross-chain message
 
     uint8 internal constant ST_NONE = 0;
     uint8 internal constant ST_PENDING = 1;
@@ -146,10 +147,9 @@ contract BambooOFT is IBambooReceiver {
         require(dstApp != address(0), "no peer");
         require(amount > 0, "amount 0");
         if (maxPerTransfer > 0) require(amount <= maxPerTransfer, "over max per transfer");
-        if (whitelistEnabled) {
-            require(whitelisted[msg.sender], "sender not whitelisted");
-            require(whitelisted[to], "recipient not whitelisted");
-        }
+        // source checks the SENDER's KYC; the RECIPIENT is checked on the dest at mint
+        // (recipient is a destination-chain address, whitelisted there, not here).
+        if (whitelistEnabled) require(whitelisted[msg.sender], "sender not whitelisted");
 
         token.burnFrom(msg.sender, amount);
         bytes memory payload = abi.encode(KIND_TRANSFER, abi.encode(to, amount));
@@ -157,6 +157,37 @@ contract BambooOFT is IBambooReceiver {
         (msgId, nonce) = gateway.send(dstChainId, dstApp, payload);
         outbound[msgId] = Outbound(msg.sender, to, amount, dstChainId, nonce, ST_PENDING, uint64(block.timestamp));
         emit SentCrossChain(msgId, dstChainId, to, amount);
+    }
+
+    /// @notice Settle MANY payments in ONE cross-chain message. The expensive part
+    ///         (threshold signature verification + the ACK round-trip) is paid once
+    ///         for the whole batch, so the per-payment cost of a high-volume retail
+    ///         flow drops ~N×. Used by the netting/settlement layer, not end users.
+    ///         Batches are fire-and-settle (ACK yes; user-cancel/refund not supported
+    ///         in v1 — recover a stuck batch with retry()/self-relay).
+    function sendBatch(uint64 dstChainId, address[] calldata tos, uint256[] calldata amounts)
+        external
+        returns (bytes32 msgId)
+    {
+        address dstApp = peer[dstChainId];
+        require(dstApp != address(0), "no peer");
+        uint256 n = tos.length;
+        require(n > 0 && n == amounts.length, "bad batch");
+        if (whitelistEnabled) require(whitelisted[msg.sender], "sender not whitelisted");
+
+        uint256 total;
+        for (uint256 i = 0; i < n; i++) {
+            require(amounts[i] > 0, "amount 0");
+            if (maxPerTransfer > 0) require(amounts[i] <= maxPerTransfer, "over max per transfer");
+            total += amounts[i]; // recipient whitelist is enforced on the dest at mint
+        }
+        token.burnFrom(msg.sender, total);
+        bytes memory payload = abi.encode(KIND_BATCH, abi.encode(tos, amounts));
+        uint64 nonce;
+        (msgId, nonce) = gateway.send(dstChainId, dstApp, payload);
+        // to == address(0) marks an aggregate batch record
+        outbound[msgId] = Outbound(msg.sender, address(0), total, dstChainId, nonce, ST_PENDING, uint64(block.timestamp));
+        emit SentCrossChain(msgId, dstChainId, address(0), total);
     }
 
     // --- cancel a stuck PENDING transfer (original sender or owner) ---
@@ -244,6 +275,21 @@ contract BambooOFT is IBambooReceiver {
                 o.status = ST_DELIVERED;
                 emit TransferDelivered(orig);
             }
+
+        } else if (kind == KIND_BATCH) {
+            (address[] memory tos, uint256[] memory amounts) = abi.decode(inner, (address[], uint256[]));
+            uint256 n = tos.length;
+            uint256 total;
+            for (uint256 i = 0; i < n; i++) {
+                if (whitelistEnabled) require(whitelisted[tos[i]], "recipient not whitelisted");
+                if (maxPerTransfer > 0) require(amounts[i] <= maxPerTransfer, "over max per transfer");
+                total += amounts[i];
+                token.mint(tos[i], amounts[i]);
+                emit ReceivedCrossChain(srcChainId, tos[i], amounts[i]);
+            }
+            _checkAndAccrueCap(total); // daily cap applies to the whole batch
+            // one ACK for the whole batch
+            gateway.send(srcChainId, peer[srcChainId], abi.encode(KIND_ACK, abi.encode(msgId)));
 
         } else {
             revert("bad kind"); // L-A: never silently consume an unknown message
