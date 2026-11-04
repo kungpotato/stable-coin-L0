@@ -218,6 +218,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
   <ol>
     <li><a href="#case-binance"><span class="n">17</span>ตามรอย Binance hack บน mainnet</a></li>
     <li><a href="#case-mercado"><span class="n">18</span>ตามรอย Mercado Bitcoin hack</a></li>
+    <li><a href="#case-ir"><span class="n">19</span>After-hack process & monitoring</a></li>
   </ol>
   <div class="part">ภาคผนวก</div>
   <ol>
@@ -245,7 +246,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <a href="#ch12">12 · DVN และ Executor</a><a href="#ch13">13 · Bridge POTATO</a><a href="#ch14">14 · Bridge USDC</a>
     <a href="#ch15">15 · Frontend และ indexer</a><a href="#ch16">16 · IBC กับ production</a>
     <div class="part">กรณีศึกษา</div>
-    <a href="#case-binance">17 · ตามรอย Binance hack</a><a href="#case-mercado">18 · Mercado Bitcoin hack</a>
+    <a href="#case-binance">17 · ตามรอย Binance hack</a><a href="#case-mercado">18 · Mercado Bitcoin hack</a><a href="#case-ir">19 · After-hack & monitoring</a>
     <div class="part">ภาคผนวก</div>
     <a href="#apx-a">A · บทเรียนรวม</a><a href="#apx-b">B · แคตตาล็อก bug</a><a href="#apx-c">C · Checklist</a>
     <a href="#apx-d">D · คำสั่ง</a><a href="#apx-e">E · อภิธานศัพท์</a><a href="#apx-f">F · ไฟล์อ้างอิง</a>
@@ -1913,6 +1914,61 @@ Tron 1.71M TRX ─Bridgers─► 181 ETH ─► 0x4d5f…   |  Solana ─Mayan/C
   <div class="quiz"><h4>คำถามทบทวน</h4>
     <details><summary>ทำไม alert ตรวจ <code>code</code> ของ EOA (ที่ช่วยจับ Binance) ถึงไม่ช่วย Mercado Bitcoin</summary><p>เพราะ Mercado Bitcoin ไม่ได้ใช้ 7702 เหยื่อไม่เคยมี code เปลี่ยน — เป็น EOA เปล่าตลอด การโจมตีคือการเซ็นโอนที่ "ถูกต้องตามลายเซ็น" ทุกประการ สิ่งที่ตรวจจับได้คือ pattern การโอน (ยอดเต็มออกจากหลายพัน address พร้อมกัน) และเพดาน/นโยบายที่ signing layer ไม่ใช่ code ของ EOA</p></details>
     <details><summary>ทำไม deposit address 36,042 ใบถึงโดนพร้อมกันได้ ทั้งที่เป็นคนละ address</summary><p>เพราะมันถูก derive จาก seed เดียว (หรือเซ็นผ่าน signing service เดียว) โจรที่ยึด secret ชิ้นนั้นได้จึงเซ็นแทนได้ทุกใบ นี่คือเหตุผลที่ควรแยก key/จำกัดสิทธิ์ต่อ address ไม่ให้จุดเดียวคุมทั้งหมด</p></details>
+  </div>
+</section>
+
+<section class="chapter tabpanel" id="case-ir">
+  <div class="ch-num">บทที่ 19 · INCIDENT RESPONSE</div>
+  <h2>After-hack process & monitoring — ปิดช่องว่าง 25 นาที</h2>
+  <p class="lead">ทั้ง Binance 14 (7702) และ Mercado Bitcoin (seed หลุด) <b>กวาดเงินเสร็จใน ~25 นาที</b> แต่คนตอบสนองช้าเป็นชั่วโมง (Binance revoke 7702 ช้าไป <b>226 นาที</b>) บทนี้คือ control ที่ปิดช่องว่างนั้น: <b>ตรวจจับสด + เบรกอัตโนมัติ</b> ไม่รอคนกด (ดู <code>forensics/incident-response/</code>)</p>
+
+  <div class="callout bad"><b>ข้อเท็จจริงที่กำหนดทุกอย่าง</b><p><b>stablecoin (USDT/USDC) freeze ย้อนหลังได้ · ETH freeze ไม่ได้</b> → เกมของโจรคือรีบ swap→ETH แล้วพักกระเป๋าสด เกมของเราคือ <b>detect + contain ให้เร็วกว่าที่โจร convert</b></p></div>
+
+  <h3>19.1 Monitoring — signal ที่ alert ได้สด</h3>
+  <table>
+    <thead><tr><th>signal</th><th>จับอะไร</th><th>เห็นในเคส</th></tr></thead>
+    <tbody>
+      <tr><td>EOA ร้อนมี code <code>0xef0100‖addr</code></td><td>ถูก delegate แบบ EIP-7702 ไป sweeper</td><td>Binance 14</td></tr>
+      <tr><td>outflow &gt; N× baseline ต่อนาที</td><td>การกวาดทุกชนิด</td><td>ทั้งคู่</td></tr>
+      <tr><td>deposit address หลายใบเซ็นในหน้าต่างเดียว</td><td>seed/signer ตัวเดียวถูกยึด</td><td>Mercado</td></tr>
+      <tr><td>test tx จิ๋ว (0.0001) นำหน้า burst</td><td>โจรลองก่อนกวาดจริง</td><td>Mercado</td></tr>
+      <tr><td>โอนเข้ากระเป๋า <b>nonce-0</b> สดๆ</td><td>เตรียมพัก ETH เพื่อ cash-out</td><td>ทั้งคู่</td></tr>
+    </tbody>
+  </table>
+  <p>logic ตรวจจับอยู่ใน <code>lz-potato/test/HotWalletMonitor.t.sol</code> — <code>_delegatedTo()</code> ถอด designator 23 byte (<code>0xef0100</code> + 20-byte address) คืน address ของ sweeper ให้ alert และ signal outflow-vs-baseline</p>
+
+  <h3>19.2 Containment — เบรกเองไม่ต้องรอคน</h3>
+  <p><code>lz-potato/src/lab/HotWalletVault.sol</code> วาง control 2 ชั้นที่ย่อความเสียหายทั้งสองเคสได้:</p>
+  <ul>
+    <li><b>Auto circuit breaker</b> — เพดาน outflow ต่อ rolling window; การถอนที่ <b>เกิน cap จะ latch เบรก (ไม่โอนอะไรเลย)</b> ดังนั้น key operator ที่ถูกยึดกวาดได้ <b>แค่ 1 window</b> ไม่ใช่ทั้งตู้ (เดโม: โจรได้ 50k จาก 1,000,000 = เหลือ 95% ในตู้)</li>
+    <li><b>Guardian pause</b> — สวิตช์ T+0 บน <b>key คนละดอกกับ operator</b> → operator ที่ถูกยึด <b>pause/resume เองไม่ได้</b></li>
+  </ul>
+  <div class="callout"><b>ทำไมเบรกต้องไม่ revert</b><p>ถ้าโอนเกิน cap แล้ว <code>revert</code> การ set <code>tripped=true</code> จะถูก rollback ไปด้วย → latch ไม่ติด ทางแก้: โอนที่เกิน cap ทำเป็น <b>no-op ที่บันทึก trip</b> (ไม่โอน ไม่ revert) แล้ว call ถัดไปทุกครั้งจึง bounce ที่ <code>tripped</code></p></div>
+
+  <h3>19.3 Runbook T+0 → T+days</h3>
+  <table>
+    <thead><tr><th>เมื่อ</th><th>ทำ</th><th>ทำไม</th></tr></thead>
+    <tbody>
+      <tr><td><b>T+0</b></td><td>เบรก trip แล้ว / guardian <code>pause()</code>; หมุน operator key; revoke 7702 ถ้ามี</td><td>หยุดเลือดโดยไม่รอคน</td></tr>
+      <tr><td><b>T+5</b></td><td>แจ้ง Tether + Circle + Chainalysis ให้ blacklist collector</td><td>freeze USDT/USDC ที่หลุดออกไปแล้ว</td></tr>
+      <tr><td><b>T+15</b></td><td>ตั้ง watcher ตามทุก hop; แจ้ง CEX ปลายทางให้ flag เงินเข้า</td><td>ดัก ETH ก่อน cash-out</td></tr>
+      <tr><td><b>T+60</b></td><td>ประกาศสถานะ; เก็บ log/หลักฐาน; snapshot ยอด</td><td>ความเชื่อมั่น + forensics</td></tr>
+      <tr><td><b>T+days</b></td><td>ชดเชย user; post-mortem; ปิดช่องทางเข้า</td><td>Binance & Mercado คืนเงิน user ทั้งคู่</td></tr>
+    </tbody>
+  </table>
+
+  <h3>19.4 Lab</h3>
+  <p><code>HotWalletMonitor.t.sol</code> ผ่าน 7/7: <code>detect7702DelegationOnHotWallet</code> (ถอด sweeper จาก code สด), <code>breakerCapsLossToOneWindow</code> (เหลือ 95% ในตู้), <code>breakerCatchesManySmallDrains</code> (นับรวม ไม่สนจำนวน tx = จับ shape Mercado), <code>windowRollsForwardForHonestTraffic</code> (ธุรกิจปกติผ่าน), <code>guardianPauseStopsBleedingOperatorCannotUndo</code>, <code>whatLeaksIsFrozenByIssuer</code> (reuse ชั้น freeze บท 17) · full suite 76/76</p>
+
+  <div class="summary"><h4>สรุปบทที่ 19</h4><ul>
+    <li>ช่องว่างจริงของทั้งสองเคสคือ "เงินออก 25 นาที vs คนตอบสนองเป็นชั่วโมง" — การตอบสนองนาทีแรกต้องอยู่ <b>on-chain อัตโนมัติ</b></li>
+    <li>Monitoring: 7702-code (Binance), outflow spike + deposit surge (Mercado), test-tx, พัก nonce-0 — alert คนละชุดต่อเคส</li>
+    <li>Containment: circuit breaker ต่อ window จำกัดโจรไว้ 1 window + guardian pause คนละ key จาก operator</li>
+    <li>freeze ช่วยได้เฉพาะ stablecoin ที่ยังไม่ swap เป็น ETH → ต้องเร็วกว่าการ convert</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ทำไมเบรกเกอร์ตอนโอนเกิน cap ถึงเลือก "ไม่ revert" ทั้งที่ควรปฏิเสธการโอน</summary><p>เพราะ revert จะ rollback ทุก state change ในสายนั้น รวมถึง <code>tripped=true</code> ที่เพิ่ง set → latch ไม่ติด โจรก็แค่เรียกใหม่เรื่อยๆ ทางแก้คือให้การโอนที่เกิน cap เป็น no-op ที่ "ไม่โอน แต่บันทึก trip" ค้างไว้ แล้วทุก call หลังจากนั้น bounce ที่เช็ก <code>tripped</code> เอง</p></details>
+    <details><summary>ทำไม guardian กับ operator ต้องเป็นคนละ key</summary><p>เพราะ key ที่โจรยึด (operator) คือ key ที่ใช้กวาดเงิน ถ้า pause/resume อยู่ key เดียวกัน โจรก็ปลด pause เองได้ทันที การแยก guardian ออกมาทำให้สวิตช์หยุดเลือดอยู่นอกมือโจร แม้ operator จะถูกยึดไปแล้ว</p></details>
   </div>
 </section>
 

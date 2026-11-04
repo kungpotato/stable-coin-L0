@@ -879,6 +879,16 @@ steps = [
      "stable-coin-L0/lz-potato", "เขียน test/MercadoDepositSweep.t.sol: derive key จาก MASTER_SEED, fund N=100 deposit EOA ด้วย USDT+ETH, วนเซ็นโอนออกทุกใบ (assert code.length==0 ทุกใบ), แล้ว issuer freeze USDT collector ได้ แต่ ETH ที่พักไว้ freeze ไม่ได้; forge test --match-path 'test/MercadoDepositSweep.t.sol'",
      "ผ่าน 2/2: oneStolenSeedDrainsEveryDepositAddress (กวาดครบ N, ทุก victim ยังเป็น EOA code 0), issuerFreezesUsdtButNotParkedEth (USDT collector โดน freeze โอนต่อ revert, ETH park โอนออกได้)", "fa1885d",
      "หัวใจต่างจาก 7702: ไม่ต้องหลอกให้เซ็น auth หรือ deploy sweeper — แค่ยึด seed/signer ก็เซ็นแทนทุก address ที่ derive มา จุดเดียวแตก=ทั้งตลาดแตก; ป้องกันที่ custody (แยก key, MPC/HSM, สิทธิ์ต่อ address) ไม่ใช่ที่ code ของ EOA; reuse MockUSDT แสดงชั้น freeze เดียวกับบท 17", "ผ่าน"),
+
+    (19, 0, "เขียน after-hack runbook + รายการ monitoring signal จาก 2 เคสจริง", "ทั้ง Binance(7702) และ Mercado(seed) กวาดเงินใน ~25 นาที แต่คนตอบสนองเป็นชั่วโมง — ต้องมี playbook T+0→T+N และ signal ที่ alert ได้สดเพื่อปิดช่องว่างนี้",
+     "stable-coin-L0/forensics/incident-response", "เขียน README.md: ตาราง monitoring signal (7702 code 0xef0100, outflow spike, deposit surge, test-tx, park nonce-0), timeline runbook T+0 หยุดเลือด→T+5 แจ้ง issuer freeze→T+15 ตาม hop→T+60 ประกาศ→T+days ชดเชย; โยงไป lab ของบทนี้",
+     "runbook ครบ: signal 5 ตัวผูกกับเคสจริง (Binance/Mercado), timeline 5 ขั้น, ย้ำข้อเท็จจริง stablecoin freeze ได้/ETH ไม่ได้ → เกมคือ detect+contain ให้เร็วกว่าโจร convert→ETH; อ้าง Binance revoke 7702 ช้า 226 นาที", "",
+     "บทเรียน: การตอบสนองนาทีแรกต้องอยู่ on-chain (auto) ไม่ใช่รอคนกด; freeze ช่วยได้เฉพาะ stablecoin ที่ยังไม่ถูก swap เป็น ETH → monitoring ต้องไวระดับนาที", "ผ่าน"),
+
+    (19, 1, "ทำ lab circuit-breaker vault + watcher test (detect+contain)", "โชว์ control เดียวที่ย่อความเสียหายทั้ง 2 เคสได้: เบรกเกอร์ outflow อัตโนมัติ + guardian pause คนละ key, พร้อม logic ตรวจจับ 7702 จาก code สด",
+     "stable-coin-L0/lz-potato", "เขียน src/lab/HotWalletVault.sol (rolling-window cap: โอนเกิน cap → latch tripped ไม่โอน/ไม่ revert, guardian pause/resume แยก key จาก operator) + test/HotWalletMonitor.t.sol (_delegatedTo ถอด 0xef0100‖addr, breaker cap loss 1 window, many-small drain, window roll, guardian pause operator แก้ไม่ได้, freeze ส่วนที่รั่ว); forge test --match-path 'test/HotWalletMonitor.t.sol'",
+     "ผ่าน 7/7: detect7702 (ถอด sweeper address จาก designator 23 byte), breakerCapsLossToOneWindow (โจรได้ 50k จาก 1M = เหลือ 95% ในตู้), breakerCatchesManySmallDrains (นับรวม ไม่สน จำนวน tx), windowRolls (ธุรกิจปกติผ่าน), guardianPause (operator ที่ถูกยึด pause/resume เองไม่ได้), whatLeaksIsFrozen; full suite 76/76", "",
+     "เบรกเกอร์ latch ได้ต้องไม่ revert (revert จะ rollback การ set tripped) → โอนที่เกิน cap ทำเป็น no-op ที่บันทึก trip แล้ว call ถัดไป bounce; แยก guardian≠operator = key ที่ถูกยึดปลด pause เองไม่ได้; detect 7702 ใช้ได้กับ Binance แต่ Mercado ต้องใช้ outflow/surge แทน", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1085,6 +1095,8 @@ RERUN = {
     (17, 35): ("ได้", "forge test --match-path 'test/{StablecoinFreeze,Sweeper7702}.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
     (18, 0): ("ได้", "RPC=https://eth.drpc.org ./forensics/mercado-bitcoin-2026-11-02/check.sh อ่านอย่างเดียว (archive RPC); ตัวเลขอาจขยับตามเวลาที่ freeze/move เพิ่ม"),
     (18, 1): ("ได้", "forge test --match-path 'test/MercadoDepositSweep.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
+    (19, 0): ("ได้", "อ่าน/แก้เอกสารอย่างเดียว ไม่มี service ไม่มี key"),
+    (19, 1): ("ได้", "forge test --match-path 'test/HotWalletMonitor.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]
