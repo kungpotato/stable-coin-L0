@@ -892,7 +892,7 @@ steps = [
 
     (20, 0, "ทำ signing service/API แล้วขอ SIG ของ account #0 ผ่าน curl (custody model ที่ 3)", "ต่อจาก seed-เดียว(บท18)/EOA(บท17): จำลอง custody แบบ signing service ที่ exchange ใช้เพื่อ operation — key อยู่หลัง API, client ขอลายเซ็นผ่าน HTTP; โชว์ว่าใครเข้าถึง endpoint ได้ = เซ็นแทนได้ทุกอย่าง (single point of failure ชั้น API)",
      "stable-coin-L0/signing-service", "เขียน server.py (stdlib http.server shell ไป cast wallet) + start-anvil.sh (anvil --hardfork prague ให้ sign-auth อ่าน nonce/chain ได้) + demo.sh; รัน anvil+server แล้ว curl /health /sign /sign-auth; SIGNER_PK=anvil #0 (public test key)",
-     "ทำงานครบ: /health คืน addr 0xf39F…2266; /sign personal_sign ได้ 65-byte sig; /sign no_hash เซ็น raw 32-byte hash ได้; /sign-auth คืน EIP-7702 authorization RLP (0xf85c… chainid 0x7a69=31337, nonce, r, s) = primitive เดียวกับที่ Binance 14 โดน; anvil prague + cast 1.8.6 รองรับ sign-auth", "",
+     "ทำงานครบ: /health คืน addr 0xf39F…2266; /sign personal_sign ได้ 65-byte sig; /sign no_hash เซ็น raw 32-byte hash ได้; /sign-auth คืน EIP-7702 authorization RLP (0xf85c… chainid 0x7a69=31337, nonce, r, s) = primitive เดียวกับที่ Binance 14 โดน; anvil prague + cast 1.8.6 รองรับ sign-auth", "1e6fc83",
      "signing service = ความสะดวก operation (rotate/log/policy ที่เดียว) แลกกับ blast radius ที่ endpoint: เจาะ API/auth = ได้ลายเซ็นทุกอย่างที่ key คุม เท่ากับ seed หลุด แค่คนละชั้น; นี่คือเหตุผลที่ Fireblocks ใช้ MPC+policy (key ไม่เคยรวมเป็นก้อน, policy ตัดสินแทน endpoint ดิบ); endpoint ไม่มี auth โดยตั้งใจเพื่อโชว์จุดอ่อน ผูก localhost เท่านั้น", "ผ่าน"),
 ]
 RERUN = {
