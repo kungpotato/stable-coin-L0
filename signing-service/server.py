@@ -95,11 +95,13 @@ class Handler(BaseHTTPRequestHandler):
                 if not delegate:
                     return self._send(400, {"error": "delegate address required"})
                 rpc = data.get("rpc", DEFAULT_RPC)
-                # sign-auth fetches nonce + chain id from the RPC (why we start anvil).
-                sig = cast(
-                    "wallet", "sign-auth", str(delegate),
-                    "--private-key", SIGNER_PK, "--rpc-url", rpc,
-                )
+                # sign-auth reads chain id (+ nonce, unless pinned) from the RPC - why we start anvil.
+                args = ["wallet", "sign-auth", str(delegate), "--private-key", SIGNER_PK, "--rpc-url", rpc]
+                # Optional explicit nonce: pins the authorization to a specific account nonce instead
+                # of the current on-chain one (e.g. signing ahead for a queued tx).
+                if data.get("nonce") is not None:
+                    args += ["--nonce", str(data["nonce"])]
+                sig = cast(*args)
                 self._send(200, {
                     "authority": address(),
                     "delegate": delegate,

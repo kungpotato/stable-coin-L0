@@ -48,7 +48,16 @@ curl -s -X POST http://127.0.0.1:8555/sign -H 'content-type: application/json' \
 # EIP-7702 authorization: delegate account #0's EOA to a sweeper (the Binance attack shape)
 curl -s -X POST http://127.0.0.1:8555/sign-auth -H 'content-type: application/json' \
   -d '{"delegate":"0x00000000000000000000000000000000DeaDBeef"}'
+
+# ...with an explicit nonce (same as `cast wallet sign-auth $SWEEP --nonce 2`), and capture just
+# the authorization string into a shell var the way the raw cast call would:
+SIG0=$(curl -s -X POST http://127.0.0.1:8555/sign-auth -H 'content-type: application/json' \
+  -d '{"delegate":"'"$SWEEP"'","nonce":2}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["authorization"])')
+echo "$SIG0"   # 0xf85c...  -> cast send --auth "$SIG0" ...
 ```
+
+Raw-cast equivalent of that call: `cast wallet sign-auth $SWEEP --private-key $HOT_PK --rpc-url $RPC --nonce 2`.
+(the service holds the key, so set `SIGNER_PK=$HOT_PK` when you start it; omit `nonce` to let anvil supply it.)
 
 The `sign-auth` response is the RLP authorization tuple
 (`chain_id, address, nonce, y_parity, r, s`) — submit it with `cast send --auth <authorization>`
@@ -60,7 +69,7 @@ and the authority's EOA gains the delegate's code. That is the exact primitive a
 | GET | `/health` | — | `{ok, address}` |
 | GET | `/address` | — | `{address}` |
 | POST | `/sign` | `{message, no_hash?}` | `{address, message, signature}` |
-| POST | `/sign-auth` | `{delegate, rpc?}` | `{authority, delegate, authorization}` |
+| POST | `/sign-auth` | `{delegate, nonce?, rpc?}` | `{authority, delegate, authorization}` |
 
 ## Env
 - `SIGNER_PK` — key to sign with (default: anvil #0 public key).
