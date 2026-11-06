@@ -889,6 +889,11 @@ steps = [
      "stable-coin-L0/lz-potato", "เขียน src/lab/HotWalletVault.sol (rolling-window cap: โอนเกิน cap → latch tripped ไม่โอน/ไม่ revert, guardian pause/resume แยก key จาก operator) + test/HotWalletMonitor.t.sol (_delegatedTo ถอด 0xef0100‖addr, breaker cap loss 1 window, many-small drain, window roll, guardian pause operator แก้ไม่ได้, freeze ส่วนที่รั่ว); forge test --match-path 'test/HotWalletMonitor.t.sol'",
      "ผ่าน 7/7: detect7702 (ถอด sweeper address จาก designator 23 byte), breakerCapsLossToOneWindow (โจรได้ 50k จาก 1M = เหลือ 95% ในตู้), breakerCatchesManySmallDrains (นับรวม ไม่สน จำนวน tx), windowRolls (ธุรกิจปกติผ่าน), guardianPause (operator ที่ถูกยึด pause/resume เองไม่ได้), whatLeaksIsFrozen; full suite 76/76", "83d0618",
      "เบรกเกอร์ latch ได้ต้องไม่ revert (revert จะ rollback การ set tripped) → โอนที่เกิน cap ทำเป็น no-op ที่บันทึก trip แล้ว call ถัดไป bounce; แยก guardian≠operator = key ที่ถูกยึดปลด pause เองไม่ได้; detect 7702 ใช้ได้กับ Binance แต่ Mercado ต้องใช้ outflow/surge แทน", "ผ่าน"),
+
+    (20, 0, "ทำ signing service/API แล้วขอ SIG ของ account #0 ผ่าน curl (custody model ที่ 3)", "ต่อจาก seed-เดียว(บท18)/EOA(บท17): จำลอง custody แบบ signing service ที่ exchange ใช้เพื่อ operation — key อยู่หลัง API, client ขอลายเซ็นผ่าน HTTP; โชว์ว่าใครเข้าถึง endpoint ได้ = เซ็นแทนได้ทุกอย่าง (single point of failure ชั้น API)",
+     "stable-coin-L0/signing-service", "เขียน server.py (stdlib http.server shell ไป cast wallet) + start-anvil.sh (anvil --hardfork prague ให้ sign-auth อ่าน nonce/chain ได้) + demo.sh; รัน anvil+server แล้ว curl /health /sign /sign-auth; SIGNER_PK=anvil #0 (public test key)",
+     "ทำงานครบ: /health คืน addr 0xf39F…2266; /sign personal_sign ได้ 65-byte sig; /sign no_hash เซ็น raw 32-byte hash ได้; /sign-auth คืน EIP-7702 authorization RLP (0xf85c… chainid 0x7a69=31337, nonce, r, s) = primitive เดียวกับที่ Binance 14 โดน; anvil prague + cast 1.8.6 รองรับ sign-auth", "",
+     "signing service = ความสะดวก operation (rotate/log/policy ที่เดียว) แลกกับ blast radius ที่ endpoint: เจาะ API/auth = ได้ลายเซ็นทุกอย่างที่ key คุม เท่ากับ seed หลุด แค่คนละชั้น; นี่คือเหตุผลที่ Fireblocks ใช้ MPC+policy (key ไม่เคยรวมเป็นก้อน, policy ตัดสินแทน endpoint ดิบ); endpoint ไม่มี auth โดยตั้งใจเพื่อโชว์จุดอ่อน ผูก localhost เท่านั้น", "ผ่าน"),
 ]
 RERUN = {
     (4, 0): ("ได้", "check-env อ่านอย่างเดียว ไม่แสดง key"),
@@ -1097,6 +1102,7 @@ RERUN = {
     (18, 1): ("ได้", "forge test --match-path 'test/MercadoDepositSweep.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
     (19, 0): ("ได้", "อ่าน/แก้เอกสารอย่างเดียว ไม่มี service ไม่มี key"),
     (19, 1): ("ได้", "forge test --match-path 'test/HotWalletMonitor.t.sol' รันซ้ำได้ ไม่มี side effect ไม่ต้องเปิด service"),
+    (20, 0): ("ได้ (ต้องเปิด service)", "ต้อง start-anvil.sh + python3 server.py ก่อน curl; รันซ้ำได้ ไม่มี side effect บนเชนจริง (anvil local, public test key); ปิด anvil+server เมื่อเสร็จ"),
 }
 rows = [[t, n, what, why, cwd, cmd, expect, commit, actual, status, *RERUN[(t, n)]]
         for (t, n, what, why, cwd, cmd, expect, commit, actual, status) in steps]

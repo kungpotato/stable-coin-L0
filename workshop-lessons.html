@@ -219,6 +219,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <li><a href="#case-binance"><span class="n">17</span>ตามรอย Binance hack บน mainnet</a></li>
     <li><a href="#case-mercado"><span class="n">18</span>ตามรอย Mercado Bitcoin hack</a></li>
     <li><a href="#case-ir"><span class="n">19</span>After-hack process & monitoring</a></li>
+    <li><a href="#case-signer"><span class="n">20</span>Signing service / API custody</a></li>
   </ol>
   <div class="part">ภาคผนวก</div>
   <ol>
@@ -246,7 +247,7 @@ footer.colophon { padding: 40px 0 10px; color: var(--muted); font-size: .88rem; 
     <a href="#ch12">12 · DVN และ Executor</a><a href="#ch13">13 · Bridge POTATO</a><a href="#ch14">14 · Bridge USDC</a>
     <a href="#ch15">15 · Frontend และ indexer</a><a href="#ch16">16 · IBC กับ production</a>
     <div class="part">กรณีศึกษา</div>
-    <a href="#case-binance">17 · ตามรอย Binance hack</a><a href="#case-mercado">18 · Mercado Bitcoin hack</a><a href="#case-ir">19 · After-hack & monitoring</a>
+    <a href="#case-binance">17 · ตามรอย Binance hack</a><a href="#case-mercado">18 · Mercado Bitcoin hack</a><a href="#case-ir">19 · After-hack & monitoring</a><a href="#case-signer">20 · Signing service / API</a>
     <div class="part">ภาคผนวก</div>
     <a href="#apx-a">A · บทเรียนรวม</a><a href="#apx-b">B · แคตตาล็อก bug</a><a href="#apx-c">C · Checklist</a>
     <a href="#apx-d">D · คำสั่ง</a><a href="#apx-e">E · อภิธานศัพท์</a><a href="#apx-f">F · ไฟล์อ้างอิง</a>
@@ -1969,6 +1970,53 @@ Tron 1.71M TRX ─Bridgers─► 181 ETH ─► 0x4d5f…   |  Solana ─Mayan/C
   <div class="quiz"><h4>คำถามทบทวน</h4>
     <details><summary>ทำไมเบรกเกอร์ตอนโอนเกิน cap ถึงเลือก "ไม่ revert" ทั้งที่ควรปฏิเสธการโอน</summary><p>เพราะ revert จะ rollback ทุก state change ในสายนั้น รวมถึง <code>tripped=true</code> ที่เพิ่ง set → latch ไม่ติด โจรก็แค่เรียกใหม่เรื่อยๆ ทางแก้คือให้การโอนที่เกิน cap เป็น no-op ที่ "ไม่โอน แต่บันทึก trip" ค้างไว้ แล้วทุก call หลังจากนั้น bounce ที่เช็ก <code>tripped</code> เอง</p></details>
     <details><summary>ทำไม guardian กับ operator ต้องเป็นคนละ key</summary><p>เพราะ key ที่โจรยึด (operator) คือ key ที่ใช้กวาดเงิน ถ้า pause/resume อยู่ key เดียวกัน โจรก็ปลด pause เองได้ทันที การแยก guardian ออกมาทำให้สวิตช์หยุดเลือดอยู่นอกมือโจร แม้ operator จะถูกยึดไปแล้ว</p></details>
+  </div>
+</section>
+
+<section class="chapter tabpanel" id="case-signer">
+  <div class="ch-num">บทที่ 20 · CUSTODY MODEL</div>
+  <h2>Signing service / API — custody model ที่ 3</h2>
+  <p class="lead">บท 17–18 ไล่ custody มา 2 แบบที่โดนเจาะ บทนี้เติมแบบที่ 3 ที่ exchange ใช้จริงเพื่อ <b>operation</b>: <b>signing service / API</b> — key อยู่หลัง endpoint, client ขอลายเซ็นผ่าน HTTP โปรเจกต์ demo อยู่ที่ <code>signing-service/</code> ขอ SIG ของ anvil account #0 (<code>0xf39F…2266</code>) ผ่าน <code>curl</code> ได้จริง</p>
+
+  <h3>20.1 custody ครบ 3 แบบ</h3>
+  <table>
+    <thead><tr><th>model</th><th>ใครเซ็นแทนได้ทุกอย่าง</th><th>แตกในบท</th></tr></thead>
+    <tbody>
+      <tr><td>seed เดียว (BIP-32 HD)</td><td>คนที่ขโมยไฟล์ seed</td><td>18 (Mercado)</td></tr>
+      <tr><td>EOA ถือเงินตรงๆ</td><td>คนที่ยึด/หลอก key ให้เซ็น 7702</td><td>17 (Binance)</td></tr>
+      <tr><td><b>signing service / API</b></td><td><b>ใครก็ตามที่เข้าถึง endpoint ได้</b></td><td>บทนี้</td></tr>
+    </tbody>
+  </table>
+
+  <h3>20.2 โปรเจกต์ทำงานยังไง</h3>
+  <ul>
+    <li><code>start-anvil.sh</code> → <code>anvil --hardfork prague</code> (fork ที่มี EIP-7702) จำเป็นเพื่อให้ <code>sign-auth</code> อ่าน nonce/chain ได้</li>
+    <li><code>server.py</code> → HTTP service (stdlib) ที่ shell ไป <code>cast wallet</code> ถือ key ของ account #0 (public test key) ฟังที่ <code>127.0.0.1:8555</code></li>
+    <li>ขอ SIG ผ่าน curl: <code>/sign</code> (personal_sign), <code>/sign</code> + <code>no_hash</code> (raw 32-byte hash), <code>/sign-auth</code> (EIP-7702 authorization)</li>
+  </ul>
+  <pre><code># personal_sign ผ่าน curl
+curl -s -X POST :8555/sign -d '{"message":"transfer 1000 USDT to treasury"}'
+# → {"address":"0xf39F…2266","signature":"0xb5f3…1b"}
+
+# EIP-7702 authorization = delegate account #0 ไป sweeper (รูปเดียวกับ Binance 14)
+curl -s -X POST :8555/sign-auth -d '{"delegate":"0x…DeaDBeef"}'
+# → {"authorization":"0xf85c 827a69(=chainid 31337) 94…deadbeef 03(nonce) 01 a0r a0s"}</code></pre>
+  <p>authorization ที่ได้คือ RLP tuple <code>(chain_id, address, nonce, y_parity, r, s)</code> ส่งต่อด้วย <code>cast send --auth &lt;authorization&gt;</code> แล้ว EOA ของ authority จะได้ code ของ delegate — <b>primitive เดียวกับที่ Binance 14 โดน</b></p>
+
+  <div class="callout bad"><b>จุดอ่อนของ signing service</b><p>ย้าย key ไปหลัง API = ความสะดวก operation (rotate/log/policy ที่เดียว) แต่ <b>รวมอำนาจเซ็นไว้ที่ endpoint</b> เจาะ API หรือ auth ของมันได้ = ได้ลายเซ็นทุกอย่างที่ key คุม <b>blast radius เท่า seed หลุด แค่คนละชั้น</b> โปรเจกต์นี้ <b>ตั้งใจไม่ใส่ auth</b> ที่ endpoint เพื่อให้เห็นจุดเดียวแตกชัดๆ — ผูก localhost เท่านั้น</p></div>
+
+  <h3>20.3 ทำไม Fireblocks ถึงไม่ใช่แบบนี้ตรงๆ</h3>
+  <p>Fireblocks เอาความสะดวกของ API/HD มา <b>แต่ตัดจุดอ่อน single-key ทิ้ง</b>ด้วย <b>MPC + policy (TAP)</b>: private key <b>ไม่เคยถูกประกอบเป็นก้อนเดียว</b>บนเครื่องไหนเลย (เป็น shares หลายฝ่าย) และ <b>policy engine</b> เป็นคนตัดสินว่าจะเซ็นอะไร ไม่ใช่ endpoint ดิบ → เจาะเครื่องเดียวไม่พอ ต้องเจาะ policy/คนอนุมัติด้วย (= แบบ Bybit)</p>
+
+  <div class="summary"><h4>สรุปบทที่ 20</h4><ul>
+    <li>custody มี 3 แบบ: seed เดียว / EOA / signing service — ทั้งหมดรวมอำนาจเซ็นไว้จุดเดียวในรูปต่างกัน</li>
+    <li>โปรเจกต์ <code>signing-service/</code> ขอ SIG ของ account #0 ผ่าน curl ได้จริง รวม EIP-7702 authorization (ต้อง anvil --hardfork prague)</li>
+    <li>ย้าย key ไปหลัง API ไม่ได้ลดความเสี่ยง แค่ย้ายจุดแตกไปที่ endpoint/auth ของ API</li>
+    <li>Fireblocks แก้ด้วย MPC (ไม่มี key เต็มให้ขโมย) + policy (ไม่ใช่ endpoint ดิบตัดสิน) — ความเสี่ยงที่เหลือคือ policy/คน (Bybit)</li>
+  </ul></div>
+  <div class="quiz"><h4>คำถามทบทวน</h4>
+    <details><summary>ทำไม signing service ถึง "blast radius เท่า seed หลุด"</summary><p>เพราะไม่ว่าเงิน/address จะมีกี่ใบ ทุกลายเซ็นออกจาก key เดียวที่อยู่หลัง endpoint เดียว ใครคุม endpoint/auth ได้ก็สั่งเซ็นได้ทุกอย่างที่ key นั้นคุม เหมือนถือ seed ที่ derive ทุกใบ ต่างแค่จุดโจมตีเป็น "API" แทน "ไฟล์ seed"</p></details>
+    <details><summary>ทำไมต้อง anvil --hardfork prague ถึงจะ sign-auth ได้</summary><p>EIP-7702 มากับ hardfork Prague (Pectra) <code>cast wallet sign-auth</code> ต้องอ่าน chain id + nonce ปัจจุบันของ authority จาก RPC เพื่อประกอบ authorization tuple ที่ถูกต้อง เราจึง start anvil บน fork prague ไว้ให้มันเรียก</p></details>
   </div>
 </section>
 
